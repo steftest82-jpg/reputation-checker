@@ -1,5 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
+import { readFileSync } from "fs";
+import { resolve } from "path";
+
+// ── Load env vars from .env.local fallback (fixes Next.js 16 Turbopack bug) ─
+function loadEnvFallback() {
+  if (process.env.ANTHROPIC_API_KEY) return; // already loaded
+  try {
+    const envPath = resolve(process.cwd(), ".env.local");
+    const content = readFileSync(envPath, "utf8");
+    for (const line of content.split("\n")) {
+      const match = line.match(/^([^#=]+)=(.*)$/);
+      if (match) {
+        const key = match[1].trim();
+        const val = match[2].trim();
+        if (!process.env[key]) process.env[key] = val;
+      }
+    }
+  } catch {
+    // .env.local doesn't exist (e.g. on Vercel) — env vars come from dashboard
+  }
+}
+loadEnvFallback();
 
 // ── Rate-limit store (in-memory; resets on cold start) ──────────────
 const ipHits: Record<string, { count: number; firstHit: number }> = {};
@@ -220,7 +242,11 @@ function buildDataPacket(
 async function analyzeReputation(
   dataPacket: ReturnType<typeof buildDataPacket>
 ) {
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) {
+    throw new Error("ANTHROPIC_API_KEY environment variable is not set");
+  }
+  const client = new Anthropic({ apiKey });
 
   const prompt = `You are an expert Online Reputation Management (ORM) analyst. You are analyzing the full online footprint of the ${dataPacket.entityType} "${dataPacket.name}".
 
@@ -508,10 +534,12 @@ export async function POST(req: NextRequest) {
         : null,
       dataStats: dataPacket.stats,
     });
-  } catch (err) {
-    console.error("Reputation check error:", err);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    const stack = err instanceof Error ? err.stack : "";
+    console.error("Reputation check error:", message, stack);
     return NextResponse.json(
-      { error: "Something went wrong. Please try again." },
+      { error: `Analysis failed: ${message}` },
       { status: 500 }
     );
   }
