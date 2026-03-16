@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
     if (RESEND_KEY) {
       const resend = new Resend(RESEND_KEY);
       const { data, error } = await resend.emails.send({
-        from: "Reputation500 Tool <onboarding@resend.dev>",
+        from: "Reputation500 <info@reputation500.com>",
         to: TO_EMAIL,
         subject: `New Lead: ${name} — ${packageName}`,
         html: emailHtml,

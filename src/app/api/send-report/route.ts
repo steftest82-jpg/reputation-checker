@@ -308,7 +308,7 @@ export async function POST(req: NextRequest) {
 
       // Send report PDF to user
       const { error: sendError } = await resend.emails.send({
-        from: "Reputation500 <onboarding@resend.dev>",
+        from: "Reputation500 <info@reputation500.com>",
         to: email,
         subject: `Your Reputation Report for "${reportName}" — Score: ${reportScore}/100`,
         html: `
