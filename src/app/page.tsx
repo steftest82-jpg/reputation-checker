@@ -448,7 +448,7 @@ export default function Home() {
                         setGateError("");
                         try {
                           // Send lead notification to Reputation500
-                          await fetch("/api/contact", {
+                          const res = await fetch("/api/contact", {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
                             body: JSON.stringify({
@@ -457,10 +457,15 @@ export default function Home() {
                               packageName: "Report Unlock",
                               reportName: report?.name || "",
                               reportScore: report?.score || 0,
+                              reportData: report || null,
                             }),
                           });
-                        } catch {
-                          // Silently fail — still unlock the report
+                          if (!res.ok) {
+                            const err = await res.json().catch(() => ({}));
+                            console.error("Lead email failed:", res.status, err);
+                          }
+                        } catch (err) {
+                          console.error("Lead email fetch error:", err);
                         } finally {
                           setGateSending(false);
                           setEmailGated(false);
