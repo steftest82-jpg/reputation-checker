@@ -394,6 +394,288 @@ Be brutally honest. Do not inflate scores. A mediocre online presence should sco
   return JSON.parse(cleaned);
 }
 
+// ── Package recommendation engine ───────────────────────────────────
+interface PackageRec {
+  id: string;
+  name: string;
+  type: "pr" | "media" | "orm";
+  price: string;
+  tag: string;
+  match: "perfect" | "strong" | "good";
+  headline: string;
+  reason: string;
+  features: string[];
+  cta: string;
+}
+
+function getPackageRecommendations(
+  score: number,
+  problems: { severity: string; category: string }[],
+  riskLevel: string,
+  entityType: string
+): { show: boolean; urgencyMessage: string; packages: PackageRec[] } {
+  // Don't show packages for scores 80+
+  if (score >= 80) {
+    return {
+      show: false,
+      urgencyMessage: "",
+      packages: [],
+    };
+  }
+
+  const highSeverity = problems.filter((p) => p.severity === "high").length;
+  const hasNegativePress = problems.some(
+    (p) => p.category === "negative_press" || p.category === "negative_content"
+  );
+  const hasComplaints = problems.some((p) => p.category === "complaint");
+  const hasLegal = problems.some((p) => p.category === "legal");
+  const hasMissingPresence = problems.some(
+    (p) => p.category === "missing_presence"
+  );
+  const isCompany = entityType === "company";
+
+  const packages: PackageRec[] = [];
+  let urgencyMessage = "";
+
+  if (score < 30) {
+    // CRITICAL — needs full ORM
+    urgencyMessage =
+      "Your online reputation is in a critical state. Every day without action means more people see damaging content when they search your name. Immediate professional intervention is strongly recommended.";
+
+    packages.push({
+      id: "orm-elite",
+      name: "Elite",
+      type: "orm",
+      price: "€3,600/mo",
+      tag: "Best for your situation",
+      match: "perfect",
+      headline: "Full Reputation Overhaul",
+      reason:
+        "With multiple high-severity issues and critical risk level, you need a comprehensive 360° approach that includes pushing negative results off page 1, building authoritative content, and continuous monitoring.",
+      features: [
+        "30 high-end feature articles & interviews in international media",
+        "8+ Web 2.0 authority profiles with strategic backlinks",
+        "4 micro-websites built for reputation control",
+        "Push negative search results off Google page 1",
+        "1 VIP digital cover + 3 VIP interviews in top publications",
+        "Advanced on-page & off-page SEO + AI optimization",
+        "Weekly brand monitoring & optimization",
+        "YouTube channel management & content strategy",
+      ],
+      cta: "Get a Free Strategy Call",
+    });
+
+    packages.push({
+      id: "orm-enhanced",
+      name: "Enhanced",
+      type: "orm",
+      price: "€2,500/mo",
+      tag: "Popular",
+      match: "strong",
+      headline: "Negative Results Suppression",
+      reason:
+        "Designed specifically for pushing negative search results away from page 1 while building a strong positive digital footprint through media features and SEO.",
+      features: [
+        "24 high-end feature articles & interviews",
+        "6+ Web 2.0 authority profiles",
+        "3 micro-websites for reputation",
+        "Push negative search results away from page 1",
+        "3 VIP premium interview features",
+        "Advanced SEO & AI optimization",
+        "Monthly brand monitoring & reporting",
+      ],
+      cta: "Book Free Consultation",
+    });
+  } else if (score < 50) {
+    // POOR — needs serious help
+    urgencyMessage =
+      "Your online reputation has significant issues that are likely costing you opportunities, clients, or trust. People searching your name are finding concerning content. Professional reputation management can turn this around.";
+
+    packages.push({
+      id: "orm-enhanced",
+      name: "Enhanced",
+      type: "orm",
+      price: "€2,500/mo",
+      tag: "Best for your situation",
+      match: "perfect",
+      headline: "Push Negative Results & Build Authority",
+      reason: hasNegativePress || hasLegal
+        ? "The negative press and legal mentions found in your search results need to be actively suppressed with authoritative positive content. This package includes a dedicated strategy to push those results off page 1."
+        : "Your low score indicates significant gaps in online presence and concerning content in search results. This package builds a strong foundation while addressing negative findings.",
+      features: [
+        "24 high-end feature articles & interviews",
+        "Strategy to push negative results off Google page 1",
+        "3 VIP premium interview features in top publications",
+        "6+ Web 2.0 authority profiles with backlinks",
+        "3 micro-websites built for reputation control",
+        "Advanced on-page & off-page SEO + AI optimization",
+        "Monthly monitoring & optimization reporting",
+      ],
+      cta: "Get a Free Strategy Call",
+    });
+
+    packages.push({
+      id: "media-exposure",
+      name: "Exposure",
+      type: "media",
+      price: "€4,600",
+      tag: "Quick impact",
+      match: "strong",
+      headline: "International Media Features",
+      reason:
+        "Get featured in 5 premium international publications to establish authority and create positive search results that outrank negative content.",
+      features: [
+        "5 premium featured articles & interviews in international media",
+        "2 VIP premium interview features",
+        "6 Web 2.0 profiles generating authority",
+        "5 ghostwriting articles establishing you as an authority",
+        "Search results strategy to influence Google page 1 & AI answers",
+        "Full on & off-page SEO and AI optimization",
+      ],
+      cta: "See Media Options",
+    });
+  } else if (score < 65) {
+    // FAIR (low end) — notable problems
+    urgencyMessage =
+      "Your online presence has clear weaknesses that a potential client, partner, or employer would notice. Addressing these issues now prevents them from getting worse and starts building a reputation that works for you.";
+
+    packages.push({
+      id: "media-exposure",
+      name: "Exposure",
+      type: "media",
+      price: "€4,600",
+      tag: "Best for your situation",
+      match: "perfect",
+      headline: "Strengthen Your Online Presence",
+      reason: hasNegativePress
+        ? "The negative press found in your results can be pushed down by creating authoritative media features that Google ranks higher. This package is designed specifically for that."
+        : "Building a wall of positive, high-authority media features is the fastest way to improve your search results and establish trust with anyone who searches your name.",
+      features: [
+        "5 premium featured articles & interviews in international media",
+        "2 VIP premium interview features",
+        "Strategy to influence Google page 1 & AI answers",
+        "6 Web 2.0 authority profiles with strategic backlinks",
+        "5 ghostwriting articles to position you as an authority",
+        "Full SEO and AI optimization",
+      ],
+      cta: "Get a Free Strategy Call",
+    });
+
+    packages.push({
+      id: "orm-essential",
+      name: "Essential",
+      type: "orm",
+      price: "€1,250/mo",
+      tag: "Full 360° solution",
+      match: "strong",
+      headline: "Complete Reputation Management",
+      reason:
+        "For ongoing protection and growth, this package provides a full 360° approach including media features, SEO, social strategy, and continuous monitoring.",
+      features: [
+        "12 premium feature articles & interviews",
+        "350+ content & digital assets",
+        "3+ Web 2.0 authority profiles",
+        "2 micro-websites for reputation",
+        "YouTube channel management & social strategy",
+        "On & off-page SEO optimization",
+        "Monthly brand monitoring & reporting",
+      ],
+      cta: "Book Free Consultation",
+    });
+
+    if (hasNegativePress || hasComplaints) {
+      packages.push({
+        id: "pr-premium",
+        name: "Premium PR Distribution",
+        type: "pr",
+        price: "€890",
+        tag: "Quick win",
+        match: "good",
+        headline: "Immediate News Coverage",
+        reason:
+          "A strategic press release distributed to 400-500+ news sites including ABC, FOX, and NBC affiliates creates immediate positive coverage that can start pushing down negative results within days.",
+        features: [
+          "Distribution across 400-500+ news sites",
+          "ABC, FOX, NBC local affiliates + Yahoo Finance, MarketWatch, Benzinga",
+          "Professional writing, formatting & SEO optimization",
+          "5 journalist targeting for additional pickup",
+          "Delivery in 4-7 days",
+        ],
+        cta: "Get Started",
+      });
+    }
+  } else {
+    // Score 65-79 — FAIR to GOOD but below 80
+    urgencyMessage =
+      "Your online reputation is decent but has room for improvement. Strengthening it now ensures you're putting your best foot forward and protects against future issues.";
+
+    packages.push({
+      id: "media-starter",
+      name: "Starter",
+      type: "media",
+      price: "€2,380",
+      tag: "Best for your situation",
+      match: "perfect",
+      headline: "Build a Stronger Foundation",
+      reason: hasMissingPresence
+        ? "We found gaps in your online presence. This package fills them with premium media features and authority-building content that Google and AI engines rank highly."
+        : "Take your reputation from good to excellent with premium international media features that establish you as a trusted authority in your field.",
+      features: [
+        "3 premium featured articles & interviews in international media",
+        "1 VIP premium interview feature",
+        "4 Web 2.0 authority profiles with backlinks",
+        "2 ghostwriting articles to establish thought leadership",
+        "On & off-page SEO and AI optimization",
+        "1 micro-website for reputation",
+      ],
+      cta: "Get a Free Strategy Call",
+    });
+
+    packages.push({
+      id: "pr-standard",
+      name: "Standard PR Distribution",
+      type: "pr",
+      price: "€620",
+      tag: "Quick boost",
+      match: "good",
+      headline: "Boost Your News Presence",
+      reason:
+        "A targeted press release across 260+ outlets helps create fresh, positive search results and demonstrates newsworthy activity to Google and AI engines.",
+      features: [
+        "Distribution across 260+ news sites including FOX affiliates",
+        "Targeted to 800 journalists",
+        "Professional writing & SEO optimization",
+        "Delivery in 4-7 days",
+      ],
+      cta: "Get Started",
+    });
+
+    if (isCompany) {
+      packages.push({
+        id: "orm-essential",
+        name: "Essential",
+        type: "orm",
+        price: "€1,250/mo",
+        tag: "Ongoing protection",
+        match: "good",
+        headline: "Ongoing Reputation Protection",
+        reason:
+          "For businesses, continuous reputation management ensures long-term protection. This package includes ongoing media features, SEO, social strategy, and monthly monitoring.",
+        features: [
+          "12 premium feature articles & interviews annually",
+          "350+ content & digital assets",
+          "YouTube, social media & content strategy",
+          "Monthly brand monitoring & reporting",
+          "On & off-page SEO optimization",
+        ],
+        cta: "Learn More",
+      });
+    }
+  }
+
+  return { show: true, urgencyMessage, packages };
+}
+
 // ── Main handler ────────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
   try {
@@ -487,10 +769,19 @@ export async function POST(req: NextRequest) {
       (cs.reviewRatings || 0) +
       (cs.domainOwnership || 0);
 
+    // Generate package recommendations based on score and problems
+    const score = Math.min(100, Math.max(0, totalScore));
+    const packageRecommendations = getPackageRecommendations(
+      score,
+      analysis.problems || [],
+      analysis.riskLevel,
+      entityType
+    );
+
     return NextResponse.json({
       name: query,
       entityType,
-      score: Math.min(100, Math.max(0, totalScore)),
+      score,
       summary: analysis.overallSummary,
       executiveBrief: analysis.executiveBrief,
       riskLevel: analysis.riskLevel,
@@ -515,6 +806,7 @@ export async function POST(req: NextRequest) {
           }
         : null,
       dataStats: dataPacket.stats,
+      packageRecommendations,
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
