@@ -278,6 +278,9 @@ export default function Home() {
   const [error, setError] = useState("");
   const [report, setReport] = useState<ReportData | null>(null);
   const [activeTab, setActiveTab] = useState<"overview" | "results" | "problems" | "strengths">("overview");
+  const [contactModal, setContactModal] = useState<{ open: boolean; packageName: string }>({ open: false, packageName: "" });
+  const [contactForm, setContactForm] = useState({ name: "", email: "" });
+  const [contactSent, setContactSent] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -424,6 +427,31 @@ export default function Home() {
               </div>
             )}
 
+            {/* CTA banner to packages (only if score < 80) */}
+            {report.packageRecommendations?.show && (
+              <a
+                href="#reputation500-packages"
+                className="block mb-6 bg-gradient-to-r from-blue-600 to-blue-500 rounded-xl p-4 text-white hover:from-blue-700 hover:to-blue-600 transition-all group"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-sm">Want to improve your score?</p>
+                      <p className="text-blue-100 text-xs">See tailored solutions from Reputation500 experts</p>
+                    </div>
+                  </div>
+                  <span className="text-sm font-medium bg-white/20 px-4 py-2 rounded-lg group-hover:bg-white/30 transition shrink-0">
+                    View Solutions &darr;
+                  </span>
+                </div>
+              </a>
+            )}
+
             {/* Tabs */}
             <div className="flex gap-1 mb-6 border-b border-gray-200 overflow-x-auto">
               {tabs.map((tab) => (
@@ -537,19 +565,23 @@ export default function Home() {
                     </div>
                   </Card>
 
-                  {/* Recommendations (top 3) */}
+                  {/* Recommendations (top 4) */}
                   <Card title="Top Recommendations">
-                    <ul className="space-y-3">
-                      {report.recommendations.slice(0, 4).map((rec, i) => (
-                        <li key={i} className="flex gap-3">
-                          <SeverityBadge level={rec.priority} />
-                          <div>
+                    <div className="space-y-3">
+                      {report.recommendations.slice(0, 4).map((rec, i) => {
+                        const borderColor = rec.priority === "high" ? "border-l-red-500" : rec.priority === "medium" ? "border-l-yellow-400" : "border-l-blue-400";
+                        const bgColor = rec.priority === "high" ? "bg-red-50/50" : rec.priority === "medium" ? "bg-yellow-50/50" : "bg-blue-50/50";
+                        return (
+                          <div key={i} className={`border-l-4 ${borderColor} ${bgColor} rounded-r-lg p-3`}>
+                            <div className="flex items-center gap-2 mb-1">
+                              <SeverityBadge level={rec.priority} />
+                            </div>
                             <p className="text-sm font-medium text-gray-800">{rec.action}</p>
-                            <p className="text-xs text-gray-500">{rec.reason}</p>
+                            <p className="text-xs text-gray-500 mt-1">{rec.reason}</p>
                           </div>
-                        </li>
-                      ))}
-                    </ul>
+                        );
+                      })}
+                    </div>
                   </Card>
 
                   {/* People Also Ask */}
@@ -692,7 +724,7 @@ export default function Home() {
 
             {/* ── PACKAGES SECTION (below tabs, for scores < 80) ── */}
             {report.packageRecommendations?.show && (
-              <div className="mt-10">
+              <div id="reputation500-packages" className="mt-10 scroll-mt-24">
                 {/* Urgency banner */}
                 <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-6 mb-6 text-white">
                   <div className="flex items-start gap-4">
@@ -780,18 +812,20 @@ export default function Home() {
                       </ul>
 
                       {/* CTA */}
-                      <a
-                        href="https://reputation500.com"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={`block w-full text-center py-3 rounded-lg font-semibold text-sm transition ${
+                      <button
+                        onClick={() => {
+                          setContactModal({ open: true, packageName: `${pkg.name} (${pkg.price})` });
+                          setContactSent(false);
+                          setContactForm({ name: "", email: "" });
+                        }}
+                        className={`block w-full text-center py-3 rounded-lg font-semibold text-sm transition cursor-pointer ${
                           pkg.match === "perfect"
                             ? "bg-blue-500 hover:bg-blue-600 text-white"
                             : "bg-blue-50 hover:bg-blue-100 text-blue-600"
                         }`}
                       >
                         {pkg.cta}
-                      </a>
+                      </button>
                     </div>
                   ))}
                 </div>
@@ -815,6 +849,103 @@ export default function Home() {
           Online Reputation Checker &mdash; Powered by <a href="https://reputation500.com" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">Reputation500</a>
         </div>
       </footer>
+
+      {/* ── Contact Modal ──────────────────────────────────────── */}
+      {contactModal.open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setContactModal({ open: false, packageName: "" })} />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 z-10">
+            {!contactSent ? (
+              <>
+                <button
+                  onClick={() => setContactModal({ open: false, packageName: "" })}
+                  className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-xl leading-none"
+                >&times;</button>
+                <h3 className="text-lg font-bold text-gray-900 mb-1">Get Started with Reputation500</h3>
+                <p className="text-sm text-gray-500 mb-1">
+                  Package: <span className="font-medium text-blue-600">{contactModal.packageName}</span>
+                </p>
+                <p className="text-xs text-gray-400 mb-5">
+                  Fill in your details and our reputation expert will contact you within 24 hours.
+                </p>
+                <form
+                  onSubmit={async (e) => {
+                    e.preventDefault();
+                    if (!contactForm.name.trim() || !contactForm.email.trim()) return;
+                    try {
+                      await fetch("/api/contact", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          name: contactForm.name.trim(),
+                          email: contactForm.email.trim(),
+                          packageName: contactModal.packageName,
+                          reportName: report?.name || "",
+                          reportScore: report?.score || 0,
+                        }),
+                      });
+                      setContactSent(true);
+                    } catch {
+                      setContactSent(true);
+                    }
+                  }}
+                  className="space-y-3"
+                >
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Your Name</label>
+                    <input
+                      type="text"
+                      required
+                      value={contactForm.name}
+                      onChange={(e) => setContactForm((f) => ({ ...f, name: e.target.value }))}
+                      className="w-full h-11 px-4 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="John Smith"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                    <input
+                      type="email"
+                      required
+                      value={contactForm.email}
+                      onChange={(e) => setContactForm((f) => ({ ...f, email: e.target.value }))}
+                      className="w-full h-11 px-4 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="john@example.com"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    className="w-full h-11 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg text-sm transition"
+                  >
+                    Send My Details
+                  </button>
+                </form>
+                <p className="text-xs text-gray-400 mt-3 text-center">
+                  Your information is only shared with Reputation500. No spam.
+                </p>
+              </>
+            ) : (
+              <div className="text-center py-6">
+                <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-7 h-7 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-bold text-gray-900 mb-2">Request Sent!</h3>
+                <p className="text-sm text-gray-500 mb-4">
+                  A Reputation500 expert will reach out to you shortly at <span className="font-medium">{contactForm.email}</span> to discuss the <span className="font-medium text-blue-600">{contactModal.packageName}</span> package.
+                </p>
+                <button
+                  onClick={() => setContactModal({ open: false, packageName: "" })}
+                  className="text-sm text-blue-500 hover:underline"
+                >
+                  Close
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
