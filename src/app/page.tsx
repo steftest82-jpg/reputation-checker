@@ -281,6 +281,10 @@ export default function Home() {
   const [contactModal, setContactModal] = useState<{ open: boolean; packageName: string }>({ open: false, packageName: "" });
   const [contactForm, setContactForm] = useState({ name: "", email: "" });
   const [contactSent, setContactSent] = useState(false);
+  const [emailGated, setEmailGated] = useState(true);
+  const [gateEmail, setGateEmail] = useState("");
+  const [gateSending, setGateSending] = useState(false);
+  const [gateError, setGateError] = useState("");
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -298,6 +302,9 @@ export default function Home() {
       if (!res.ok) throw new Error(data.error || "Request failed");
       setReport(data);
       setActiveTab("overview");
+      setEmailGated(true);
+      setGateEmail("");
+      setGateError("");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
     } finally {
@@ -418,6 +425,75 @@ export default function Home() {
                 ))}
               </div>
             </div>
+
+            {/* ── EMAIL GATE: everything below score is blurred until email provided ── */}
+            <div className="relative">
+              {emailGated && (
+                <div className="absolute inset-0 z-30 flex items-start justify-center pt-12">
+                  <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 w-full max-w-md p-8 mx-4">
+                    <div className="text-center mb-6">
+                      <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                      </div>
+                      <h3 className="text-xl font-bold text-gray-900 mb-1">Your Report is Ready!</h3>
+                      <p className="text-sm text-gray-500">Enter your email to receive the full report as a PDF and unlock the detailed analysis below.</p>
+                    </div>
+                    <form
+                      onSubmit={async (e) => {
+                        e.preventDefault();
+                        if (!gateEmail.trim()) return;
+                        setGateSending(true);
+                        setGateError("");
+                        try {
+                          const res = await fetch("/api/send-report", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ email: gateEmail.trim(), report }),
+                          });
+                          const data = await res.json();
+                          if (!res.ok) throw new Error(data.error || "Failed to send report");
+                          setEmailGated(false);
+                        } catch (err: unknown) {
+                          setGateError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
+                        } finally {
+                          setGateSending(false);
+                        }
+                      }}
+                      className="space-y-3"
+                    >
+                      <input
+                        type="email"
+                        required
+                        value={gateEmail}
+                        onChange={(e) => setGateEmail(e.target.value)}
+                        placeholder="your@email.com"
+                        className="w-full h-12 px-4 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                      {gateError && <p className="text-red-500 text-xs">{gateError}</p>}
+                      <button
+                        type="submit"
+                        disabled={gateSending}
+                        className="w-full h-12 bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 text-white font-semibold rounded-xl text-sm transition flex items-center justify-center gap-2"
+                      >
+                        {gateSending ? (
+                          <>
+                            <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            Generating &amp; Sending PDF...
+                          </>
+                        ) : (
+                          "Send Me the Full Report"
+                        )}
+                      </button>
+                    </form>
+                    <p className="text-xs text-gray-400 mt-3 text-center">
+                      We&apos;ll email you the full PDF report. No spam, ever.
+                    </p>
+                  </div>
+                </div>
+              )}
+              <div className={emailGated ? "blur-sm pointer-events-none select-none" : ""}>
 
             {/* Executive brief */}
             {report.executiveBrief && (
@@ -840,6 +916,9 @@ export default function Home() {
                 </div>
               </div>
             )}
+
+              </div>{/* end blur wrapper */}
+            </div>{/* end email gate relative container */}
           </div>
         )}
       </main>
