@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 // ── Types ───────────────────────────────────────────────────────────
 interface ResultItem {
@@ -8,8 +8,10 @@ interface ResultItem {
   snippet: string;
   link: string;
   sentiment: "positive" | "neutral" | "negative";
+  category: string;
   severity: "low" | "medium" | "high";
   reason: string;
+  position: number;
 }
 
 interface Problem {
@@ -17,6 +19,20 @@ interface Problem {
   title: string;
   description: string;
   source: string;
+  category: string;
+}
+
+interface Strength {
+  title: string;
+  description: string;
+  source?: string;
+}
+
+interface Recommendation {
+  priority: "high" | "medium" | "low";
+  action: string;
+  reason: string;
+  estimatedImpact: string;
 }
 
 interface CategoryScores {
@@ -35,161 +51,207 @@ interface ReportData {
   entityType: string;
   score: number;
   summary: string;
+  executiveBrief: string;
+  riskLevel: string;
+  sentimentBreakdown: { positive: number; neutral: number; negative: number };
   results: ResultItem[];
   problems: Problem[];
-  recommendations: string[];
+  strengths: Strength[];
+  recommendations: Recommendation[];
   categoryScores: CategoryScores;
+  serpBreakdown: {
+    ownedProperties: string[];
+    riskyResults: string[];
+    firstPageDominance: string;
+  };
+  socialPresenceDetail: {
+    found: string[];
+    missing: string[];
+    assessment: string;
+  };
+  reviewSummary: {
+    platforms_found: string[];
+    overall_sentiment: string;
+    assessment: string;
+  };
+  autocompleteSentiment: {
+    negative_terms: string[];
+    neutral_terms: string[];
+    score: number;
+    analysis: string;
+  };
   autocomplete: string[];
   peopleAlsoAsk: string[];
+  domainInfo: { domain: string; available: boolean; hasSite: boolean };
+  knowledgeGraph: { title: string; type: string; description: string } | null;
+  dataStats: {
+    totalResults: number;
+    complaintCount: number;
+    reviewCount: number;
+    socialCount: number;
+    newsCount: number;
+    uniqueDomainsInTop10: number;
+  };
 }
 
-// ── Score gauge component ───────────────────────────────────────────
+// ── Loading steps ───────────────────────────────────────────────────
+const LOADING_STEPS = [
+  { label: "Searching Google...", duration: 3000 },
+  { label: "Fetching news articles...", duration: 3000 },
+  { label: "Checking autocomplete suggestions...", duration: 2000 },
+  { label: "Verifying domain ownership...", duration: 2000 },
+  { label: "Analyzing sentiment with AI...", duration: 8000 },
+  { label: "Calculating reputation score...", duration: 4000 },
+];
+
+function LoadingProgress() {
+  const [step, setStep] = useState(0);
+
+  useEffect(() => {
+    if (step >= LOADING_STEPS.length) return;
+    const timer = setTimeout(() => setStep((s) => s + 1), LOADING_STEPS[step].duration);
+    return () => clearTimeout(timer);
+  }, [step]);
+
+  return (
+    <div className="max-w-md mx-auto text-center py-16">
+      <div className="inline-block w-14 h-14 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-8" />
+      <h3 className="text-xl font-semibold mb-6">Analyzing Reputation</h3>
+      <div className="space-y-3 text-left">
+        {LOADING_STEPS.map((s, i) => (
+          <div key={i} className="flex items-center gap-3">
+            {i < step ? (
+              <span className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center text-white text-xs shrink-0">&#10003;</span>
+            ) : i === step ? (
+              <span className="w-5 h-5 rounded-full border-2 border-blue-500 border-t-transparent animate-spin shrink-0" />
+            ) : (
+              <span className="w-5 h-5 rounded-full bg-gray-200 shrink-0" />
+            )}
+            <span className={`text-sm ${i <= step ? "text-gray-800" : "text-gray-400"}`}>
+              {s.label}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── Score gauge ─────────────────────────────────────────────────────
 function ScoreGauge({ score }: { score: number }) {
   const radius = 80;
   const circumference = 2 * Math.PI * radius;
   const progress = (score / 100) * circumference;
   const color =
-    score >= 90
-      ? "#22c55e"
-      : score >= 70
-      ? "#84cc16"
-      : score >= 50
-      ? "#eab308"
-      : score >= 30
-      ? "#f97316"
-      : "#ef4444";
+    score >= 90 ? "#22c55e" : score >= 70 ? "#84cc16" : score >= 50 ? "#eab308" : score >= 30 ? "#f97316" : "#ef4444";
   const label =
-    score >= 90
-      ? "Excellent"
-      : score >= 70
-      ? "Good"
-      : score >= 50
-      ? "Fair"
-      : score >= 30
-      ? "Poor"
-      : "Critical";
+    score >= 90 ? "Excellent" : score >= 70 ? "Good" : score >= 50 ? "Fair" : score >= 30 ? "Poor" : "Critical";
 
   return (
     <div className="flex flex-col items-center">
-      <svg width="200" height="200" viewBox="0 0 200 200">
+      <svg width="180" height="180" viewBox="0 0 200 200">
+        <circle cx="100" cy="100" r={radius} fill="none" stroke="#e5e7eb" strokeWidth="14" />
         <circle
-          cx="100"
-          cy="100"
-          r={radius}
-          fill="none"
-          stroke="#e5e7eb"
-          strokeWidth="14"
+          cx="100" cy="100" r={radius} fill="none" stroke={color} strokeWidth="14"
+          strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={circumference - progress}
+          transform="rotate(-90 100 100)" style={{ transition: "stroke-dashoffset 1.2s ease" }}
         />
-        <circle
-          cx="100"
-          cy="100"
-          r={radius}
-          fill="none"
-          stroke={color}
-          strokeWidth="14"
-          strokeLinecap="round"
-          strokeDasharray={circumference}
-          strokeDashoffset={circumference - progress}
-          transform="rotate(-90 100 100)"
-          style={{ transition: "stroke-dashoffset 1s ease" }}
-        />
-        <text
-          x="100"
-          y="92"
-          textAnchor="middle"
-          fontSize="42"
-          fontWeight="700"
-          fill={color}
-        >
-          {score}
-        </text>
-        <text
-          x="100"
-          y="118"
-          textAnchor="middle"
-          fontSize="14"
-          fill="#64748b"
-        >
-          / 100
-        </text>
+        <text x="100" y="90" textAnchor="middle" fontSize="44" fontWeight="700" fill={color}>{score}</text>
+        <text x="100" y="116" textAnchor="middle" fontSize="14" fill="#64748b">/ 100</text>
       </svg>
-      <span
-        className="mt-1 text-lg font-semibold"
-        style={{ color }}
-      >
-        {label}
-      </span>
+      <span className="mt-1 text-lg font-semibold" style={{ color }}>{label}</span>
+    </div>
+  );
+}
+
+// ── Sentiment mini chart ────────────────────────────────────────────
+function SentimentChart({ breakdown }: { breakdown: { positive: number; neutral: number; negative: number } }) {
+  const total = breakdown.positive + breakdown.neutral + breakdown.negative || 1;
+  const pPct = Math.round((breakdown.positive / total) * 100);
+  const nPct = Math.round((breakdown.neutral / total) * 100);
+  const negPct = Math.round((breakdown.negative / total) * 100);
+
+  return (
+    <div>
+      <div className="flex rounded-full overflow-hidden h-4 mb-2">
+        {pPct > 0 && <div className="bg-green-500" style={{ width: `${pPct}%` }} />}
+        {nPct > 0 && <div className="bg-gray-300" style={{ width: `${nPct}%` }} />}
+        {negPct > 0 && <div className="bg-red-500" style={{ width: `${negPct}%` }} />}
+      </div>
+      <div className="flex justify-between text-xs text-gray-500">
+        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500" /> Positive ({breakdown.positive})</span>
+        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-gray-300" /> Neutral ({breakdown.neutral})</span>
+        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500" /> Negative ({breakdown.negative})</span>
+      </div>
     </div>
   );
 }
 
 // ── Category bar ────────────────────────────────────────────────────
-function CategoryBar({
-  label,
-  value,
-  max,
-}: {
-  label: string;
-  value: number;
-  max: number;
-}) {
+function CategoryBar({ label, value, max }: { label: string; value: number; max: number }) {
   const pct = Math.round((value / max) * 100);
-  const color =
-    pct >= 80
-      ? "bg-green-500"
-      : pct >= 60
-      ? "bg-lime-500"
-      : pct >= 40
-      ? "bg-yellow-400"
-      : pct >= 20
-      ? "bg-orange-500"
-      : "bg-red-500";
-
+  const color = pct >= 80 ? "bg-green-500" : pct >= 60 ? "bg-lime-500" : pct >= 40 ? "bg-yellow-400" : pct >= 20 ? "bg-orange-500" : "bg-red-500";
   return (
     <div className="mb-3">
       <div className="flex justify-between text-sm mb-1">
         <span className="text-gray-700">{label}</span>
-        <span className="font-medium">
-          {value}/{max}
-        </span>
+        <span className="font-medium">{value}/{max}</span>
       </div>
       <div className="h-2.5 bg-gray-200 rounded-full overflow-hidden">
-        <div
-          className={`h-full rounded-full ${color}`}
-          style={{ width: `${pct}%`, transition: "width 0.8s ease" }}
-        />
+        <div className={`h-full rounded-full ${color}`} style={{ width: `${pct}%`, transition: "width 0.8s ease" }} />
       </div>
     </div>
   );
 }
 
-// ── Severity badge ──────────────────────────────────────────────────
+// ── Badges ──────────────────────────────────────────────────────────
 function SeverityBadge({ level }: { level: string }) {
   const styles: Record<string, string> = {
     high: "bg-red-100 text-red-700",
     medium: "bg-yellow-100 text-yellow-700",
     low: "bg-blue-100 text-blue-600",
   };
+  return <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold uppercase ${styles[level] || styles.low}`}>{level}</span>;
+}
+
+function SentimentDot({ sentiment }: { sentiment: string }) {
+  const color = sentiment === "positive" ? "bg-green-500" : sentiment === "negative" ? "bg-red-500" : "bg-gray-400";
+  return <span className={`inline-block w-2.5 h-2.5 rounded-full ${color}`} />;
+}
+
+function RiskBadge({ level }: { level: string }) {
+  const styles: Record<string, string> = {
+    low: "bg-green-100 text-green-700 border-green-200",
+    moderate: "bg-yellow-100 text-yellow-700 border-yellow-200",
+    high: "bg-orange-100 text-orange-700 border-orange-200",
+    critical: "bg-red-100 text-red-700 border-red-200",
+  };
   return (
-    <span
-      className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold uppercase ${
-        styles[level] || styles.low
-      }`}
-    >
-      {level}
+    <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold uppercase border ${styles[level] || styles.moderate}`}>
+      {level} risk
     </span>
   );
 }
 
-// ── Sentiment badge ─────────────────────────────────────────────────
-function SentimentDot({ sentiment }: { sentiment: string }) {
-  const color =
-    sentiment === "positive"
-      ? "bg-green-500"
-      : sentiment === "negative"
-      ? "bg-red-500"
-      : "bg-gray-400";
-  return <span className={`inline-block w-2.5 h-2.5 rounded-full ${color}`} />;
+function CategoryTag({ cat }: { cat: string }) {
+  const labels: Record<string, string> = {
+    organic: "Organic", news: "News", review: "Review", social: "Social", complaint: "Complaint", legal: "Legal",
+  };
+  const colors: Record<string, string> = {
+    organic: "bg-gray-100 text-gray-600", news: "bg-purple-100 text-purple-600", review: "bg-indigo-100 text-indigo-600",
+    social: "bg-sky-100 text-sky-600", complaint: "bg-red-100 text-red-600", legal: "bg-orange-100 text-orange-600",
+  };
+  return <span className={`px-2 py-0.5 rounded text-xs font-medium ${colors[cat] || colors.organic}`}>{labels[cat] || cat}</span>;
+}
+
+// ── Card wrapper ────────────────────────────────────────────────────
+function Card({ title, children, className = "" }: { title?: string; children: React.ReactNode; className?: string }) {
+  return (
+    <div className={`bg-white rounded-xl border border-gray-200 p-6 ${className}`}>
+      {title && <h3 className="font-semibold mb-4 text-gray-900">{title}</h3>}
+      {children}
+    </div>
+  );
 }
 
 // ── Main page ───────────────────────────────────────────────────────
@@ -199,7 +261,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [report, setReport] = useState<ReportData | null>(null);
-  const [activeTab, setActiveTab] = useState<"overview" | "results" | "problems">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "results" | "problems" | "strengths">("overview");
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -207,7 +269,6 @@ export default function Home() {
     setLoading(true);
     setError("");
     setReport(null);
-
     try {
       const res = await fetch("/api/check", {
         method: "POST",
@@ -225,257 +286,291 @@ export default function Home() {
     }
   }
 
+  const tabs = [
+    { key: "overview" as const, label: "Overview" },
+    { key: "results" as const, label: "Search Results" },
+    { key: "problems" as const, label: "Problems", count: report?.problems.length },
+    { key: "strengths" as const, label: "Strengths", count: report?.strengths.length },
+  ];
+
   return (
-    <div className="min-h-screen">
-      {/* ── Header ─────────────────────────────────────────────── */}
-      <header className="bg-white border-b border-gray-200">
-        <div className="max-w-5xl mx-auto px-4 py-5 flex items-center gap-3">
+    <div className="min-h-screen flex flex-col">
+      {/* Header */}
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
+        <div className="max-w-5xl mx-auto px-4 py-4 flex items-center gap-3">
           <div className="w-9 h-9 rounded-lg bg-blue-500 flex items-center justify-center">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="w-5 h-5 text-white"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z"
-              />
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
             </svg>
           </div>
-          <h1 className="text-xl font-bold text-gray-900">
-            Online Reputation Checker
-          </h1>
+          <h1 className="text-xl font-bold text-gray-900">Online Reputation Checker</h1>
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-4 py-10">
-        {/* ── Search form ────────────────────────────────────── */}
+      <main className="max-w-5xl mx-auto px-4 py-10 flex-1 w-full">
+        {/* Search form */}
         {!report && !loading && (
           <div className="max-w-xl mx-auto text-center">
-            <h2 className="text-3xl font-bold mb-3">
-              Check Any Online Reputation
-            </h2>
+            <h2 className="text-3xl font-bold mb-3">Check Any Online Reputation</h2>
             <p className="text-gray-500 mb-8">
-              Enter a person or company name to get a comprehensive reputation
-              score based on what Google shows about them.
+              Enter a person or company name to get a comprehensive AI-powered reputation analysis based on Google Search, News, Reviews, and Social Media.
             </p>
-
             <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Toggle */}
               <div className="inline-flex rounded-lg border border-gray-200 p-1 bg-white">
-                <button
-                  type="button"
-                  onClick={() => setType("person")}
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition ${
-                    type === "person"
-                      ? "bg-blue-500 text-white"
-                      : "text-gray-600 hover:bg-gray-100"
-                  }`}
-                >
+                <button type="button" onClick={() => setType("person")}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition ${type === "person" ? "bg-blue-500 text-white" : "text-gray-600 hover:bg-gray-100"}`}>
                   Person
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setType("company")}
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition ${
-                    type === "company"
-                      ? "bg-blue-500 text-white"
-                      : "text-gray-600 hover:bg-gray-100"
-                  }`}
-                >
+                <button type="button" onClick={() => setType("company")}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition ${type === "company" ? "bg-blue-500 text-white" : "text-gray-600 hover:bg-gray-100"}`}>
                   Company
                 </button>
               </div>
-
-              {/* Input */}
               <div className="relative">
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder={
-                    type === "person"
-                      ? "e.g. John Smith"
-                      : "e.g. Acme Corporation"
-                  }
-                  className="w-full h-14 pl-5 pr-32 rounded-xl border border-gray-300 text-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-                />
-                <button
-                  type="submit"
-                  className="absolute right-2 top-2 h-10 px-6 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg transition"
-                >
+                <input type="text" value={name} onChange={(e) => setName(e.target.value)}
+                  placeholder={type === "person" ? "e.g. John Smith" : "e.g. Acme Corporation"}
+                  className="w-full h-14 pl-5 pr-32 rounded-xl border border-gray-300 text-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white" />
+                <button type="submit"
+                  className="absolute right-2 top-2 h-10 px-6 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg transition">
                   Check
                 </button>
               </div>
-
-              {error && (
-                <p className="text-red-500 text-sm">{error}</p>
-              )}
+              {error && <p className="text-red-500 text-sm">{error}</p>}
             </form>
+
+            {/* Features */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-12 text-left">
+              {[
+                { icon: "M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z", title: "SERP Analysis", desc: "Top 20 Google results" },
+                { icon: "M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2", title: "News Scan", desc: "Recent news & press" },
+                { icon: "M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z", title: "Sentiment AI", desc: "AI-powered analysis" },
+                { icon: "M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z", title: "Risk Score", desc: "0-100 reputation score" },
+              ].map((f, i) => (
+                <div key={i} className="bg-white rounded-xl border border-gray-200 p-4">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-blue-500 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d={f.icon} />
+                  </svg>
+                  <p className="font-semibold text-sm">{f.title}</p>
+                  <p className="text-xs text-gray-400">{f.desc}</p>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
-        {/* ── Loading state ──────────────────────────────────── */}
-        {loading && (
-          <div className="max-w-md mx-auto text-center py-20">
-            <div className="inline-block w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-6" />
-            <h3 className="text-xl font-semibold mb-2">Analyzing Reputation</h3>
-            <p className="text-gray-500">
-              Searching Google, analyzing sentiment, calculating score&hellip;
-              <br />
-              This usually takes 15–30 seconds.
-            </p>
-          </div>
-        )}
+        {/* Loading */}
+        {loading && <LoadingProgress />}
 
-        {/* ── Report ─────────────────────────────────────────── */}
+        {/* Report */}
         {report && !loading && (
           <div>
-            {/* Back button */}
-            <button
-              onClick={() => {
-                setReport(null);
-                setName("");
-              }}
-              className="mb-6 text-sm text-blue-500 hover:underline flex items-center gap-1"
-            >
-              &larr; New check
-            </button>
+            <button onClick={() => { setReport(null); setName(""); }}
+              className="mb-6 text-sm text-blue-500 hover:underline flex items-center gap-1">&larr; New check</button>
 
             {/* Score header */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 mb-6 flex flex-col md:flex-row items-center gap-8">
-              <ScoreGauge score={report.score} />
-              <div className="flex-1 text-center md:text-left">
-                <h2 className="text-2xl font-bold mb-1">{report.name}</h2>
-                <span className="inline-block px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-xs font-medium uppercase mb-3">
-                  {report.entityType}
-                </span>
-                <p className="text-gray-600 leading-relaxed">
-                  {report.summary}
-                </p>
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 mb-6">
+              <div className="flex flex-col md:flex-row items-center gap-8">
+                <ScoreGauge score={report.score} />
+                <div className="flex-1 text-center md:text-left">
+                  <div className="flex flex-wrap items-center gap-3 justify-center md:justify-start mb-2">
+                    <h2 className="text-2xl font-bold">{report.name}</h2>
+                    <span className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-xs font-medium uppercase">{report.entityType}</span>
+                    <RiskBadge level={report.riskLevel} />
+                  </div>
+                  <p className="text-gray-600 leading-relaxed mb-4">{report.summary}</p>
+                  {report.sentimentBreakdown && <SentimentChart breakdown={report.sentimentBreakdown} />}
+                </div>
+              </div>
+
+              {/* Data stats row */}
+              <div className="grid grid-cols-3 md:grid-cols-6 gap-3 mt-6 pt-6 border-t border-gray-100">
+                {[
+                  { label: "Results Analyzed", value: report.dataStats.totalResults },
+                  { label: "News Mentions", value: report.dataStats.newsCount },
+                  { label: "Social Profiles", value: report.dataStats.socialCount },
+                  { label: "Review Sites", value: report.dataStats.reviewCount },
+                  { label: "Complaint Sites", value: report.dataStats.complaintCount },
+                  { label: "Domains in Top 10", value: report.dataStats.uniqueDomainsInTop10 },
+                ].map((s, i) => (
+                  <div key={i} className="text-center">
+                    <p className="text-2xl font-bold text-gray-900">{s.value}</p>
+                    <p className="text-xs text-gray-400">{s.label}</p>
+                  </div>
+                ))}
               </div>
             </div>
 
+            {/* Executive brief */}
+            {report.executiveBrief && (
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-5 mb-6">
+                <h3 className="font-semibold text-blue-800 mb-2 text-sm uppercase tracking-wide">Executive Brief</h3>
+                <p className="text-gray-700 text-sm leading-relaxed">{report.executiveBrief}</p>
+              </div>
+            )}
+
             {/* Tabs */}
-            <div className="flex gap-1 mb-6 border-b border-gray-200">
-              {(["overview", "results", "problems"] as const).map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`px-5 py-3 text-sm font-medium capitalize transition border-b-2 -mb-px ${
-                    activeTab === tab
-                      ? "border-blue-500 text-blue-600"
-                      : "border-transparent text-gray-500 hover:text-gray-700"
-                  }`}
-                >
-                  {tab}
-                  {tab === "problems" && report.problems.length > 0 && (
-                    <span className="ml-1.5 inline-flex items-center justify-center w-5 h-5 rounded-full bg-red-100 text-red-600 text-xs font-bold">
-                      {report.problems.length}
-                    </span>
+            <div className="flex gap-1 mb-6 border-b border-gray-200 overflow-x-auto">
+              {tabs.map((tab) => (
+                <button key={tab.key} onClick={() => setActiveTab(tab.key)}
+                  className={`px-5 py-3 text-sm font-medium whitespace-nowrap transition border-b-2 -mb-px ${
+                    activeTab === tab.key ? "border-blue-500 text-blue-600" : "border-transparent text-gray-500 hover:text-gray-700"
+                  }`}>
+                  {tab.label}
+                  {tab.count !== undefined && tab.count > 0 && (
+                    <span className={`ml-1.5 inline-flex items-center justify-center w-5 h-5 rounded-full text-xs font-bold ${
+                      tab.key === "problems" ? "bg-red-100 text-red-600" : "bg-green-100 text-green-600"
+                    }`}>{tab.count}</span>
                   )}
                 </button>
               ))}
             </div>
 
-            {/* ── Overview tab ──────────────────────────────── */}
+            {/* ── OVERVIEW TAB ──────────────────────────────── */}
             {activeTab === "overview" && (
               <div className="grid md:grid-cols-2 gap-6">
-                {/* Category scores */}
-                <div className="bg-white rounded-xl border border-gray-200 p-6">
-                  <h3 className="font-semibold mb-4">Score Breakdown</h3>
-                  <CategoryBar label="Search Results Sentiment" value={report.categoryScores.serpSentiment} max={30} />
-                  <CategoryBar label="Review Ratings" value={report.categoryScores.reviewRatings} max={15} />
-                  <CategoryBar label="News Sentiment" value={report.categoryScores.newsSentiment} max={15} />
-                  <CategoryBar label="Autocomplete Safety" value={report.categoryScores.autocompleteSafety} max={10} />
-                  <CategoryBar label="Social Media Presence" value={report.categoryScores.socialPresence} max={10} />
-                  <CategoryBar label="Complaint Sites" value={report.categoryScores.complaintSites} max={10} />
-                  <CategoryBar label="Content Control" value={report.categoryScores.contentControl} max={5} />
-                  <CategoryBar label="Domain Ownership" value={report.categoryScores.domainOwnership} max={5} />
+                <div className="space-y-6">
+                  <Card title="Score Breakdown">
+                    <CategoryBar label="Search Results Sentiment" value={report.categoryScores.serpSentiment} max={30} />
+                    <CategoryBar label="Review Ratings" value={report.categoryScores.reviewRatings} max={15} />
+                    <CategoryBar label="News Sentiment" value={report.categoryScores.newsSentiment} max={15} />
+                    <CategoryBar label="Autocomplete Safety" value={report.categoryScores.autocompleteSafety} max={10} />
+                    <CategoryBar label="Social Media Presence" value={report.categoryScores.socialPresence} max={10} />
+                    <CategoryBar label="Complaint Sites" value={report.categoryScores.complaintSites} max={10} />
+                    <CategoryBar label="Content Control" value={report.categoryScores.contentControl} max={5} />
+                    <CategoryBar label="Domain Ownership" value={report.categoryScores.domainOwnership} max={5} />
+                  </Card>
+
+                  {/* Domain Info */}
+                  <Card title="Domain Check">
+                    <div className="flex items-center gap-3">
+                      <span className={`w-3 h-3 rounded-full ${report.domainInfo.hasSite ? "bg-green-500" : "bg-red-500"}`} />
+                      <div>
+                        <p className="font-medium text-sm">{report.domainInfo.domain}</p>
+                        <p className="text-xs text-gray-500">
+                          {report.domainInfo.hasSite ? "Active website detected" : "No active website found"}
+                        </p>
+                      </div>
+                    </div>
+                  </Card>
+
+                  {/* Knowledge Graph */}
+                  {report.knowledgeGraph && (
+                    <Card title="Google Knowledge Panel">
+                      <p className="font-medium">{report.knowledgeGraph.title}</p>
+                      {report.knowledgeGraph.type && <p className="text-xs text-gray-400 mb-1">{report.knowledgeGraph.type}</p>}
+                      {report.knowledgeGraph.description && <p className="text-sm text-gray-600">{report.knowledgeGraph.description}</p>}
+                    </Card>
+                  )}
                 </div>
 
-                {/* Recommendations */}
                 <div className="space-y-6">
-                  <div className="bg-white rounded-xl border border-gray-200 p-6">
-                    <h3 className="font-semibold mb-3">Recommendations</h3>
-                    <ul className="space-y-2">
-                      {report.recommendations.map((rec, i) => (
-                        <li key={i} className="flex gap-2 text-sm text-gray-700">
-                          <span className="text-blue-500 mt-0.5 shrink-0">&#10003;</span>
-                          {rec}
+                  {/* Social Presence */}
+                  <Card title="Social Media Presence">
+                    <p className="text-sm text-gray-600 mb-3">{report.socialPresenceDetail.assessment}</p>
+                    {report.socialPresenceDetail.found.length > 0 && (
+                      <div className="mb-3">
+                        <p className="text-xs font-medium text-gray-500 mb-1.5">Found:</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {report.socialPresenceDetail.found.map((p, i) => (
+                            <span key={i} className="px-2.5 py-1 bg-green-50 text-green-700 rounded-full text-xs font-medium">{p}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {report.socialPresenceDetail.missing.length > 0 && (
+                      <div>
+                        <p className="text-xs font-medium text-gray-500 mb-1.5">Missing:</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {report.socialPresenceDetail.missing.map((p, i) => (
+                            <span key={i} className="px-2.5 py-1 bg-gray-100 text-gray-500 rounded-full text-xs font-medium">{p}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </Card>
+
+                  {/* Review Summary */}
+                  <Card title="Review Sites">
+                    <p className="text-sm text-gray-600 mb-2">{report.reviewSummary.assessment}</p>
+                    {report.reviewSummary.platforms_found.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5">
+                        {report.reviewSummary.platforms_found.map((p, i) => (
+                          <span key={i} className="px-2.5 py-1 bg-indigo-50 text-indigo-600 rounded-full text-xs font-medium">{p}</span>
+                        ))}
+                      </div>
+                    )}
+                  </Card>
+
+                  {/* Autocomplete */}
+                  <Card title="Google Autocomplete">
+                    <p className="text-sm text-gray-600 mb-3">{report.autocompleteSentiment.analysis}</p>
+                    {report.autocompleteSentiment.negative_terms.length > 0 && (
+                      <div className="mb-2">
+                        <p className="text-xs font-medium text-red-500 mb-1">Concerning:</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {report.autocompleteSentiment.negative_terms.map((t, i) => (
+                            <span key={i} className="px-2.5 py-1 bg-red-50 text-red-600 rounded-full text-xs">{t}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    <div className="flex flex-wrap gap-1.5">
+                      {report.autocomplete.filter(s => !report.autocompleteSentiment.negative_terms.includes(s)).map((s, i) => (
+                        <span key={i} className="px-2.5 py-1 bg-gray-100 rounded-full text-xs text-gray-600">{s}</span>
+                      ))}
+                    </div>
+                  </Card>
+
+                  {/* Recommendations (top 3) */}
+                  <Card title="Top Recommendations">
+                    <ul className="space-y-3">
+                      {report.recommendations.slice(0, 4).map((rec, i) => (
+                        <li key={i} className="flex gap-3">
+                          <SeverityBadge level={rec.priority} />
+                          <div>
+                            <p className="text-sm font-medium text-gray-800">{rec.action}</p>
+                            <p className="text-xs text-gray-500">{rec.reason}</p>
+                          </div>
                         </li>
                       ))}
                     </ul>
-                  </div>
-
-                  {/* Autocomplete */}
-                  {report.autocomplete.length > 0 && (
-                    <div className="bg-white rounded-xl border border-gray-200 p-6">
-                      <h3 className="font-semibold mb-3">
-                        Google Autocomplete Suggestions
-                      </h3>
-                      <div className="flex flex-wrap gap-2">
-                        {report.autocomplete.map((s, i) => (
-                          <span
-                            key={i}
-                            className="px-3 py-1 bg-gray-100 rounded-full text-sm text-gray-700"
-                          >
-                            {s}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                  </Card>
 
                   {/* People Also Ask */}
                   {report.peopleAlsoAsk.length > 0 && (
-                    <div className="bg-white rounded-xl border border-gray-200 p-6">
-                      <h3 className="font-semibold mb-3">
-                        People Also Ask
-                      </h3>
+                    <Card title="People Also Ask">
                       <ul className="space-y-1.5">
                         {report.peopleAlsoAsk.map((q, i) => (
-                          <li key={i} className="text-sm text-gray-600">
-                            &bull; {q}
+                          <li key={i} className="text-sm text-gray-600 flex gap-2">
+                            <span className="text-blue-400 shrink-0">Q:</span> {q}
                           </li>
                         ))}
                       </ul>
-                    </div>
+                    </Card>
                   )}
                 </div>
               </div>
             )}
 
-            {/* ── Results tab ──────────────────────────────── */}
+            {/* ── RESULTS TAB ──────────────────────────────── */}
             {activeTab === "results" && (
               <div className="space-y-3">
                 {report.results.map((r, i) => (
-                  <div
-                    key={i}
-                    className="bg-white rounded-xl border border-gray-200 p-5 flex gap-4"
-                  >
-                    <div className="pt-1">
+                  <div key={i} className="bg-white rounded-xl border border-gray-200 p-5 flex gap-4">
+                    <div className="pt-1 flex flex-col items-center gap-1">
+                      <span className="text-xs text-gray-400 font-mono">#{r.position}</span>
                       <SentimentDot sentiment={r.sentiment} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <a
-                        href={r.link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 hover:underline font-medium text-sm line-clamp-1"
-                      >
-                        {r.title}
-                      </a>
-                      <p className="text-sm text-gray-500 mt-1 line-clamp-2">
-                        {r.snippet}
-                      </p>
-                      <p className="text-xs text-gray-400 mt-1.5">{r.reason}</p>
+                      <div className="flex items-center gap-2 mb-1">
+                        <a href={r.link} target="_blank" rel="noopener noreferrer"
+                          className="text-blue-600 hover:underline font-medium text-sm line-clamp-1">{r.title}</a>
+                      </div>
+                      <p className="text-sm text-gray-500 line-clamp-2">{r.snippet}</p>
+                      <p className="text-xs text-gray-400 mt-1.5 italic">{r.reason}</p>
                     </div>
-                    <div className="shrink-0">
+                    <div className="shrink-0 flex flex-col items-end gap-1.5">
+                      <CategoryTag cat={r.category} />
                       <SeverityBadge level={r.severity} />
                     </div>
                   </div>
@@ -483,54 +578,108 @@ export default function Home() {
               </div>
             )}
 
-            {/* ── Problems tab ─────────────────────────────── */}
+            {/* ── PROBLEMS TAB ─────────────────────────────── */}
             {activeTab === "problems" && (
               <div className="space-y-4">
                 {report.problems.length === 0 && (
-                  <div className="text-center py-12 text-gray-400">
-                    No significant problems detected.
-                  </div>
+                  <div className="text-center py-12 text-gray-400">No significant problems detected.</div>
                 )}
                 {report.problems.map((p, i) => (
-                  <div
-                    key={i}
-                    className={`rounded-xl border p-5 ${
-                      p.severity === "high"
-                        ? "border-red-200 bg-red-50"
-                        : p.severity === "medium"
-                        ? "border-yellow-200 bg-yellow-50"
-                        : "border-blue-200 bg-blue-50"
-                    }`}
-                  >
+                  <div key={i} className={`rounded-xl border p-5 ${
+                    p.severity === "high" ? "border-red-200 bg-red-50" : p.severity === "medium" ? "border-yellow-200 bg-yellow-50" : "border-blue-200 bg-blue-50"
+                  }`}>
                     <div className="flex items-center gap-2 mb-2">
                       <SeverityBadge level={p.severity} />
                       <span className="font-semibold text-sm">{p.title}</span>
+                      <CategoryTag cat={p.category} />
                     </div>
-                    <p className="text-sm text-gray-700 mb-1">
-                      {p.description}
-                    </p>
+                    <p className="text-sm text-gray-700 mb-2">{p.description}</p>
                     {p.source && (
-                      <a
-                        href={p.source}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs text-blue-500 hover:underline"
-                      >
-                        {p.source}
-                      </a>
+                      <a href={p.source} target="_blank" rel="noopener noreferrer"
+                        className="text-xs text-blue-500 hover:underline break-all">{p.source}</a>
                     )}
                   </div>
                 ))}
+
+                {/* Full recommendations at bottom of problems */}
+                {report.recommendations.length > 0 && (
+                  <Card title="All Recommendations" className="mt-6">
+                    <div className="space-y-4">
+                      {report.recommendations.map((rec, i) => (
+                        <div key={i} className="flex gap-3 pb-3 border-b border-gray-100 last:border-0 last:pb-0">
+                          <SeverityBadge level={rec.priority} />
+                          <div>
+                            <p className="text-sm font-medium text-gray-800">{rec.action}</p>
+                            <p className="text-xs text-gray-500 mt-0.5">{rec.reason}</p>
+                            <p className="text-xs text-green-600 mt-0.5">Expected impact: {rec.estimatedImpact}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </Card>
+                )}
+              </div>
+            )}
+
+            {/* ── STRENGTHS TAB ────────────────────────────── */}
+            {activeTab === "strengths" && (
+              <div className="space-y-4">
+                {(!report.strengths || report.strengths.length === 0) && (
+                  <div className="text-center py-12 text-gray-400">No notable strengths identified.</div>
+                )}
+                {report.strengths?.map((s, i) => (
+                  <div key={i} className="rounded-xl border border-green-200 bg-green-50 p-5">
+                    <h4 className="font-semibold text-sm text-green-800 mb-1">{s.title}</h4>
+                    <p className="text-sm text-gray-700">{s.description}</p>
+                    {s.source && (
+                      <a href={s.source} target="_blank" rel="noopener noreferrer"
+                        className="text-xs text-blue-500 hover:underline mt-1 inline-block">{s.source}</a>
+                    )}
+                  </div>
+                ))}
+
+                {/* SERP breakdown */}
+                {report.serpBreakdown && (
+                  <Card title="SERP Control Analysis" className="mt-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="text-sm text-gray-600">First page dominance:</span>
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+                        report.serpBreakdown.firstPageDominance === "high" ? "bg-green-100 text-green-700"
+                        : report.serpBreakdown.firstPageDominance === "medium" ? "bg-yellow-100 text-yellow-700"
+                        : "bg-red-100 text-red-700"
+                      }`}>{report.serpBreakdown.firstPageDominance}</span>
+                    </div>
+                    {report.serpBreakdown.ownedProperties.length > 0 && (
+                      <div className="mb-3">
+                        <p className="text-xs font-medium text-gray-500 mb-1">Owned/Controlled Properties:</p>
+                        <ul className="space-y-1">
+                          {report.serpBreakdown.ownedProperties.map((url, i) => (
+                            <li key={i} className="text-xs text-green-600 truncate">{url}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {report.serpBreakdown.riskyResults.length > 0 && (
+                      <div>
+                        <p className="text-xs font-medium text-gray-500 mb-1">Risky Results:</p>
+                        <ul className="space-y-1">
+                          {report.serpBreakdown.riskyResults.map((url, i) => (
+                            <li key={i} className="text-xs text-red-500 truncate">{url}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </Card>
+                )}
               </div>
             )}
           </div>
         )}
       </main>
 
-      {/* ── Footer ───────────────────────────────────────────── */}
-      <footer className="border-t border-gray-200 mt-16">
+      <footer className="border-t border-gray-200 mt-auto">
         <div className="max-w-5xl mx-auto px-4 py-6 text-center text-sm text-gray-400">
-          Online Reputation Checker &mdash; Powered by AI analysis of public search data.
+          Online Reputation Checker &mdash; AI-powered analysis of public search data
         </div>
       </footer>
     </div>
