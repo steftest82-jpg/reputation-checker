@@ -447,18 +447,23 @@ export default function Home() {
                         setGateSending(true);
                         setGateError("");
                         try {
-                          const res = await fetch("/api/send-report", {
+                          // Send lead notification to Reputation500
+                          await fetch("/api/contact", {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ email: gateEmail.trim(), report }),
+                            body: JSON.stringify({
+                              name: gateEmail.trim(),
+                              email: gateEmail.trim(),
+                              packageName: "Report Unlock",
+                              reportName: report?.name || "",
+                              reportScore: report?.score || 0,
+                            }),
                           });
-                          const data = await res.json();
-                          if (!res.ok) throw new Error(data.error || "Failed to send report");
-                          setEmailGated(false);
-                        } catch (err: unknown) {
-                          setGateError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
+                        } catch {
+                          // Silently fail — still unlock the report
                         } finally {
                           setGateSending(false);
+                          setEmailGated(false);
                         }
                       }}
                       className="space-y-3"
@@ -480,10 +485,10 @@ export default function Home() {
                         {gateSending ? (
                           <>
                             <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                            Generating &amp; Sending PDF...
+                            Unlocking Report...
                           </>
                         ) : (
-                          "Send Me the Full Report"
+                          "Unlock Full Report"
                         )}
                       </button>
                     </form>
