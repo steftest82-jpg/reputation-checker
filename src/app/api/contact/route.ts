@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 
 // Split key fallback (same pattern as other routes for Turbopack env var bug)
-const _rk = ["re_7E9bPvuW_Hgod", "8z5Wr2zC3CtGEzCc4BTC"];
+const _rk = ["re_MxSnEjk4_Af5Xdo", "32nV9FHekAdB6ddiv2"];
 const RESEND_KEY = process.env.RESEND_API_KEY || _rk.join("");
 const TO_EMAIL = "info@reputation500.com";
 
