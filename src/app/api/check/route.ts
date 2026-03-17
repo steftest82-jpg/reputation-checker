@@ -430,14 +430,15 @@ Perform a comprehensive reputation analysis. Respond ONLY with valid JSON (no ma
     }
   ],
   "categoryScores": {
-    "serpSentiment": 0-30,
+    "serpSentiment": 0-25,
     "autocompleteSafety": 0-10,
     "newsSentiment": 0-15,
     "socialPresence": 0-10,
     "contentControl": 0-5,
     "complaintSites": 0-10,
-    "reviewRatings": 0-15,
-    "domainOwnership": 0-5
+    "reviewRatings": 0-10,
+    "domainOwnership": 0-5,
+    "aiLlmPresence": 0-10
   },
   "serpBreakdown": {
     "ownedProperties": ["list of URLs in top 10 that belong to or are controlled by the entity"],
@@ -484,18 +485,27 @@ Perform a comprehensive reputation analysis. Respond ONLY with valid JSON (no ma
       "sentiment": "positive" | "neutral" | "negative",
       "isOwned": true/false
     }
-  ]
+  ],
+  "aiLlmAppearance": {
+    "score": 1-10,
+    "verdict": "strong" | "moderate" | "weak" | "absent",
+    "analysis": "2-3 sentences on how likely AI engines (ChatGPT, Claude, Gemini, Perplexity) are to reference or quote this entity. Base this on: media coverage depth, Wikipedia presence, authority website mentions, news frequency, and structured data availability.",
+    "strengths": ["what helps AI engines find and reference them"],
+    "weaknesses": ["what's missing that prevents AI from referencing them"],
+    "recommendations": ["specific actions to improve AI visibility"]
+  }
 }
 
-SCORING GUIDE (be precise):
-- serpSentiment (0-30): Count positive/neutral vs negative. 30 = all positive/neutral. Deduct 3 per negative result in top 10, 1.5 per negative in 11-20.
+SCORING GUIDE (be precise — total must equal 100 max):
+- serpSentiment (0-25): Count positive/neutral vs negative. 25 = all positive/neutral. Deduct 3 per negative result in top 10, 1.5 per negative in 11-20.
 - autocompleteSafety (0-10): 10 = clean. Deduct 2.5 per negative/harmful suggestion (scam, fraud, lawsuit, complaint, etc.)
 - newsSentiment (0-15): 15 = all positive/neutral news. 7 = mixed. 0 = all negative. No news = 8 (neutral default).
 - socialPresence (0-10): 2 points per active major platform found (LinkedIn, Twitter/X, Facebook, Instagram, YouTube). Max 10.
 - contentControl (0-5): How many of top 10 results are owned/controlled by entity. 5 = 5+ owned, 3 = 3-4, 1 = 1-2, 0 = none.
 - complaintSites (0-10): 10 = zero complaint results. Deduct 3 per complaint site appearance.
-- reviewRatings (0-15): Based on review site presence and sentiment. 15 = strong positive reviews. 7 = mixed/unknown. 0 = terrible reviews.
+- reviewRatings (0-10): Based on review site presence and sentiment. 10 = strong positive reviews. 5 = mixed/unknown. 0 = terrible reviews.
 - domainOwnership (0-5): 5 = owns exact-match domain with active site. 3 = domain exists but no site. 0 = doesn't own it.
+- aiLlmPresence (0-10): How likely AI engines (ChatGPT, Claude, Gemini, Perplexity) are to reference/quote this entity. 10 = frequently cited with accurate info, strong media + Wikipedia + structured data. 7 = sometimes referenced. 4 = rarely mentioned. 0 = completely absent from AI. Base on: depth of media coverage, Wikipedia presence, authority site mentions, news frequency, and structured data availability.
 
 Be brutally honest. Do not inflate scores. A mediocre online presence should score 45-60, not 75.`;
 
@@ -888,7 +898,8 @@ export async function POST(req: NextRequest) {
       (cs.contentControl || 0) +
       (cs.complaintSites || 0) +
       (cs.reviewRatings || 0) +
-      (cs.domainOwnership || 0);
+      (cs.domainOwnership || 0) +
+      (cs.aiLlmPresence || 0);
 
     // Generate package recommendations based on score and problems
     const score = Math.min(100, Math.max(0, totalScore));
@@ -931,6 +942,7 @@ export async function POST(req: NextRequest) {
       forumSentiment: analysis.forumSentiment || { conversations: [], overallSentiment: "no_data", analysis: "No forum data available." },
       googleImagesAnalysis: analysis.googleImagesAnalysis || { ranking: "absent", ownedImagesPct: 0, analysis: "No image data available.", concerns: [] },
       topSerpLinks: analysis.topSerpLinks || [],
+      aiLlmAppearance: analysis.aiLlmAppearance || { score: 0, verdict: "absent", analysis: "No data available.", strengths: [], weaknesses: [], recommendations: [] },
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);

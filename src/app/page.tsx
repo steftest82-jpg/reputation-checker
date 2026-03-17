@@ -44,6 +44,16 @@ interface CategoryScores {
   complaintSites: number;
   reviewRatings: number;
   domainOwnership: number;
+  aiLlmPresence: number;
+}
+
+interface AiLlmAppearance {
+  score: number;
+  verdict: string;
+  analysis: string;
+  strengths: string[];
+  weaknesses: string[];
+  recommendations: string[];
 }
 
 interface ForumConversation {
@@ -139,6 +149,7 @@ interface ReportData {
     concerns: string[];
   };
   topSerpLinks?: TopSerpLink[];
+  aiLlmAppearance?: AiLlmAppearance;
 }
 
 // ── Loading steps ───────────────────────────────────────────────────
@@ -364,7 +375,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [report, setReport] = useState<ReportData | null>(null);
-  const [activeTab, setActiveTab] = useState<"overview" | "results" | "problems" | "strengths">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "ai-llm" | "results" | "problems" | "strengths">("overview");
   const [contactModal, setContactModal] = useState<{ open: boolean; packageName: string }>({ open: false, packageName: "" });
   const [contactForm, setContactForm] = useState({ name: "", email: "" });
   const [contactSent, setContactSent] = useState(false);
@@ -401,6 +412,7 @@ export default function Home() {
 
   const tabs = [
     { key: "overview" as const, label: "Overview" },
+    { key: "ai-llm" as const, label: "AI / LLM Appearance" },
     { key: "results" as const, label: "Search Results" },
     { key: "problems" as const, label: "Problems", count: report?.problems.length },
     { key: "strengths" as const, label: "Strengths", count: report?.strengths.length },
@@ -668,9 +680,10 @@ export default function Home() {
               <div className="report-section grid md:grid-cols-2 gap-6">
                 <div className="space-y-6">
                   <Card title="Score Breakdown">
-                    <CategoryBar label="Search Results Sentiment" value={report.categoryScores.serpSentiment} max={30} />
-                    <CategoryBar label="Review Ratings" value={report.categoryScores.reviewRatings} max={15} />
+                    <CategoryBar label="Search Results Sentiment" value={report.categoryScores.serpSentiment} max={25} />
                     <CategoryBar label="News Sentiment" value={report.categoryScores.newsSentiment} max={15} />
+                    <CategoryBar label="Review Ratings" value={report.categoryScores.reviewRatings} max={10} />
+                    <CategoryBar label="AI / LLM Appearance" value={report.categoryScores.aiLlmPresence || 0} max={10} />
                     <CategoryBar label="Autocomplete Safety" value={report.categoryScores.autocompleteSafety} max={10} />
                     <CategoryBar label="Social Media Presence" value={report.categoryScores.socialPresence} max={10} />
                     <CategoryBar label="Complaint Sites" value={report.categoryScores.complaintSites} max={10} />
@@ -916,6 +929,144 @@ export default function Home() {
                       </ul>
                     </Card>
                   )}
+                </div>
+              </div>
+            )}
+
+            {/* ── AI / LLM APPEARANCE TAB ─────────────────── */}
+            {activeTab === "ai-llm" && report.aiLlmAppearance && (
+              <div className="report-section space-y-6">
+                {/* Score card */}
+                <div className="bg-white rounded-2xl border-2 border-gray-300 p-8">
+                  <div className="flex flex-col md:flex-row items-center gap-8">
+                    {/* Score circle */}
+                    <div className="flex flex-col items-center">
+                      <div className="relative w-36 h-36">
+                        <svg width="144" height="144" viewBox="0 0 144 144">
+                          <circle cx="72" cy="72" r="60" fill="none" stroke="#e5e7eb" strokeWidth="10" />
+                          <circle cx="72" cy="72" r="60" fill="none"
+                            stroke={report.aiLlmAppearance.score >= 7 ? "#22c55e" : report.aiLlmAppearance.score >= 5 ? "#eab308" : "#ef4444"}
+                            strokeWidth="10" strokeLinecap="round"
+                            strokeDasharray={`${2 * Math.PI * 60}`}
+                            strokeDashoffset={`${2 * Math.PI * 60 * (1 - report.aiLlmAppearance.score / 10)}`}
+                            transform="rotate(-90 72 72)"
+                            style={{ transition: "stroke-dashoffset 1s ease" }}
+                          />
+                          <text x="72" y="68" textAnchor="middle" fontSize="36" fontWeight="700"
+                            fill={report.aiLlmAppearance.score >= 7 ? "#22c55e" : report.aiLlmAppearance.score >= 5 ? "#eab308" : "#ef4444"}>
+                            {report.aiLlmAppearance.score}
+                          </text>
+                          <text x="72" y="88" textAnchor="middle" fontSize="12" fill="#94a3b8">/ 10</text>
+                        </svg>
+                      </div>
+                      <span className={`mt-2 px-3 py-1 rounded-full text-sm font-bold uppercase ${
+                        report.aiLlmAppearance.verdict === "strong" ? "bg-green-100 text-green-700"
+                        : report.aiLlmAppearance.verdict === "moderate" ? "bg-yellow-100 text-yellow-700"
+                        : "bg-red-100 text-red-700"
+                      }`}>{report.aiLlmAppearance.verdict}</span>
+                    </div>
+
+                    <div className="flex-1">
+                      <h3 className="text-xl font-bold text-gray-900 mb-2">AI / LLM Prominence Score</h3>
+                      <p className="text-gray-500 text-sm mb-4">
+                        How well AI engines like ChatGPT, Claude, Gemini, and Perplexity reference and quote {report.name}.
+                      </p>
+                      <p className="text-gray-700 leading-relaxed">{report.aiLlmAppearance.analysis}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Alert if score < 6 */}
+                {report.aiLlmAppearance.score < 6 && (
+                  <div className="bg-red-50 border-2 border-red-200 rounded-xl p-5">
+                    <div className="flex items-start gap-3">
+                      <span className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center shrink-0 mt-0.5">
+                        <svg className="w-4 h-4 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg>
+                      </span>
+                      <div>
+                        <p className="font-bold text-red-800 mb-1">Low AI Visibility - Action Required</p>
+                        <p className="text-sm text-red-700 leading-relaxed">
+                          With a score of {report.aiLlmAppearance.score}/10, AI engines are unlikely to reference or accurately represent {report.name}.
+                          As AI-powered search becomes the primary way people discover information, this gap will widen.
+                          You can fix this with an active content and media strategy including magazine features, leadership articles, and expertise pieces that AI engines can reference.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="grid md:grid-cols-2 gap-6">
+                  {/* Strengths */}
+                  <Card title="What&apos;s Helping AI Find You">
+                    {report.aiLlmAppearance.strengths.length > 0 ? (
+                      <ul className="space-y-2">
+                        {report.aiLlmAppearance.strengths.map((s, i) => (
+                          <li key={i} className="flex gap-2 text-sm text-gray-700">
+                            <svg className="w-4 h-4 text-green-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                            </svg>
+                            {s}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-sm text-gray-400">No AI visibility strengths detected.</p>
+                    )}
+                  </Card>
+
+                  {/* Weaknesses */}
+                  <Card title="What&apos;s Missing for AI Visibility">
+                    {report.aiLlmAppearance.weaknesses.length > 0 ? (
+                      <ul className="space-y-2">
+                        {report.aiLlmAppearance.weaknesses.map((w, i) => (
+                          <li key={i} className="flex gap-2 text-sm text-gray-700">
+                            <svg className="w-4 h-4 text-red-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                            {w}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-sm text-gray-400">No significant weaknesses found.</p>
+                    )}
+                  </Card>
+                </div>
+
+                {/* Recommendations */}
+                {report.aiLlmAppearance.recommendations.length > 0 && (
+                  <Card title="How to Improve AI Visibility">
+                    <div className="space-y-3">
+                      {report.aiLlmAppearance.recommendations.map((rec, i) => (
+                        <div key={i} className="flex gap-3 pb-3 border-b border-gray-100 last:border-0 last:pb-0">
+                          <span className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-xs font-bold shrink-0">{i + 1}</span>
+                          <p className="text-sm text-gray-700">{rec}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </Card>
+                )}
+
+                {/* AI engines explanation */}
+                <div className="bg-gray-50 rounded-xl border-2 border-gray-200 p-5">
+                  <h4 className="font-semibold text-sm text-gray-700 mb-3">Which AI Engines Are Analyzed?</h4>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {[
+                      { name: "ChatGPT", desc: "OpenAI" },
+                      { name: "Claude", desc: "Anthropic" },
+                      { name: "Gemini", desc: "Google" },
+                      { name: "Perplexity", desc: "AI Search" },
+                    ].map((engine, i) => (
+                      <div key={i} className="bg-white rounded-lg p-3 border border-gray-200 text-center">
+                        <p className="font-semibold text-sm text-gray-800">{engine.name}</p>
+                        <p className="text-xs text-gray-400">{engine.desc}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-xs text-gray-400 mt-3">
+                    AI engines pull information from authoritative sources like news articles, Wikipedia, official websites, and structured data.
+                    The more high-quality, factual content available about you online, the more accurately AI will represent you.
+                  </p>
                 </div>
               </div>
             )}
