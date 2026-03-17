@@ -12,3 +12,42 @@ body {
   color: var(--foreground);
   font-family: "Inter", Arial, Helvetica, sans-serif;
 }
+
+/* ── Loading pulse animation ── */
+@keyframes loadingPulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+.loading-pulse {
+  animation: loadingPulse 2s ease-in-out infinite;
+}
+
+/* ── Loading progress bar animation ── */
+@keyframes loadingBar {
+  0% { width: 0%; }
+  100% { width: 100%; }
+}
+
+/* ── Report section font boost (+4px base) ── */
+.report-section {
+  font-size: 18px;
+  line-height: 1.6;
+}
+.report-section .card-title {
+  font-size: 20px;
+}
+.report-section p, .report-section span, .report-section li {
+  font-size: 18px;
+}
+.report-section .text-sm {
+  font-size: 18px !important;
+}
+.report-section .text-xs {
+  font-size: 16px !important;
+}
+.report-section .text-2xl {
+  font-size: 28px !important;
+}
+.report-section .text-lg {
+  font-size: 22px !important;
+}

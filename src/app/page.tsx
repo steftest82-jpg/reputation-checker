@@ -112,16 +112,29 @@ interface ReportData {
 
 // ── Loading steps ───────────────────────────────────────────────────
 const LOADING_STEPS = [
-  { label: "Searching Google...", duration: 3000 },
-  { label: "Fetching news articles...", duration: 3000 },
-  { label: "Checking autocomplete suggestions...", duration: 2000 },
-  { label: "Verifying domain ownership...", duration: 2000 },
-  { label: "Analyzing sentiment with AI...", duration: 8000 },
-  { label: "Calculating reputation score...", duration: 4000 },
+  { label: "Preparing your reputation analysis...", sublabel: "Setting up AI engines", duration: 2000 },
+  { label: "Scanning Google Search results...", sublabel: "Analyzing top 20 results", duration: 3000 },
+  { label: "Scanning news & magazine features...", sublabel: "Checking 500+ news sources", duration: 3000 },
+  { label: "Analyzing autocomplete & suggestions...", sublabel: "Evaluating public perception signals", duration: 2000 },
+  { label: "Verifying domain & digital assets...", sublabel: "Checking ownership and control", duration: 2000 },
+  { label: "Checking forums & social mentions...", sublabel: "Reddit, Quora, and social platforms", duration: 3000 },
+  { label: "Running AI-powered deep analysis...", sublabel: "Processing 10,000,000+ data points", duration: 8000 },
+  { label: "Calculating reputation score...", sublabel: "Finalizing your comprehensive report", duration: 3000 },
+];
+
+const LOADING_TIPS = [
+  "Did you know? 85% of consumers research online before making a decision.",
+  "A single negative result on page 1 can cost up to 22% of business.",
+  "It takes 40 positive reviews to undo the damage of one negative review.",
+  "75% of people never scroll past the first page of Google.",
+  "Your online reputation is your most valuable digital asset.",
+  "Companies with strong online reputations see 31% more revenue growth.",
 ];
 
 function LoadingProgress() {
   const [step, setStep] = useState(0);
+  const [tipIndex, setTipIndex] = useState(0);
+  const [elapsed, setElapsed] = useState(0);
 
   useEffect(() => {
     if (step >= LOADING_STEPS.length) return;
@@ -129,25 +142,68 @@ function LoadingProgress() {
     return () => clearTimeout(timer);
   }, [step]);
 
+  useEffect(() => {
+    const tipTimer = setInterval(() => setTipIndex((i) => (i + 1) % LOADING_TIPS.length), 5000);
+    return () => clearInterval(tipTimer);
+  }, []);
+
+  useEffect(() => {
+    const tick = setInterval(() => setElapsed((e) => e + 1), 1000);
+    return () => clearInterval(tick);
+  }, []);
+
+  const progress = Math.min(Math.round((step / LOADING_STEPS.length) * 100), 99);
+
   return (
-    <div className="max-w-md mx-auto text-center py-16">
-      <div className="inline-block w-14 h-14 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-8" />
-      <h3 className="text-xl font-semibold mb-6">Analyzing Reputation</h3>
-      <div className="space-y-3 text-left">
+    <div className="max-w-lg mx-auto text-center py-16">
+      {/* Animated shield icon */}
+      <div className="relative inline-block mb-6">
+        <div className="w-20 h-20 rounded-full bg-blue-50 flex items-center justify-center">
+          <div className="w-16 h-16 rounded-full border-4 border-blue-500 border-t-transparent animate-spin" />
+        </div>
+        <div className="absolute inset-0 flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 text-blue-500 loading-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+          </svg>
+        </div>
+      </div>
+
+      <h3 className="text-2xl font-bold mb-2 text-gray-900">Preparing Your Reputation Report</h3>
+      <p className="text-gray-500 text-sm mb-1">This usually takes 20-30 seconds. Please don&apos;t close this page.</p>
+      <p className="text-gray-400 text-xs mb-6">Elapsed: {elapsed}s &middot; {progress}% complete</p>
+
+      {/* Progress bar */}
+      <div className="h-2 bg-gray-200 rounded-full overflow-hidden mb-8 mx-4">
+        <div className="h-full bg-gradient-to-r from-blue-500 to-blue-400 rounded-full transition-all duration-700 ease-out" style={{ width: `${progress}%` }} />
+      </div>
+
+      {/* Steps */}
+      <div className="space-y-2.5 text-left px-4">
         {LOADING_STEPS.map((s, i) => (
-          <div key={i} className="flex items-center gap-3">
+          <div key={i} className={`flex items-start gap-3 transition-all duration-300 ${i > step + 1 ? "opacity-30" : ""}`}>
             {i < step ? (
-              <span className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center text-white text-xs shrink-0">&#10003;</span>
+              <span className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center text-white text-xs shrink-0 mt-0.5">&#10003;</span>
             ) : i === step ? (
-              <span className="w-5 h-5 rounded-full border-2 border-blue-500 border-t-transparent animate-spin shrink-0" />
+              <span className="w-6 h-6 rounded-full border-2 border-blue-500 border-t-transparent animate-spin shrink-0 mt-0.5" />
             ) : (
-              <span className="w-5 h-5 rounded-full bg-gray-200 shrink-0" />
+              <span className="w-6 h-6 rounded-full bg-gray-200 shrink-0 mt-0.5" />
             )}
-            <span className={`text-sm ${i <= step ? "text-gray-800" : "text-gray-400"}`}>
-              {s.label}
-            </span>
+            <div>
+              <span className={`text-sm font-medium ${i < step ? "text-green-700" : i === step ? "text-gray-900" : "text-gray-400"}`}>
+                {s.label}
+              </span>
+              {i === step && (
+                <p className="text-xs text-blue-500 loading-pulse mt-0.5">{s.sublabel}</p>
+              )}
+            </div>
           </div>
         ))}
+      </div>
+
+      {/* Rotating tips */}
+      <div className="mt-8 mx-4 bg-blue-50 rounded-xl p-4 border border-blue-100">
+        <p className="text-xs text-blue-400 font-medium uppercase tracking-wide mb-1">Did you know?</p>
+        <p className="text-sm text-blue-700 leading-relaxed transition-all duration-500">{LOADING_TIPS[tipIndex]}</p>
       </div>
     </div>
   );
@@ -263,8 +319,8 @@ function CategoryTag({ cat }: { cat: string }) {
 // ── Card wrapper ────────────────────────────────────────────────────
 function Card({ title, children, className = "" }: { title?: string; children: React.ReactNode; className?: string }) {
   return (
-    <div className={`bg-white rounded-xl border border-gray-200 p-6 ${className}`}>
-      {title && <h3 className="font-semibold mb-4 text-gray-900">{title}</h3>}
+    <div className={`bg-white rounded-xl border-2 border-gray-300 p-6 ${className}`}>
+      {title && <h3 className="font-semibold mb-4 text-gray-900" style={{ fontSize: "1.15rem" }}>{title}</h3>}
       {children}
     </div>
   );
@@ -322,62 +378,70 @@ export default function Home() {
   return (
     <div className="min-h-screen flex flex-col">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
+      <header className="bg-white border-b-2 border-gray-300 sticky top-0 z-10">
         <div className="max-w-5xl mx-auto px-4 py-4 flex items-center gap-3">
           <div className="w-9 h-9 rounded-lg bg-blue-500 flex items-center justify-center">
             <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
             </svg>
           </div>
-          <h1 className="text-xl font-bold text-gray-900">Online Reputation Checker</h1>
+          <div>
+            <h1 className="text-xl font-bold text-gray-900">Online Reputation Checker</h1>
+            <p className="text-xs text-gray-400">by <a href="https://reputation500.com" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline font-medium">Reputation500</a></p>
+          </div>
         </div>
       </header>
 
       <main className="max-w-5xl mx-auto px-4 py-10 flex-1 w-full">
         {/* Search form */}
         {!report && !loading && (
-          <div className="max-w-xl mx-auto text-center">
-            <h2 className="text-3xl font-bold mb-3">Check Any Online Reputation</h2>
-            <p className="text-gray-500 mb-8">
-              Enter a person or company name to get a comprehensive AI-powered reputation analysis based on Google Search, News, Reviews, and Social Media.
+          <div className="max-w-2xl mx-auto text-center">
+            <h2 className="text-4xl font-bold mb-4" style={{ fontSize: "2.4rem" }}>Check your Online Reputation in seconds</h2>
+            <p className="text-gray-500 mb-8" style={{ fontSize: "1.2rem", lineHeight: "1.7" }}>
+              Enter a person or company name to get a comprehensive AI-powered reputation analysis based on Google Search, AI answers, News, Magazines, Reviews, Forums and all Social Media.
             </p>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="inline-flex rounded-lg border border-gray-200 p-1 bg-white">
+              <div className="inline-flex rounded-lg border-2 border-gray-300 p-1 bg-white">
                 <button type="button" onClick={() => setType("person")}
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition ${type === "person" ? "bg-blue-500 text-white" : "text-gray-600 hover:bg-gray-100"}`}>
+                  className={`px-5 py-2.5 rounded-md font-medium transition ${type === "person" ? "bg-blue-500 text-white" : "text-gray-600 hover:bg-gray-100"}`} style={{ fontSize: "1rem" }}>
                   Person
                 </button>
                 <button type="button" onClick={() => setType("company")}
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition ${type === "company" ? "bg-blue-500 text-white" : "text-gray-600 hover:bg-gray-100"}`}>
+                  className={`px-5 py-2.5 rounded-md font-medium transition ${type === "company" ? "bg-blue-500 text-white" : "text-gray-600 hover:bg-gray-100"}`} style={{ fontSize: "1rem" }}>
                   Company
                 </button>
               </div>
               <div className="relative">
                 <input type="text" value={name} onChange={(e) => setName(e.target.value)}
                   placeholder={type === "person" ? "e.g. John Smith" : "e.g. Acme Corporation"}
-                  className="w-full h-14 pl-5 pr-32 rounded-xl border border-gray-300 text-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white" />
+                  className="w-full h-16 pl-5 pr-36 rounded-xl border-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white" style={{ fontSize: "1.15rem" }} />
                 <button type="submit"
-                  className="absolute right-2 top-2 h-10 px-6 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg transition">
+                  className="absolute right-2.5 top-2.5 h-11 px-7 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg transition" style={{ fontSize: "1.05rem" }}>
                   Check
                 </button>
               </div>
-              {error && <p className="text-red-500 text-sm">{error}</p>}
+              {error && <p className="text-red-500" style={{ fontSize: "0.95rem" }}>{error}</p>}
             </form>
+
+            {/* Touchpoints statement */}
+            <p className="text-gray-400 mt-4" style={{ fontSize: "0.85rem" }}>
+              Reputation Checker analyzes 10,000,000+ touchpoints across search engines, AI engines, forums, reviews, and social media.
+            </p>
 
             {/* Features */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-12 text-left">
               {[
                 { icon: "M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z", title: "SERP Analysis", desc: "Top 20 Google results" },
-                { icon: "M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2", title: "News Scan", desc: "Recent news & press" },
-                { icon: "M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z", title: "Sentiment AI", desc: "AI-powered analysis" },
+                { icon: "M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2", title: "News & Magazines", desc: "500+ publications scanned" },
+                { icon: "M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z", title: "AI & Sentiment", desc: "AI-powered deep analysis" },
                 { icon: "M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z", title: "Risk Score", desc: "0-100 reputation score" },
               ].map((f, i) => (
-                <div key={i} className="bg-white rounded-xl border border-gray-200 p-4">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-blue-500 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <div key={i} className="bg-white rounded-xl border-2 border-gray-300 p-5">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-7 h-7 text-blue-500 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d={f.icon} />
                   </svg>
-                  <p className="font-semibold text-sm">{f.title}</p>
-                  <p className="text-xs text-gray-400">{f.desc}</p>
+                  <p className="font-semibold" style={{ fontSize: "1rem" }}>{f.title}</p>
+                  <p className="text-gray-400" style={{ fontSize: "0.85rem" }}>{f.desc}</p>
                 </div>
               ))}
             </div>
@@ -393,8 +457,21 @@ export default function Home() {
             <button onClick={() => { setReport(null); setName(""); }}
               className="mb-6 text-sm text-blue-500 hover:underline flex items-center gap-1">&larr; New check</button>
 
+            {/* Reputation500 report branding */}
+            <div className="flex items-center gap-3 mb-4 pb-4 border-b-2 border-gray-300">
+              <div className="w-10 h-10 rounded-lg bg-blue-500 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+              </div>
+              <div>
+                <p className="font-bold text-lg text-gray-900">Reputation500</p>
+                <p className="text-xs text-gray-400">Online Reputation Report</p>
+              </div>
+            </div>
+
             {/* Score header */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 mb-6">
+            <div className="report-section bg-white rounded-2xl shadow-sm border-2 border-gray-300 p-8 mb-6">
               <div className="flex flex-col md:flex-row items-center gap-8">
                 <ScoreGauge score={report.score} />
                 <div className="flex-1 text-center md:text-left">
@@ -409,7 +486,7 @@ export default function Home() {
               </div>
 
               {/* Data stats row */}
-              <div className="grid grid-cols-3 md:grid-cols-6 gap-3 mt-6 pt-6 border-t border-gray-100">
+              <div className="grid grid-cols-3 md:grid-cols-6 gap-3 mt-6 pt-6 border-t-2 border-gray-200">
                 {[
                   { label: "Results Analyzed", value: report.dataStats.totalResults },
                   { label: "News Mentions", value: report.dataStats.newsCount },
@@ -507,9 +584,9 @@ export default function Home() {
 
             {/* Executive brief */}
             {report.executiveBrief && (
-              <div className="bg-blue-50 border border-blue-200 rounded-xl p-5 mb-6">
-                <h3 className="font-semibold text-blue-800 mb-2 text-sm uppercase tracking-wide">Executive Brief</h3>
-                <p className="text-gray-700 text-sm leading-relaxed">{report.executiveBrief}</p>
+              <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-5 mb-6">
+                <h3 className="font-semibold text-blue-800 mb-2 uppercase tracking-wide" style={{ fontSize: "1rem" }}>Executive Brief</h3>
+                <p className="text-gray-700 leading-relaxed" style={{ fontSize: "1.05rem", lineHeight: "1.7" }}>{report.executiveBrief}</p>
               </div>
             )}
 
@@ -539,7 +616,7 @@ export default function Home() {
             )}
 
             {/* Tabs */}
-            <div className="flex gap-1 mb-6 border-b border-gray-200 overflow-x-auto">
+            <div className="flex gap-1 mb-6 border-b-2 border-gray-300 overflow-x-auto">
               {tabs.map((tab) => (
                 <button key={tab.key} onClick={() => setActiveTab(tab.key)}
                   className={`px-5 py-3 text-sm font-medium whitespace-nowrap transition border-b-2 -mb-px ${
@@ -557,7 +634,7 @@ export default function Home() {
 
             {/* ── OVERVIEW TAB ──────────────────────────────── */}
             {activeTab === "overview" && (
-              <div className="grid md:grid-cols-2 gap-6">
+              <div className="report-section grid md:grid-cols-2 gap-6">
                 <div className="space-y-6">
                   <Card title="Score Breakdown">
                     <CategoryBar label="Search Results Sentiment" value={report.categoryScores.serpSentiment} max={30} />
@@ -690,7 +767,7 @@ export default function Home() {
             {activeTab === "results" && (
               <div className="space-y-3">
                 {report.results.map((r, i) => (
-                  <div key={i} className="bg-white rounded-xl border border-gray-200 p-5 flex gap-4">
+                  <div key={i} className="bg-white rounded-xl border-2 border-gray-300 p-5 flex gap-4">
                     <div className="pt-1 flex flex-col items-center gap-1">
                       <span className="text-xs text-gray-400 font-mono">#{r.position}</span>
                       <SentimentDot sentiment={r.sentiment} />
@@ -820,11 +897,11 @@ export default function Home() {
                       </svg>
                     </div>
                     <div>
-                      <h3 className="text-lg font-bold mb-1">How Reputation500 Can Help</h3>
-                      <p className="text-blue-100 text-sm leading-relaxed">
+                      <h3 className="text-xl font-bold mb-2">How Reputation500 Can Help</h3>
+                      <p className="text-blue-100 leading-relaxed" style={{ fontSize: "1.05rem", lineHeight: "1.7" }}>
                         {report.packageRecommendations.urgencyMessage}
                       </p>
-                      <p className="text-blue-200 text-xs mt-2">
+                      <p className="text-white font-medium mt-3" style={{ fontSize: "0.95rem", lineHeight: "1.5" }}>
                         Trusted by 300+ companies and individuals with a 100% satisfaction rate. Led by ex-Google reputation experts.
                       </p>
                     </div>
@@ -917,10 +994,11 @@ export default function Home() {
                 </div>
 
                 {/* Trust footer */}
-                <div className="mt-6 text-center">
-                  <p className="text-xs text-gray-400">
+                <div className="mt-8 text-center py-6 border-t-2 border-gray-300">
+                  <p className="text-gray-900 font-bold" style={{ fontSize: "1.1rem", lineHeight: "1.6" }}>
                     Featured in Forbes, GQ, Entrepreneur, USA Today, Rolling Stone, and 3,481+ more publications.
-                    <br />
+                  </p>
+                  <p className="text-gray-700 font-medium mt-2" style={{ fontSize: "1rem" }}>
                     All features are guaranteed. Money back if we don&apos;t deliver.
                   </p>
                 </div>
@@ -933,9 +1011,9 @@ export default function Home() {
         )}
       </main>
 
-      <footer className="border-t border-gray-200 mt-auto">
-        <div className="max-w-5xl mx-auto px-4 py-6 text-center text-sm text-gray-400">
-          Online Reputation Checker &mdash; Powered by <a href="https://reputation500.com" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">Reputation500</a>
+      <footer className="border-t-2 border-gray-300 mt-auto">
+        <div className="max-w-5xl mx-auto px-4 py-6 text-center text-gray-400" style={{ fontSize: "0.95rem" }}>
+          Online Reputation Checker &mdash; Powered by <a href="https://reputation500.com" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline font-medium">Reputation500</a>
         </div>
       </footer>
 
