@@ -53,19 +53,20 @@ function generatePDF(report: Record<string, unknown>): Promise<Buffer> {
     function sectionTitle(title: string) {
       if (doc.y > doc.page.height - 120) addPage();
       doc.moveDown(0.8);
-      doc.fontSize(18).fillColor(blue).text(title);
+      doc.fontSize(15).fillColor(blue).text(String(title));
       doc.moveDown(0.3);
-      doc.moveTo(50, doc.y).lineTo(doc.page.width - 50, doc.y).strokeColor("#e2e8f0").lineWidth(2).stroke();
+      doc.moveTo(50, doc.y).lineTo(doc.page.width - 50, doc.y).strokeColor("#e2e8f0").lineWidth(1.5).stroke();
       doc.moveDown(0.5);
     }
 
     function bodyText(text: string) {
-      doc.fontSize(14).fillColor(medGray).text(text, { lineGap: 4 });
+      if (!text) return;
+      doc.fontSize(11).fillColor(medGray).text(String(text), { lineGap: 3 });
     }
 
     function labelValue(label: string, value: string) {
-      doc.fontSize(13).fillColor(lightGray).text(label, { continued: true });
-      doc.fillColor(darkGray).text(`  ${value}`);
+      doc.fontSize(10).fillColor(lightGray).text(String(label), { continued: true });
+      doc.fillColor(darkGray).text(`  ${String(value)}`);
     }
 
     // ── COVER / HEADER ──
@@ -301,14 +302,22 @@ export async function POST(req: NextRequest) {
     }
 
     // Generate PDF
-    const pdfBuffer = await generatePDF(report);
+    let pdfBuffer: Buffer;
+    try {
+      pdfBuffer = await generatePDF(report);
+    } catch (pdfErr) {
+      console.error("PDF generation error:", pdfErr);
+      return NextResponse.json({ error: "PDF generation failed" }, { status: 500 });
+    }
 
     // Direct download mode (no email sent)
     if (email === "__download__") {
-      return new NextResponse(new Uint8Array(pdfBuffer), {
+      const bytes = new Uint8Array(pdfBuffer);
+      return new NextResponse(bytes, {
         status: 200,
         headers: {
           "Content-Type": "application/pdf",
+          "Content-Length": String(bytes.length),
           "Content-Disposition": `attachment; filename="Reputation500-Report-${(report.name || "Report").replace(/[^a-zA-Z0-9]/g, "-")}.pdf"`,
         },
       });

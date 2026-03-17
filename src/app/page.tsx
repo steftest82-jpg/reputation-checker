@@ -251,7 +251,8 @@ function LoadingProgress() {
   const [elapsed, setElapsed] = useState(0);
 
   useEffect(() => {
-    if (step >= LOADING_STEPS.length) return;
+    // Stop advancing at the last step — it stays spinning until the report loads
+    if (step >= LOADING_STEPS.length - 1) return;
     const timer = setTimeout(() => setStep((s) => s + 1), LOADING_STEPS[step].duration);
     return () => clearTimeout(timer);
   }, [step]);
@@ -266,7 +267,8 @@ function LoadingProgress() {
     return () => clearInterval(tick);
   }, []);
 
-  const progress = Math.min(Math.round((step / LOADING_STEPS.length) * 100), 99);
+  // Cap at 95% — the last step stays spinning until the report actually loads
+  const progress = Math.min(Math.round((step / LOADING_STEPS.length) * 100), 95);
 
   return (
     <div className="max-w-lg mx-auto text-center py-16">
@@ -430,6 +432,29 @@ function CategoryTag({ cat }: { cat: string }) {
   return <span className={`px-2 py-0.5 rounded text-xs font-medium ${colors[cat] || colors.organic}`}>{labels[cat] || cat}</span>;
 }
 
+// ── Bullet point text helper ────────────────────────────────────────
+function BulletText({ text, className = "" }: { text: string; className?: string }) {
+  if (!text) return null;
+  // Split by sentence-ending punctuation followed by space, or by newlines
+  const sentences = text
+    .split(/(?<=[.!?])\s+/)
+    .map((s) => s.trim())
+    .filter((s) => s.length > 10);
+  if (sentences.length <= 1) {
+    return <p className={className}>{text}</p>;
+  }
+  return (
+    <ul className={`space-y-1.5 ${className}`}>
+      {sentences.map((s, i) => (
+        <li key={i} className="flex gap-2">
+          <span className="text-blue-400 shrink-0 mt-0.5">&#8226;</span>
+          <span>{s}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 // ── Card wrapper ────────────────────────────────────────────────────
 function Card({ title, children, className = "" }: { title?: string; children: React.ReactNode; className?: string }) {
   return (
@@ -461,13 +486,43 @@ export default function Home() {
     if (!report) return;
     setPdfDownloading(true);
     try {
+      // Send only essential report data to avoid payload size issues
+      const slimReport = {
+        name: report.name,
+        entityType: report.entityType,
+        score: report.score,
+        summary: report.summary,
+        executiveBrief: report.executiveBrief,
+        riskLevel: report.riskLevel,
+        sentimentBreakdown: report.sentimentBreakdown,
+        results: report.results?.slice(0, 20) || [],
+        problems: report.problems || [],
+        strengths: report.strengths || [],
+        recommendations: report.recommendations || [],
+        categoryScores: report.categoryScores,
+        serpBreakdown: report.serpBreakdown,
+        socialPresenceDetail: report.socialPresenceDetail,
+        reviewSummary: report.reviewSummary,
+        autocompleteSentiment: report.autocompleteSentiment,
+        domainInfo: report.domainInfo,
+        packageRecommendations: report.packageRecommendations,
+        dataStats: report.dataStats,
+      };
       const res = await fetch("/api/send-report", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: "__download__", report }),
+        body: JSON.stringify({ email: "__download__", report: slimReport }),
       });
-      if (!res.ok) throw new Error("PDF generation failed");
+      if (!res.ok) {
+        const errText = await res.text();
+        console.error("PDF API error:", res.status, errText);
+        return;
+      }
       const blob = await res.blob();
+      if (blob.size === 0) {
+        console.error("PDF blob is empty");
+        return;
+      }
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -475,7 +530,7 @@ export default function Home() {
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch (err) {
       console.error("PDF download error:", err);
     } finally {
@@ -637,7 +692,7 @@ export default function Home() {
                     <span className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-xs font-medium uppercase">{report.entityType}</span>
                     <RiskBadge level={report.riskLevel} />
                   </div>
-                  <p className="text-gray-600 leading-relaxed mb-4">{report.summary}</p>
+                  <BulletText text={report.summary} className="text-gray-600 leading-relaxed mb-4" />
                   {report.sentimentBreakdown && <SentimentChart breakdown={report.sentimentBreakdown} />}
 
                   {/* Action buttons */}
@@ -772,7 +827,7 @@ export default function Home() {
             {report.executiveBrief && (
               <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-5 mb-6">
                 <h3 className="font-semibold text-blue-800 mb-2 uppercase tracking-wide" style={{ fontSize: "1rem" }}>Executive Brief</h3>
-                <p className="text-gray-700 leading-relaxed" style={{ fontSize: "1.05rem", lineHeight: "1.7" }}>{report.executiveBrief}</p>
+                <BulletText text={report.executiveBrief} className="text-gray-700 leading-relaxed" />
               </div>
             )}
 
@@ -923,7 +978,7 @@ export default function Home() {
                         }`}>{report.futureRiskAssessment.overallRisk} risk</span>
                         <span className="text-sm text-gray-500">Score: {report.futureRiskAssessment.riskScore}/10</span>
                       </div>
-                      <p className="text-sm text-gray-600 mb-4 leading-relaxed">{report.futureRiskAssessment.analysis}</p>
+                      <BulletText text={report.futureRiskAssessment.analysis} className="text-sm text-gray-600 mb-4 leading-relaxed" />
                       {report.futureRiskAssessment.risks.length > 0 && (
                         <div className="space-y-2.5">
                           {report.futureRiskAssessment.risks.map((risk, i) => (
@@ -1352,7 +1407,7 @@ export default function Home() {
                       <p className="text-gray-500 text-sm mb-4">
                         How well AI engines like ChatGPT, Claude, Gemini, and Perplexity reference and quote {report.name}.
                       </p>
-                      <p className="text-gray-700 leading-relaxed">{report.aiLlmAppearance.analysis}</p>
+                      <BulletText text={report.aiLlmAppearance.analysis} className="text-gray-700 leading-relaxed" />
                     </div>
                   </div>
                 </div>
@@ -1489,7 +1544,7 @@ export default function Home() {
                       <p className="text-gray-500 text-sm mb-3">
                         Scale: 1 (clean) to 10 (highly suspicious). Higher scores indicate potential SERP manipulation flags based on Google policies.
                       </p>
-                      <p className="text-gray-700 leading-relaxed">{report.suspiciousActivityAnalysis.analysis}</p>
+                      <BulletText text={report.suspiciousActivityAnalysis.analysis} className="text-gray-700 leading-relaxed" />
                     </div>
                   </div>
                 </div>
