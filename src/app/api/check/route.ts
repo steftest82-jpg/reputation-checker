@@ -516,6 +516,20 @@ Perform a comprehensive reputation analysis. Respond ONLY with valid JSON (no ma
       { "month": "Month YYYY", "sentiment": "positive" | "neutral" | "negative" | "mixed" }
     ]
   },
+  "suspiciousActivityAnalysis": {
+    "score": 1-10,
+    "riskLevel": "low" | "moderate" | "high" | "critical",
+    "patterns": [
+      {
+        "type": "review_flooding" | "content_flooding" | "web2_flooding" | "link_manipulation" | "other",
+        "description": "what suspicious pattern was detected",
+        "severity": "low" | "medium" | "high",
+        "evidence": "specific evidence found (e.g., 15 reviews posted in same week)"
+      }
+    ],
+    "analysis": "2-3 sentences about suspicious activity. Look for: multiple reviews posted on same date, burst of media features in single month, many Web 2.0 profiles created simultaneously, unnatural backlink patterns. Score 1 = completely clean, 10 = highly suspicious. The higher the score the more risky.",
+    "recommendation": "If suspicious patterns found, advise proceeding with caution - surgical approach rather than flooding. Google considers rushed patterns as SERP manipulation."
+  },
   "futureRiskAssessment": {
     "overallRisk": "low" | "moderate" | "high" | "critical",
     "riskScore": 1-10,
@@ -835,6 +849,33 @@ function getPackageRecommendations(
     }
   }
 
+  // If negative publicity is detected, always offer Complete Reputation Management as first option
+  if (hasNegativePress || hasComplaints || hasLegal) {
+    const alreadyHasOrm = packages.some(p => p.type === "orm" && p.match === "perfect");
+    if (!alreadyHasOrm) {
+      packages.unshift({
+        id: "orm-complete",
+        name: "Complete Reputation Management",
+        type: "orm",
+        price: "Custom",
+        tag: "Best for negative publicity",
+        match: "perfect",
+        headline: "Complete Reputation Repair & Protection",
+        reason:
+          "Negative publicity has been detected in your search results. The Complete Reputation Management package is the most effective solution — it combines negative result suppression, positive content creation, media features, and ongoing monitoring to fully repair and protect your online reputation.",
+        features: [
+          "Full negative content suppression strategy",
+          "Premium media features & magazine interviews",
+          "Crisis management & rapid response",
+          "Ongoing monitoring & monthly optimization",
+          "SEO + AI optimization for positive results",
+          "Custom strategy tailored to your situation",
+        ],
+        cta: "Get a Free Strategy Call",
+      });
+    }
+  }
+
   return { show: true, urgencyMessage, packages };
 }
 
@@ -979,6 +1020,7 @@ export async function POST(req: NextRequest) {
       topSerpLinks: analysis.topSerpLinks || [],
       aiLlmAppearance: analysis.aiLlmAppearance || { score: 0, verdict: "absent", analysis: "No data available.", strengths: [], weaknesses: [], recommendations: [] },
       mediaPresenceWarning: analysis.mediaPresenceWarning || { hasAdequateMedia: true, mediaCount: 0, warning: "" },
+      suspiciousActivityAnalysis: analysis.suspiciousActivityAnalysis || { score: 1, riskLevel: "low", patterns: [], analysis: "No suspicious activity detected.", recommendation: "" },
       sentimentTimeline: analysis.sentimentTimeline || { trend: "insufficient_data", trendAnalysis: "Not enough data.", recentNegatives: [], monthlyTrend: [] },
       futureRiskAssessment: analysis.futureRiskAssessment || { overallRisk: "moderate", riskScore: 5, risks: [], analysis: "Insufficient data for risk assessment." },
     });

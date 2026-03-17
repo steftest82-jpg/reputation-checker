@@ -150,6 +150,18 @@ interface ReportData {
   };
   topSerpLinks?: TopSerpLink[];
   aiLlmAppearance?: AiLlmAppearance;
+  suspiciousActivityAnalysis?: {
+    score: number;
+    riskLevel: string;
+    patterns: {
+      type: string;
+      description: string;
+      severity: string;
+      evidence: string;
+    }[];
+    analysis: string;
+    recommendation: string;
+  };
   mediaPresenceWarning?: {
     hasAdequateMedia: boolean;
     mediaCount: number;
@@ -404,7 +416,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [report, setReport] = useState<ReportData | null>(null);
-  const [activeTab, setActiveTab] = useState<"overview" | "ai-llm" | "results" | "problems" | "strengths">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "ai-llm" | "suspicious" | "results" | "problems" | "strengths">("overview");
   const [contactModal, setContactModal] = useState<{ open: boolean; packageName: string }>({ open: false, packageName: "" });
   const [contactForm, setContactForm] = useState({ name: "", email: "" });
   const [contactSent, setContactSent] = useState(false);
@@ -442,6 +454,7 @@ export default function Home() {
   const tabs = [
     { key: "overview" as const, label: "Overview" },
     { key: "ai-llm" as const, label: "AI / LLM Appearance" },
+    { key: "suspicious" as const, label: "Suspicious Activity" },
     { key: "results" as const, label: "Search Results" },
     { key: "problems" as const, label: "Problems", count: report?.problems.length },
     { key: "strengths" as const, label: "Strengths", count: report?.strengths.length },
@@ -1205,6 +1218,114 @@ export default function Home() {
                   <p className="text-xs text-gray-400 mt-3">
                     AI engines pull information from authoritative sources like news articles, Wikipedia, official websites, and structured data.
                     The more high-quality, factual content available about you online, the more accurately AI will represent you.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* ── SUSPICIOUS ACTIVITY TAB ──────────────────── */}
+            {activeTab === "suspicious" && report.suspiciousActivityAnalysis && (
+              <div className="report-section space-y-6">
+                {/* Score header */}
+                <div className="bg-white rounded-2xl border-2 border-gray-300 p-8">
+                  <div className="flex flex-col md:flex-row items-center gap-8">
+                    <div className="flex flex-col items-center">
+                      <div className="relative w-36 h-36">
+                        <svg width="144" height="144" viewBox="0 0 144 144">
+                          <circle cx="72" cy="72" r="60" fill="none" stroke="#e5e7eb" strokeWidth="10" />
+                          <circle cx="72" cy="72" r="60" fill="none"
+                            stroke={report.suspiciousActivityAnalysis.score <= 3 ? "#22c55e" : report.suspiciousActivityAnalysis.score <= 6 ? "#eab308" : "#ef4444"}
+                            strokeWidth="10" strokeLinecap="round"
+                            strokeDasharray={`${2 * Math.PI * 60}`}
+                            strokeDashoffset={`${2 * Math.PI * 60 * (1 - report.suspiciousActivityAnalysis.score / 10)}`}
+                            transform="rotate(-90 72 72)"
+                            style={{ transition: "stroke-dashoffset 1s ease" }}
+                          />
+                          <text x="72" y="68" textAnchor="middle" fontSize="36" fontWeight="700"
+                            fill={report.suspiciousActivityAnalysis.score <= 3 ? "#22c55e" : report.suspiciousActivityAnalysis.score <= 6 ? "#eab308" : "#ef4444"}>
+                            {report.suspiciousActivityAnalysis.score}
+                          </text>
+                          <text x="72" y="88" textAnchor="middle" fontSize="12" fill="#94a3b8">/ 10</text>
+                        </svg>
+                      </div>
+                      <span className={`mt-2 px-3 py-1 rounded-full text-sm font-bold uppercase ${
+                        report.suspiciousActivityAnalysis.riskLevel === "low" ? "bg-green-100 text-green-700"
+                        : report.suspiciousActivityAnalysis.riskLevel === "moderate" ? "bg-yellow-100 text-yellow-700"
+                        : report.suspiciousActivityAnalysis.riskLevel === "high" ? "bg-orange-100 text-orange-700"
+                        : "bg-red-100 text-red-700"
+                      }`}>{report.suspiciousActivityAnalysis.riskLevel} risk</span>
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-xl font-bold text-gray-900 mb-2">Suspicious Activity Score</h3>
+                      <p className="text-gray-500 text-sm mb-3">
+                        Scale: 1 (clean) to 10 (highly suspicious). Higher scores indicate potential SERP manipulation flags based on Google policies.
+                      </p>
+                      <p className="text-gray-700 leading-relaxed">{report.suspiciousActivityAnalysis.analysis}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Alert for high scores */}
+                {report.suspiciousActivityAnalysis.score >= 6 && (
+                  <div className="bg-red-50 border-2 border-red-200 rounded-xl p-5">
+                    <div className="flex items-start gap-3">
+                      <span className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+                        <svg className="w-4 h-4 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg>
+                      </span>
+                      <div>
+                        <p className="font-bold text-red-800 mb-1">Warning: Suspicious Patterns Detected</p>
+                        <p className="text-sm text-red-700 leading-relaxed">
+                          Google policies consider rushed or unnatural patterns as SERP manipulation. This can result in penalties, deindexing, or reduced rankings.
+                          The recommendation is to proceed with caution &mdash; take a surgical approach to achieve results while staying under the radar from Google flagging this as spam or fraud.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Detected patterns */}
+                {report.suspiciousActivityAnalysis.patterns.length > 0 ? (
+                  <Card title="Detected Patterns">
+                    <div className="space-y-3">
+                      {report.suspiciousActivityAnalysis.patterns.map((p, i) => (
+                        <div key={i} className={`rounded-lg p-4 border ${
+                          p.severity === "high" ? "border-red-200 bg-red-50" : p.severity === "medium" ? "border-yellow-200 bg-yellow-50" : "border-gray-200 bg-gray-50"
+                        }`}>
+                          <div className="flex items-center gap-2 mb-1.5">
+                            <SeverityBadge level={p.severity} />
+                            <span className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-xs font-medium uppercase">{p.type.replace(/_/g, " ")}</span>
+                          </div>
+                          <p className="text-sm font-medium text-gray-800 mb-1">{p.description}</p>
+                          <p className="text-xs text-gray-500 italic">{p.evidence}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </Card>
+                ) : (
+                  <Card title="Detected Patterns">
+                    <div className="text-center py-6">
+                      <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <svg className="w-6 h-6 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                      </div>
+                      <p className="text-sm text-gray-600 font-medium">No suspicious patterns detected</p>
+                      <p className="text-xs text-gray-400 mt-1">The online presence appears to be organically built.</p>
+                    </div>
+                  </Card>
+                )}
+
+                {/* Recommendation */}
+                {report.suspiciousActivityAnalysis.recommendation && (
+                  <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-5">
+                    <h4 className="font-semibold text-blue-800 text-sm mb-2">Recommendation</h4>
+                    <p className="text-sm text-blue-700 leading-relaxed">{report.suspiciousActivityAnalysis.recommendation}</p>
+                  </div>
+                )}
+
+                {/* Google policy explanation */}
+                <div className="bg-gray-50 rounded-xl border-2 border-gray-200 p-5">
+                  <h4 className="font-semibold text-sm text-gray-700 mb-2">About Google&apos;s SERP Manipulation Policies</h4>
+                  <p className="text-sm text-gray-600 leading-relaxed">
+                    Google actively detects and penalizes unnatural patterns including: review flooding (many reviews posted in short timeframes), mass Web 2.0 profile creation, unnatural link building spikes, and content stuffing. Violations can lead to manual actions, ranking penalties, or complete deindexing from search results.
                   </p>
                 </div>
               </div>
