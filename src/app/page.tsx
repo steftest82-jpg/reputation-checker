@@ -150,6 +150,21 @@ interface ReportData {
   };
   topSerpLinks?: TopSerpLink[];
   aiLlmAppearance?: AiLlmAppearance;
+  videoSentimentAnalysis?: {
+    hasVideos: boolean;
+    overallSentiment: string;
+    videos: {
+      title: string;
+      channel: string;
+      sentiment: string;
+      summary: string;
+      link: string;
+      isOwned: boolean;
+      views: number;
+    }[];
+    analysis: string;
+    concerns: string[];
+  };
   industryBenchmark?: {
     applicable: boolean;
     industry: string;
@@ -1004,6 +1019,51 @@ export default function Home() {
                       </div>
                     )}
                   </Card>
+
+                  {/* Video / YouTube Sentiment */}
+                  {report.videoSentimentAnalysis && (
+                    <Card title="YouTube / Video Sentiment">
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="text-sm text-gray-600">Video sentiment:</span>
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+                          report.videoSentimentAnalysis.overallSentiment === "positive" ? "bg-green-100 text-green-700"
+                          : report.videoSentimentAnalysis.overallSentiment === "negative" ? "bg-red-100 text-red-700"
+                          : report.videoSentimentAnalysis.overallSentiment === "mixed" ? "bg-yellow-100 text-yellow-700"
+                          : "bg-gray-100 text-gray-600"
+                        }`}>{report.videoSentimentAnalysis.overallSentiment}</span>
+                      </div>
+                      <p className="text-sm text-gray-600 mb-3 leading-relaxed">{report.videoSentimentAnalysis.analysis}</p>
+                      {report.videoSentimentAnalysis.videos.length > 0 ? (
+                        <div className="space-y-2">
+                          {report.videoSentimentAnalysis.videos.slice(0, 5).map((v, i) => (
+                            <div key={i} className={`rounded-lg p-3 border ${
+                              v.sentiment === "negative" ? "border-red-200 bg-red-50" : v.sentiment === "positive" ? "border-green-200 bg-green-50" : "border-gray-200 bg-gray-50"
+                            }`}>
+                              <div className="flex items-center gap-2 mb-1">
+                                <SentimentDot sentiment={v.sentiment} />
+                                {v.isOwned && <span className="px-1.5 py-0.5 bg-green-100 text-green-600 rounded text-xs font-medium">Owned</span>}
+                                <span className="text-xs text-gray-400">{v.views?.toLocaleString()} views</span>
+                              </div>
+                              <a href={v.link} target="_blank" rel="noopener noreferrer"
+                                className="text-sm text-blue-600 hover:underline font-medium line-clamp-1">{v.title}</a>
+                              <p className="text-xs text-gray-500 mt-0.5">by {v.channel}</p>
+                              <p className="text-xs text-gray-500 mt-0.5 italic">{v.summary}</p>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-gray-400 text-center py-3">No YouTube videos found for this entity.</p>
+                      )}
+                      {report.videoSentimentAnalysis.concerns.length > 0 && (
+                        <div className="mt-3 pt-3 border-t border-gray-200">
+                          <p className="text-xs font-semibold text-red-500 mb-1">Concerns:</p>
+                          {report.videoSentimentAnalysis.concerns.map((c, i) => (
+                            <p key={i} className="text-xs text-red-600">&#9888; {c}</p>
+                          ))}
+                        </div>
+                      )}
+                    </Card>
+                  )}
 
                   {/* Reddit & Quora Conversations */}
                   <Card title="Reddit & Quora Conversations">

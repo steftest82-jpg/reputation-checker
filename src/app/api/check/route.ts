@@ -52,6 +52,29 @@ async function serpAutocomplete(query: string) {
   return (data.suggestions || []).map((s: { value: string }) => s.value);
 }
 
+// ── YouTube video search ────────────────────────────────────────────
+async function serpYouTube(query: string) {
+  const params = new URLSearchParams({
+    q: query,
+    api_key: SERP_KEY,
+    engine: "youtube",
+    search_query: query,
+  });
+  const res = await fetch(`https://serpapi.com/search.json?${params}`);
+  if (!res.ok) return [];
+  const data = await res.json();
+  return (data.video_results || []).slice(0, 8).map((r: { title?: string; link?: string; channel?: { name?: string }; description?: string; views?: number; published_date?: string; length?: string }, i: number) => ({
+    position: i + 1,
+    title: r.title || "",
+    link: r.link || "",
+    channel: r.channel?.name || "",
+    description: r.description || "",
+    views: r.views || 0,
+    publishedDate: r.published_date || "",
+    length: r.length || "",
+  }));
+}
+
 // ── Reddit/Quora search ─────────────────────────────────────────────
 async function serpRedditQuora(query: string) {
   const params = new URLSearchParams({
@@ -225,7 +248,8 @@ function buildDataPacket(
   domainInfo: { domain: string; available: boolean; hasSite: boolean },
   knowledgeGraph: Record<string, unknown> | null,
   forumResults: ForumResult[] = [],
-  imageData: { results: ImageResult[]; totalEstimate: number } = { results: [], totalEstimate: 0 }
+  imageData: { results: ImageResult[]; totalEstimate: number } = { results: [], totalEstimate: 0 },
+  youtubeResults: { position: number; title: string; link: string; channel: string; description: string; views: number; publishedDate: string; length: string }[] = []
 ) {
   const classified = organic.map((r, i) => {
     const url = r.link || "";
@@ -272,6 +296,7 @@ function buildDataPacket(
     knowledgeGraph,
     forumResults,
     imageData,
+    youtubeResults,
     stats: {
       totalResults: classified.length,
       complaintCount: complaintResults.length,
@@ -281,6 +306,7 @@ function buildDataPacket(
       uniqueDomainsInTop10: uniqueTop10.size,
       forumCount: forumResults.length,
       imageCount: imageData.results.length,
+      youtubeCount: youtubeResults.length,
     },
     entityType,
     name,
@@ -367,6 +393,17 @@ ${dataPacket.imageData.results.length
       .join("\n")
   : "No image results found."}
 
+=== YOUTUBE VIDEOS ===
+${dataPacket.youtubeResults.length
+  ? dataPacket.youtubeResults
+      .map(
+        (r: { position: number; title: string; channel: string; views: number; publishedDate: string; link: string }) =>
+          `#${r.position} "${r.title}" by ${r.channel} (${r.views} views, ${r.publishedDate})
+  URL: ${r.link}`
+      )
+      .join("\n\n")
+  : "No YouTube videos found."}
+
 === DATA SUMMARY ===
 - Total organic results analyzed: ${dataPacket.stats.totalResults}
 - Results on complaint sites: ${dataPacket.stats.complaintCount}
@@ -376,6 +413,7 @@ ${dataPacket.imageData.results.length
 - Unique domains in top 10: ${dataPacket.stats.uniqueDomainsInTop10}
 - Forum discussions (Reddit/Quora): ${dataPacket.stats.forumCount}
 - Google Images results: ${dataPacket.stats.imageCount}
+- YouTube videos: ${dataPacket.stats.youtubeCount}
 
 === YOUR TASK ===
 Perform a comprehensive reputation analysis. Respond ONLY with valid JSON (no markdown fences, no commentary outside JSON).
@@ -539,6 +577,23 @@ Perform a comprehensive reputation analysis. Respond ONLY with valid JSON (no ma
     "gap": number,
     "analysis": "2-3 sentences comparing this entity's reputation score to industry leaders and average. Only fill if entityType is 'company'.",
     "recommendations": ["specific actions to reach market leader level"]
+  },
+  "videoSentimentAnalysis": {
+    "hasVideos": true/false,
+    "overallSentiment": "positive" | "neutral" | "negative" | "mixed" | "no_data",
+    "videos": [
+      {
+        "title": "video title",
+        "channel": "channel name",
+        "sentiment": "positive" | "neutral" | "negative",
+        "summary": "1-sentence analysis of the video's tone and content regarding the entity",
+        "link": "url",
+        "isOwned": true/false,
+        "views": number
+      }
+    ],
+    "analysis": "2-3 sentences about video/voice presence on YouTube. Consider whether the entity controls their own YouTube narrative or if third parties dominate.",
+    "concerns": ["any negative or concerning videos found"]
   },
   "geographicPresence": {
     "scope": "local" | "national" | "regional" | "global",
@@ -923,8 +978,8 @@ export async function POST(req: NextRequest) {
     const entityType = type === "company" ? "company" : "person";
     const query = name.trim();
 
-    // Fire ALL data-gathering requests in parallel (6 API calls total)
-    const [organicData, newsData, autocomplete, domainInfo, forumResults, imageData] = await Promise.all(
+    // Fire ALL data-gathering requests in parallel (7 API calls total)
+    const [organicData, newsData, autocomplete, domainInfo, forumResults, imageData, youtubeResults] = await Promise.all(
       [
         serpSearch(query),
         serpSearch(`${query}`, { tbm: "nws", num: "10" }),
@@ -932,6 +987,7 @@ export async function POST(req: NextRequest) {
         checkDomain(query),
         serpRedditQuora(query),
         serpImages(query),
+        serpYouTube(query),
       ]
     );
 
@@ -976,7 +1032,8 @@ export async function POST(req: NextRequest) {
       domainInfo,
       knowledgeGraph,
       forumResults,
-      imageData
+      imageData,
+      youtubeResults
     );
 
     // Analyze with Claude
@@ -1040,6 +1097,7 @@ export async function POST(req: NextRequest) {
       mediaPresenceWarning: analysis.mediaPresenceWarning || { hasAdequateMedia: true, mediaCount: 0, warning: "" },
       suspiciousActivityAnalysis: analysis.suspiciousActivityAnalysis || { score: 1, riskLevel: "low", patterns: [], analysis: "No suspicious activity detected.", recommendation: "" },
       industryBenchmark: analysis.industryBenchmark || null,
+      videoSentimentAnalysis: analysis.videoSentimentAnalysis || { hasVideos: false, overallSentiment: "no_data", videos: [], analysis: "No YouTube data available.", concerns: [] },
       geographicPresence: analysis.geographicPresence || { scope: "local", primaryMarket: "Unknown", markets: [], analysis: "Insufficient data." },
       sentimentTimeline: analysis.sentimentTimeline || { trend: "insufficient_data", trendAnalysis: "Not enough data.", recentNegatives: [], monthlyTrend: [] },
       futureRiskAssessment: analysis.futureRiskAssessment || { overallRisk: "moderate", riskScore: 5, risks: [], analysis: "Insufficient data for risk assessment." },
