@@ -493,6 +493,41 @@ Perform a comprehensive reputation analysis. Respond ONLY with valid JSON (no ma
     "strengths": ["what helps AI engines find and reference them"],
     "weaknesses": ["what's missing that prevents AI from referencing them"],
     "recommendations": ["specific actions to improve AI visibility"]
+  },
+  "mediaPresenceWarning": {
+    "hasAdequateMedia": true/false,
+    "mediaCount": number_of_media_features_found,
+    "warning": "If media coverage is low, write a clear warning that non-media publicity creates an open space for competitors to step in and attack. Explain this as a vulnerability. If media coverage is adequate, leave empty string."
+  },
+  "sentimentTimeline": {
+    "trend": "improving" | "stable" | "declining" | "insufficient_data",
+    "trendAnalysis": "2-3 sentences describing how the reputation has changed over the past 6 months based on dates found in search results and news.",
+    "recentNegatives": [
+      {
+        "title": "title of negative item",
+        "source": "url",
+        "dateFound": "date string when it appeared (approximate)",
+        "daysAgo": number,
+        "isPotentialCrisis": true/false,
+        "summary": "1-sentence summary"
+      }
+    ],
+    "monthlyTrend": [
+      { "month": "Month YYYY", "sentiment": "positive" | "neutral" | "negative" | "mixed" }
+    ]
+  },
+  "futureRiskAssessment": {
+    "overallRisk": "low" | "moderate" | "high" | "critical",
+    "riskScore": 1-10,
+    "risks": [
+      {
+        "risk": "description of the future risk",
+        "likelihood": "low" | "medium" | "high",
+        "impact": "low" | "medium" | "high",
+        "mitigation": "what can be done to prevent this"
+      }
+    ],
+    "analysis": "2-3 sentences about future reputation vulnerability. Consider: content control gaps (if they don't own enough results, a competitor can attack), media presence gaps, crisis preparedness, and one-mistake resilience."
   }
 }
 
@@ -943,6 +978,9 @@ export async function POST(req: NextRequest) {
       googleImagesAnalysis: analysis.googleImagesAnalysis || { ranking: "absent", ownedImagesPct: 0, analysis: "No image data available.", concerns: [] },
       topSerpLinks: analysis.topSerpLinks || [],
       aiLlmAppearance: analysis.aiLlmAppearance || { score: 0, verdict: "absent", analysis: "No data available.", strengths: [], weaknesses: [], recommendations: [] },
+      mediaPresenceWarning: analysis.mediaPresenceWarning || { hasAdequateMedia: true, mediaCount: 0, warning: "" },
+      sentimentTimeline: analysis.sentimentTimeline || { trend: "insufficient_data", trendAnalysis: "Not enough data.", recentNegatives: [], monthlyTrend: [] },
+      futureRiskAssessment: analysis.futureRiskAssessment || { overallRisk: "moderate", riskScore: 5, risks: [], analysis: "Insufficient data for risk assessment." },
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);

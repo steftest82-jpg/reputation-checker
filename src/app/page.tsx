@@ -150,6 +150,35 @@ interface ReportData {
   };
   topSerpLinks?: TopSerpLink[];
   aiLlmAppearance?: AiLlmAppearance;
+  mediaPresenceWarning?: {
+    hasAdequateMedia: boolean;
+    mediaCount: number;
+    warning: string;
+  };
+  sentimentTimeline?: {
+    trend: string;
+    trendAnalysis: string;
+    recentNegatives: {
+      title: string;
+      source: string;
+      dateFound: string;
+      daysAgo: number;
+      isPotentialCrisis: boolean;
+      summary: string;
+    }[];
+    monthlyTrend: { month: string; sentiment: string }[];
+  };
+  futureRiskAssessment?: {
+    overallRisk: string;
+    riskScore: number;
+    risks: {
+      risk: string;
+      likelihood: string;
+      impact: string;
+      mitigation: string;
+    }[];
+    analysis: string;
+  };
 }
 
 // ── Loading steps ───────────────────────────────────────────────────
@@ -633,6 +662,24 @@ export default function Home() {
               </div>
             )}
 
+            {/* Media presence warning */}
+            {report.mediaPresenceWarning && !report.mediaPresenceWarning.hasAdequateMedia && report.mediaPresenceWarning.warning && (
+              <div className="bg-orange-50 border-2 border-orange-200 rounded-xl p-5 mb-6">
+                <div className="flex items-start gap-3">
+                  <span className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center shrink-0">
+                    <svg className="w-5 h-5 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg>
+                  </span>
+                  <div>
+                    <h3 className="font-bold text-orange-800 mb-1" style={{ fontSize: "1rem" }}>Low Media Coverage Detected</h3>
+                    <p className="text-orange-700 leading-relaxed" style={{ fontSize: "0.95rem" }}>{report.mediaPresenceWarning.warning}</p>
+                    <p className="text-orange-600 text-sm mt-2 font-medium">
+                      Media features found: {report.mediaPresenceWarning.mediaCount} &mdash; Recommended minimum: 5+
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* CTA banner to packages (only if score < 80) */}
             {report.packageRecommendations?.show && (
               <a
@@ -690,6 +737,98 @@ export default function Home() {
                     <CategoryBar label="Content Control" value={report.categoryScores.contentControl} max={5} />
                     <CategoryBar label="Domain Ownership" value={report.categoryScores.domainOwnership} max={5} />
                   </Card>
+
+                  {/* Sentiment Timeline */}
+                  {report.sentimentTimeline && (
+                    <Card title="Sentiment Trend (Past 6 Months)">
+                      {/* Trend badge */}
+                      <div className="flex items-center gap-3 mb-3">
+                        <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${
+                          report.sentimentTimeline.trend === "improving" ? "bg-green-100 text-green-700"
+                          : report.sentimentTimeline.trend === "declining" ? "bg-red-100 text-red-700"
+                          : report.sentimentTimeline.trend === "stable" ? "bg-blue-100 text-blue-700"
+                          : "bg-gray-100 text-gray-600"
+                        }`}>
+                          {report.sentimentTimeline.trend === "improving" ? "&#8593; Improving"
+                           : report.sentimentTimeline.trend === "declining" ? "&#8595; Declining"
+                           : report.sentimentTimeline.trend === "stable" ? "&#8596; Stable"
+                           : "? Insufficient Data"}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-600 mb-4 leading-relaxed">{report.sentimentTimeline.trendAnalysis}</p>
+
+                      {/* Monthly trend bars */}
+                      {report.sentimentTimeline.monthlyTrend.length > 0 && (
+                        <div className="flex items-end gap-1.5 mb-4 h-20">
+                          {report.sentimentTimeline.monthlyTrend.map((m, i) => (
+                            <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                              <div className={`w-full rounded-t ${
+                                m.sentiment === "positive" ? "bg-green-400" : m.sentiment === "negative" ? "bg-red-400" : m.sentiment === "mixed" ? "bg-yellow-400" : "bg-gray-300"
+                              }`} style={{ height: m.sentiment === "positive" ? "100%" : m.sentiment === "mixed" ? "60%" : m.sentiment === "negative" ? "30%" : "50%" }} />
+                              <span className="text-xs text-gray-400 truncate w-full text-center" style={{ fontSize: "10px" }}>{m.month.split(" ")[0]?.slice(0, 3)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Recent negatives / crisis alerts */}
+                      {report.sentimentTimeline.recentNegatives.length > 0 && (
+                        <div className="mt-3 pt-3 border-t border-gray-200">
+                          <p className="text-xs font-semibold text-red-600 uppercase tracking-wide mb-2">Recent Negative Events</p>
+                          <div className="space-y-2">
+                            {report.sentimentTimeline.recentNegatives.map((neg, i) => (
+                              <div key={i} className={`rounded-lg p-3 border ${neg.isPotentialCrisis ? "border-red-300 bg-red-50" : "border-yellow-200 bg-yellow-50"}`}>
+                                <div className="flex items-center gap-2 mb-1">
+                                  {neg.isPotentialCrisis && (
+                                    <span className="px-2 py-0.5 bg-red-500 text-white rounded text-xs font-bold">POTENTIAL CRISIS</span>
+                                  )}
+                                  <span className="text-xs text-gray-500">{neg.dateFound} ({neg.daysAgo}d ago)</span>
+                                </div>
+                                <p className="text-sm font-medium text-gray-800">{neg.title}</p>
+                                <p className="text-xs text-gray-500 mt-0.5">{neg.summary}</p>
+                                {neg.source && (
+                                  <a href={neg.source} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-500 hover:underline mt-1 inline-block">{neg.source}</a>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </Card>
+                  )}
+
+                  {/* Future Risk Assessment */}
+                  {report.futureRiskAssessment && (
+                    <Card title="Future Reputation Risk">
+                      <div className="flex items-center gap-3 mb-3">
+                        <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${
+                          report.futureRiskAssessment.overallRisk === "low" ? "bg-green-100 text-green-700"
+                          : report.futureRiskAssessment.overallRisk === "moderate" ? "bg-yellow-100 text-yellow-700"
+                          : report.futureRiskAssessment.overallRisk === "high" ? "bg-orange-100 text-orange-700"
+                          : "bg-red-100 text-red-700"
+                        }`}>{report.futureRiskAssessment.overallRisk} risk</span>
+                        <span className="text-sm text-gray-500">Score: {report.futureRiskAssessment.riskScore}/10</span>
+                      </div>
+                      <p className="text-sm text-gray-600 mb-4 leading-relaxed">{report.futureRiskAssessment.analysis}</p>
+                      {report.futureRiskAssessment.risks.length > 0 && (
+                        <div className="space-y-2.5">
+                          {report.futureRiskAssessment.risks.map((risk, i) => (
+                            <div key={i} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className={`w-2 h-2 rounded-full ${risk.impact === "high" ? "bg-red-500" : risk.impact === "medium" ? "bg-yellow-500" : "bg-green-500"}`} />
+                                <span className="text-sm font-medium text-gray-800">{risk.risk}</span>
+                              </div>
+                              <div className="flex gap-3 text-xs text-gray-400 mb-1.5">
+                                <span>Likelihood: <span className="font-medium text-gray-600">{risk.likelihood}</span></span>
+                                <span>Impact: <span className="font-medium text-gray-600">{risk.impact}</span></span>
+                              </div>
+                              <p className="text-xs text-blue-600">{risk.mitigation}</p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </Card>
+                  )}
 
                   {/* Top 6 SERP Links */}
                   {report.topSerpLinks && report.topSerpLinks.length > 0 && (
