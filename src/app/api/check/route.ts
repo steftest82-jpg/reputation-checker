@@ -530,6 +530,24 @@ Perform a comprehensive reputation analysis. Respond ONLY with valid JSON (no ma
     "analysis": "2-3 sentences about suspicious activity. Look for: multiple reviews posted on same date, burst of media features in single month, many Web 2.0 profiles created simultaneously, unnatural backlink patterns. Score 1 = completely clean, 10 = highly suspicious. The higher the score the more risky.",
     "recommendation": "If suspicious patterns found, advise proceeding with caution - surgical approach rather than flooding. Google considers rushed patterns as SERP manipulation."
   },
+  "industryBenchmark": {
+    "applicable": true/false,
+    "industry": "industry name if detectable",
+    "marketLeaderScore": 85-95,
+    "industryAverage": 55-70,
+    "entityScore": the_score_you_calculated,
+    "gap": number,
+    "analysis": "2-3 sentences comparing this entity's reputation score to industry leaders and average. Only fill if entityType is 'company'.",
+    "recommendations": ["specific actions to reach market leader level"]
+  },
+  "geographicPresence": {
+    "scope": "local" | "national" | "regional" | "global",
+    "primaryMarket": "country name",
+    "markets": [
+      { "country": "country name", "strength": "strong" | "moderate" | "weak", "evidence": "what was found" }
+    ],
+    "analysis": "1-2 sentences about geographic reputation reach"
+  },
   "futureRiskAssessment": {
     "overallRisk": "low" | "moderate" | "high" | "critical",
     "riskScore": 1-10,
@@ -1021,6 +1039,8 @@ export async function POST(req: NextRequest) {
       aiLlmAppearance: analysis.aiLlmAppearance || { score: 0, verdict: "absent", analysis: "No data available.", strengths: [], weaknesses: [], recommendations: [] },
       mediaPresenceWarning: analysis.mediaPresenceWarning || { hasAdequateMedia: true, mediaCount: 0, warning: "" },
       suspiciousActivityAnalysis: analysis.suspiciousActivityAnalysis || { score: 1, riskLevel: "low", patterns: [], analysis: "No suspicious activity detected.", recommendation: "" },
+      industryBenchmark: analysis.industryBenchmark || null,
+      geographicPresence: analysis.geographicPresence || { scope: "local", primaryMarket: "Unknown", markets: [], analysis: "Insufficient data." },
       sentimentTimeline: analysis.sentimentTimeline || { trend: "insufficient_data", trendAnalysis: "Not enough data.", recentNegatives: [], monthlyTrend: [] },
       futureRiskAssessment: analysis.futureRiskAssessment || { overallRisk: "moderate", riskScore: 5, risks: [], analysis: "Insufficient data for risk assessment." },
     });

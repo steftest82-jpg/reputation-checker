@@ -150,6 +150,22 @@ interface ReportData {
   };
   topSerpLinks?: TopSerpLink[];
   aiLlmAppearance?: AiLlmAppearance;
+  industryBenchmark?: {
+    applicable: boolean;
+    industry: string;
+    marketLeaderScore: number;
+    industryAverage: number;
+    entityScore: number;
+    gap: number;
+    analysis: string;
+    recommendations: string[];
+  } | null;
+  geographicPresence?: {
+    scope: string;
+    primaryMarket: string;
+    markets: { country: string; strength: string; evidence: string }[];
+    analysis: string;
+  };
   suspiciousActivityAnalysis?: {
     score: number;
     riskLevel: string;
@@ -1068,6 +1084,89 @@ export default function Home() {
                       })}
                     </div>
                   </Card>
+
+                  {/* Industry Benchmark (companies only) */}
+                  {report.industryBenchmark?.applicable && (
+                    <Card title={`Industry Benchmark: ${report.industryBenchmark.industry}`}>
+                      <div className="space-y-3 mb-4">
+                        {/* Market Leader bar */}
+                        <div>
+                          <div className="flex justify-between text-sm mb-1">
+                            <span className="text-gray-500">Market Leaders</span>
+                            <span className="font-bold text-green-600">{report.industryBenchmark.marketLeaderScore}/100</span>
+                          </div>
+                          <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
+                            <div className="h-full bg-green-500 rounded-full" style={{ width: `${report.industryBenchmark.marketLeaderScore}%` }} />
+                          </div>
+                        </div>
+                        {/* Industry Average bar */}
+                        <div>
+                          <div className="flex justify-between text-sm mb-1">
+                            <span className="text-gray-500">Industry Average</span>
+                            <span className="font-bold text-yellow-600">{report.industryBenchmark.industryAverage}/100</span>
+                          </div>
+                          <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
+                            <div className="h-full bg-yellow-400 rounded-full" style={{ width: `${report.industryBenchmark.industryAverage}%` }} />
+                          </div>
+                        </div>
+                        {/* Your score bar */}
+                        <div>
+                          <div className="flex justify-between text-sm mb-1">
+                            <span className="text-gray-700 font-medium">{report.name}</span>
+                            <span className="font-bold text-blue-600">{report.score}/100</span>
+                          </div>
+                          <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
+                            <div className="h-full bg-blue-500 rounded-full" style={{ width: `${report.score}%` }} />
+                          </div>
+                        </div>
+                      </div>
+                      <p className="text-sm text-gray-600 leading-relaxed mb-3">{report.industryBenchmark.analysis}</p>
+                      {report.industryBenchmark.gap > 0 && (
+                        <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
+                          <p className="text-xs font-semibold text-blue-700 mb-1.5">Gap to Market Leader: {report.industryBenchmark.gap} points</p>
+                          <ul className="space-y-1">
+                            {report.industryBenchmark.recommendations.map((r, i) => (
+                              <li key={i} className="text-xs text-blue-600 flex gap-1.5">
+                                <span className="text-blue-500 shrink-0">{i + 1}.</span> {r}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </Card>
+                  )}
+
+                  {/* Geographic Reputation Map */}
+                  {report.geographicPresence && (
+                    <Card title="Geographic Reputation Reach">
+                      <div className="flex items-center gap-3 mb-3">
+                        <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${
+                          report.geographicPresence.scope === "global" ? "bg-green-100 text-green-700"
+                          : report.geographicPresence.scope === "regional" ? "bg-blue-100 text-blue-700"
+                          : report.geographicPresence.scope === "national" ? "bg-yellow-100 text-yellow-700"
+                          : "bg-gray-100 text-gray-600"
+                        }`}>{report.geographicPresence.scope}</span>
+                        <span className="text-sm text-gray-500">Primary: {report.geographicPresence.primaryMarket}</span>
+                      </div>
+                      <p className="text-sm text-gray-600 mb-3 leading-relaxed">{report.geographicPresence.analysis}</p>
+                      {report.geographicPresence.markets.length > 0 && (
+                        <div>
+                          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Top Markets</p>
+                          <div className="space-y-1.5">
+                            {report.geographicPresence.markets.slice(0, 10).map((m, i) => (
+                              <div key={i} className="flex items-center gap-3 py-1.5 border-b border-gray-100 last:border-0">
+                                <span className="text-sm font-mono text-gray-400 w-5">{i + 1}</span>
+                                <span className="text-sm font-medium text-gray-800 flex-1">{m.country}</span>
+                                <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                                  m.strength === "strong" ? "bg-green-100 text-green-700" : m.strength === "moderate" ? "bg-yellow-100 text-yellow-700" : "bg-red-100 text-red-700"
+                                }`}>{m.strength}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </Card>
+                  )}
 
                   {/* People Also Ask */}
                   {report.peopleAlsoAsk.length > 0 && (
