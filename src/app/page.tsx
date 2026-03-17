@@ -46,6 +46,23 @@ interface CategoryScores {
   domainOwnership: number;
 }
 
+interface ForumConversation {
+  platform: string;
+  title: string;
+  sentiment: "positive" | "neutral" | "negative";
+  summary: string;
+  link: string;
+  isRisk: boolean;
+}
+
+interface TopSerpLink {
+  position: number;
+  title: string;
+  link: string;
+  sentiment: "positive" | "neutral" | "negative";
+  isOwned: boolean;
+}
+
 interface ReportData {
   name: string;
   entityType: string;
@@ -107,7 +124,21 @@ interface ReportData {
     socialCount: number;
     newsCount: number;
     uniqueDomainsInTop10: number;
+    forumCount?: number;
+    imageCount?: number;
   };
+  forumSentiment?: {
+    conversations: ForumConversation[];
+    overallSentiment: string;
+    analysis: string;
+  };
+  googleImagesAnalysis?: {
+    ranking: string;
+    ownedImagesPct: number;
+    analysis: string;
+    concerns: string[];
+  };
+  topSerpLinks?: TopSerpLink[];
 }
 
 // ── Loading steps ───────────────────────────────────────────────────
@@ -647,6 +678,30 @@ export default function Home() {
                     <CategoryBar label="Domain Ownership" value={report.categoryScores.domainOwnership} max={5} />
                   </Card>
 
+                  {/* Top 6 SERP Links */}
+                  {report.topSerpLinks && report.topSerpLinks.length > 0 && (
+                    <Card title="Top SERP Links (Google Page 1)">
+                      <div className="space-y-2.5">
+                        {report.topSerpLinks.slice(0, 6).map((link, i) => (
+                          <div key={i} className="flex items-start gap-3 pb-2.5 border-b border-gray-100 last:border-0 last:pb-0">
+                            <span className="text-xs font-mono text-gray-400 bg-gray-50 rounded px-1.5 py-0.5 shrink-0">#{link.position}</span>
+                            <div className="flex-1 min-w-0">
+                              <a href={link.link} target="_blank" rel="noopener noreferrer"
+                                className="text-blue-600 hover:underline font-medium text-sm line-clamp-1">{link.title}</a>
+                              <p className="text-xs text-gray-400 truncate">{link.link}</p>
+                            </div>
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              <SentimentDot sentiment={link.sentiment} />
+                              {link.isOwned && (
+                                <span className="px-1.5 py-0.5 bg-green-50 text-green-600 rounded text-xs font-medium">Owned</span>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </Card>
+                  )}
+
                   {/* Domain Info */}
                   <Card title="Domain Check">
                     <div className="flex items-center gap-3">
@@ -661,11 +716,72 @@ export default function Home() {
                   </Card>
 
                   {/* Knowledge Graph */}
-                  {report.knowledgeGraph && (
+                  {report.knowledgeGraph ? (
                     <Card title="Google Knowledge Panel">
-                      <p className="font-medium">{report.knowledgeGraph.title}</p>
-                      {report.knowledgeGraph.type && <p className="text-xs text-gray-400 mb-1">{report.knowledgeGraph.type}</p>}
-                      {report.knowledgeGraph.description && <p className="text-sm text-gray-600">{report.knowledgeGraph.description}</p>}
+                      <div className="flex items-start gap-3">
+                        <span className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center shrink-0">
+                          <svg className="w-4 h-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                        </span>
+                        <div>
+                          <p className="font-medium">{report.knowledgeGraph.title}</p>
+                          {report.knowledgeGraph.type && <p className="text-xs text-gray-400 mb-1">{report.knowledgeGraph.type}</p>}
+                          {report.knowledgeGraph.description && <p className="text-sm text-gray-600">{report.knowledgeGraph.description}</p>}
+                        </div>
+                      </div>
+                    </Card>
+                  ) : (
+                    <Card title="Google Knowledge Panel">
+                      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                        <div className="flex items-start gap-3">
+                          <span className="w-8 h-8 rounded-full bg-yellow-100 flex items-center justify-center shrink-0">
+                            <svg className="w-4 h-4 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg>
+                          </span>
+                          <div>
+                            <p className="font-semibold text-yellow-800 text-sm mb-1">No Knowledge Panel Detected</p>
+                            <p className="text-sm text-yellow-700 leading-relaxed">
+                              A Google Knowledge Panel significantly boosts credibility and trust. Without one, you&apos;re missing a key trust signal that competitors may have.
+                            </p>
+                            <div className="mt-3 bg-white rounded-lg p-3 border border-yellow-200">
+                              <p className="text-xs font-semibold text-gray-700 mb-1.5">How to get a Knowledge Panel:</p>
+                              <ul className="text-xs text-gray-600 space-y-1">
+                                <li className="flex gap-1.5"><span className="text-blue-500">1.</span> Get featured in authoritative media & magazines</li>
+                                <li className="flex gap-1.5"><span className="text-blue-500">2.</span> Create a Wikipedia presence (if notable)</li>
+                                <li className="flex gap-1.5"><span className="text-blue-500">3.</span> Claim & optimize your Google Business Profile</li>
+                                <li className="flex gap-1.5"><span className="text-blue-500">4.</span> Build consistent structured data across the web</li>
+                              </ul>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </Card>
+                  )}
+
+                  {/* Google Images Ranking */}
+                  {report.googleImagesAnalysis && (
+                    <Card title="Google Images Ranking">
+                      <div className="flex items-center gap-3 mb-3">
+                        <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${
+                          report.googleImagesAnalysis.ranking === "strong" ? "bg-green-100 text-green-700"
+                          : report.googleImagesAnalysis.ranking === "moderate" ? "bg-yellow-100 text-yellow-700"
+                          : "bg-red-100 text-red-700"
+                        }`}>{report.googleImagesAnalysis.ranking}</span>
+                        <span className="text-sm text-gray-500">
+                          ~{report.googleImagesAnalysis.ownedImagesPct}% owned/controlled images
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-600 leading-relaxed">{report.googleImagesAnalysis.analysis}</p>
+                      {report.googleImagesAnalysis.concerns.length > 0 && (
+                        <div className="mt-3">
+                          <p className="text-xs font-medium text-red-500 mb-1">Concerns:</p>
+                          <ul className="space-y-1">
+                            {report.googleImagesAnalysis.concerns.map((c, i) => (
+                              <li key={i} className="text-xs text-red-600 flex gap-1.5">
+                                <span className="shrink-0">&#9888;</span> {c}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
                     </Card>
                   )}
                 </div>
@@ -704,6 +820,47 @@ export default function Home() {
                         {report.reviewSummary.platforms_found.map((p, i) => (
                           <span key={i} className="px-2.5 py-1 bg-indigo-50 text-indigo-600 rounded-full text-xs font-medium">{p}</span>
                         ))}
+                      </div>
+                    )}
+                  </Card>
+
+                  {/* Reddit & Quora Conversations */}
+                  <Card title="Reddit & Quora Conversations">
+                    {report.forumSentiment && report.forumSentiment.conversations.length > 0 ? (
+                      <>
+                        <div className="flex items-center gap-2 mb-3">
+                          <span className="text-sm text-gray-600">Forum sentiment:</span>
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+                            report.forumSentiment.overallSentiment === "positive" ? "bg-green-100 text-green-700"
+                            : report.forumSentiment.overallSentiment === "negative" ? "bg-red-100 text-red-700"
+                            : report.forumSentiment.overallSentiment === "mixed" ? "bg-yellow-100 text-yellow-700"
+                            : "bg-gray-100 text-gray-600"
+                          }`}>{report.forumSentiment.overallSentiment}</span>
+                        </div>
+                        <p className="text-sm text-gray-600 mb-3">{report.forumSentiment.analysis}</p>
+                        <div className="space-y-2.5">
+                          {report.forumSentiment.conversations.map((conv, i) => (
+                            <div key={i} className={`rounded-lg p-3 border ${
+                              conv.sentiment === "negative" ? "border-red-200 bg-red-50" : conv.sentiment === "positive" ? "border-green-200 bg-green-50" : "border-gray-200 bg-gray-50"
+                            }`}>
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className={`px-1.5 py-0.5 rounded text-xs font-bold uppercase ${
+                                  conv.platform === "reddit" ? "bg-orange-100 text-orange-600" : "bg-blue-100 text-blue-600"
+                                }`}>{conv.platform}</span>
+                                <SentimentDot sentiment={conv.sentiment} />
+                                {conv.isRisk && <span className="text-xs text-red-500 font-medium">&#9888; Risk</span>}
+                              </div>
+                              <a href={conv.link} target="_blank" rel="noopener noreferrer"
+                                className="text-sm text-blue-600 hover:underline font-medium line-clamp-1">{conv.title}</a>
+                              <p className="text-xs text-gray-500 mt-0.5">{conv.summary}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-center py-4">
+                        <p className="text-sm text-gray-400">No Reddit or Quora discussions found.</p>
+                        <p className="text-xs text-gray-400 mt-1">This is generally positive - no public forum complaints detected.</p>
                       </div>
                     )}
                   </Card>

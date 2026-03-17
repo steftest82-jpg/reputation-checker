@@ -52,6 +52,47 @@ async function serpAutocomplete(query: string) {
   return (data.suggestions || []).map((s: { value: string }) => s.value);
 }
 
+// ── Reddit/Quora search ─────────────────────────────────────────────
+async function serpRedditQuora(query: string) {
+  const params = new URLSearchParams({
+    q: `${query} site:reddit.com OR site:quora.com`,
+    api_key: SERP_KEY,
+    engine: "google",
+    num: "10",
+  });
+  const res = await fetch(`https://serpapi.com/search.json?${params}`);
+  if (!res.ok) return [];
+  const data = await res.json();
+  return (data.organic_results || []).slice(0, 10).map((r: SerpResult, i: number) => ({
+    title: r.title || "",
+    snippet: r.snippet || "",
+    link: r.link || "",
+    position: i + 1,
+    platform: (r.link || "").includes("reddit.com") ? "reddit" : "quora",
+  }));
+}
+
+// ── Google Images search ────────────────────────────────────────────
+async function serpImages(query: string) {
+  const params = new URLSearchParams({
+    q: query,
+    api_key: SERP_KEY,
+    engine: "google_images",
+    num: "10",
+  });
+  const res = await fetch(`https://serpapi.com/search.json?${params}`);
+  if (!res.ok) return { results: [], totalEstimate: 0 };
+  const data = await res.json();
+  const results = (data.images_results || []).slice(0, 10).map((r: { title?: string; link?: string; original?: string; source?: string; position?: number }, i: number) => ({
+    title: r.title || "",
+    link: r.link || "",
+    original: r.original || "",
+    source: r.source || "",
+    position: i + 1,
+  }));
+  return { results, totalEstimate: data.search_information?.total_results || 0 };
+}
+
 // ── Domain check (free, no API needed) ──────────────────────────────
 async function checkDomain(name: string): Promise<{
   domain: string;
@@ -158,6 +199,22 @@ function extractDomain(url: string): string {
 }
 
 // ── Build rich context for Claude ───────────────────────────────────
+interface ForumResult {
+  title: string;
+  snippet: string;
+  link: string;
+  position: number;
+  platform: string;
+}
+
+interface ImageResult {
+  title: string;
+  link: string;
+  original: string;
+  source: string;
+  position: number;
+}
+
 function buildDataPacket(
   name: string,
   entityType: string,
@@ -166,7 +223,9 @@ function buildDataPacket(
   autocomplete: string[],
   peopleAlsoAsk: string[],
   domainInfo: { domain: string; available: boolean; hasSite: boolean },
-  knowledgeGraph: Record<string, unknown> | null
+  knowledgeGraph: Record<string, unknown> | null,
+  forumResults: ForumResult[] = [],
+  imageData: { results: ImageResult[]; totalEstimate: number } = { results: [], totalEstimate: 0 }
 ) {
   const classified = organic.map((r, i) => {
     const url = r.link || "";
@@ -211,6 +270,8 @@ function buildDataPacket(
     peopleAlsoAsk,
     domainInfo,
     knowledgeGraph,
+    forumResults,
+    imageData,
     stats: {
       totalResults: classified.length,
       complaintCount: complaintResults.length,
@@ -218,6 +279,8 @@ function buildDataPacket(
       socialCount: socialResults.length,
       newsCount: newsInOrganic.length + newsResults.length,
       uniqueDomainsInTop10: uniqueTop10.size,
+      forumCount: forumResults.length,
+      imageCount: imageData.results.length,
     },
     entityType,
     name,
@@ -281,6 +344,29 @@ Has active website: ${dataPacket.domainInfo.hasSite ? "Yes" : "No"}
 === KNOWLEDGE GRAPH ===
 ${dataPacket.knowledgeGraph ? JSON.stringify(dataPacket.knowledgeGraph, null, 2) : "Not available"}
 
+=== REDDIT & QUORA FORUM DISCUSSIONS ===
+${dataPacket.forumResults.length
+  ? dataPacket.forumResults
+      .map(
+        (r: ForumResult) =>
+          `[${r.platform.toUpperCase()}] ${r.title}
+  Snippet: ${r.snippet}
+  URL: ${r.link}`
+      )
+      .join("\n\n")
+  : "No Reddit or Quora discussions found."}
+
+=== GOOGLE IMAGES ===
+Total estimated image results: ${dataPacket.imageData.totalEstimate}
+${dataPacket.imageData.results.length
+  ? dataPacket.imageData.results
+      .map(
+        (r: ImageResult) =>
+          `#${r.position} ${r.title} [Source: ${r.source}]`
+      )
+      .join("\n")
+  : "No image results found."}
+
 === DATA SUMMARY ===
 - Total organic results analyzed: ${dataPacket.stats.totalResults}
 - Results on complaint sites: ${dataPacket.stats.complaintCount}
@@ -288,6 +374,8 @@ ${dataPacket.knowledgeGraph ? JSON.stringify(dataPacket.knowledgeGraph, null, 2)
 - Social media profiles found: ${dataPacket.stats.socialCount}
 - News mentions: ${dataPacket.stats.newsCount}
 - Unique domains in top 10: ${dataPacket.stats.uniqueDomainsInTop10}
+- Forum discussions (Reddit/Quora): ${dataPacket.stats.forumCount}
+- Google Images results: ${dataPacket.stats.imageCount}
 
 === YOUR TASK ===
 Perform a comprehensive reputation analysis. Respond ONLY with valid JSON (no markdown fences, no commentary outside JSON).
@@ -367,7 +455,36 @@ Perform a comprehensive reputation analysis. Respond ONLY with valid JSON (no ma
     "assessment": "1-2 sentences"
   },
   "riskLevel": "low" | "moderate" | "high" | "critical",
-  "executiveBrief": "1 paragraph (4-6 sentences) that a CEO or brand manager could read to understand the full picture. Include the most important finding, the biggest risk, and the #1 action to take."
+  "executiveBrief": "1 paragraph (4-6 sentences) that a CEO or brand manager could read to understand the full picture. Include the most important finding, the biggest risk, and the #1 action to take. If the entity lacks media coverage, explicitly warn that this creates vulnerability for competitor attacks and crisis situations.",
+  "forumSentiment": {
+    "conversations": [
+      {
+        "platform": "reddit" | "quora",
+        "title": "thread title",
+        "sentiment": "positive" | "neutral" | "negative",
+        "summary": "1-sentence summary of what's being discussed",
+        "link": "url",
+        "isRisk": true/false
+      }
+    ],
+    "overallSentiment": "positive" | "neutral" | "negative" | "mixed" | "no_data",
+    "analysis": "1-2 sentences about forum reputation"
+  },
+  "googleImagesAnalysis": {
+    "ranking": "strong" | "moderate" | "weak" | "absent",
+    "ownedImagesPct": 0-100,
+    "analysis": "1-2 sentences about image search presence",
+    "concerns": ["any negative or concerning images found"]
+  },
+  "topSerpLinks": [
+    {
+      "position": number,
+      "title": "title",
+      "link": "url",
+      "sentiment": "positive" | "neutral" | "negative",
+      "isOwned": true/false
+    }
+  ]
 }
 
 SCORING GUIDE (be precise):
@@ -702,13 +819,15 @@ export async function POST(req: NextRequest) {
     const entityType = type === "company" ? "company" : "person";
     const query = name.trim();
 
-    // Fire ALL data-gathering requests in parallel (4 API calls total)
-    const [organicData, newsData, autocomplete, domainInfo] = await Promise.all(
+    // Fire ALL data-gathering requests in parallel (6 API calls total)
+    const [organicData, newsData, autocomplete, domainInfo, forumResults, imageData] = await Promise.all(
       [
         serpSearch(query),
         serpSearch(`${query}`, { tbm: "nws", num: "10" }),
         serpAutocomplete(query),
         checkDomain(query),
+        serpRedditQuora(query),
+        serpImages(query),
       ]
     );
 
@@ -751,7 +870,9 @@ export async function POST(req: NextRequest) {
       autocomplete,
       peopleAlsoAsk,
       domainInfo,
-      knowledgeGraph
+      knowledgeGraph,
+      forumResults,
+      imageData
     );
 
     // Analyze with Claude
@@ -807,6 +928,9 @@ export async function POST(req: NextRequest) {
         : null,
       dataStats: dataPacket.stats,
       packageRecommendations,
+      forumSentiment: analysis.forumSentiment || { conversations: [], overallSentiment: "no_data", analysis: "No forum data available." },
+      googleImagesAnalysis: analysis.googleImagesAnalysis || { ranking: "absent", ownedImagesPct: 0, analysis: "No image data available.", concerns: [] },
+      topSerpLinks: analysis.topSerpLinks || [],
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
