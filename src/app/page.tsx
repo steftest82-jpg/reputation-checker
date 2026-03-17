@@ -455,6 +455,47 @@ export default function Home() {
   const [gateEmail, setGateEmail] = useState("");
   const [gateSending, setGateSending] = useState(false);
   const [gateError, setGateError] = useState("");
+  const [pdfDownloading, setPdfDownloading] = useState(false);
+
+  async function handleDownloadPdf() {
+    if (!report) return;
+    setPdfDownloading(true);
+    try {
+      const res = await fetch("/api/send-report", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: "__download__", report }),
+      });
+      if (!res.ok) throw new Error("PDF generation failed");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Reputation500-Report-${report.name.replace(/\s+/g, "-")}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("PDF download error:", err);
+    } finally {
+      setPdfDownloading(false);
+    }
+  }
+
+  function handleShareLinkedIn() {
+    if (!report) return;
+    const text = `I just scored ${report.score}/100 on my Online Reputation Check by @Reputation500! ${report.score >= 90 ? "Excellent" : "Good"} reputation confirmed. Check yours at`;
+    const url = "https://reputation500.com";
+    window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}&summary=${encodeURIComponent(text)}`, "_blank");
+  }
+
+  function handleShareX() {
+    if (!report) return;
+    const text = `I scored ${report.score}/100 on my Online Reputation Check by @Reputation500! ${report.score >= 90 ? "Excellent" : "Good"} reputation. Check yours:`;
+    const url = "https://reputation500.com";
+    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, "_blank");
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -598,6 +639,35 @@ export default function Home() {
                   </div>
                   <p className="text-gray-600 leading-relaxed mb-4">{report.summary}</p>
                   {report.sentimentBreakdown && <SentimentChart breakdown={report.sentimentBreakdown} />}
+
+                  {/* Action buttons */}
+                  <div className="flex flex-wrap gap-2 mt-4">
+                    {/* Download PDF */}
+                    <button onClick={handleDownloadPdf} disabled={pdfDownloading}
+                      className="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 text-white rounded-lg text-sm font-medium transition">
+                      {pdfDownloading ? (
+                        <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Generating PDF...</>
+                      ) : (
+                        <><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg> Download PDF Report</>
+                      )}
+                    </button>
+
+                    {/* Share buttons (only if score >= 80) */}
+                    {report.score >= 80 && (
+                      <>
+                        <button onClick={handleShareLinkedIn}
+                          className="flex items-center gap-2 px-4 py-2 bg-[#0077b5] hover:bg-[#006097] text-white rounded-lg text-sm font-medium transition">
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+                          Share on LinkedIn
+                        </button>
+                        <button onClick={handleShareX}
+                          className="flex items-center gap-2 px-4 py-2 bg-black hover:bg-gray-800 text-white rounded-lg text-sm font-medium transition">
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                          Share on X
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
 

@@ -53,38 +53,42 @@ function generatePDF(report: Record<string, unknown>): Promise<Buffer> {
     function sectionTitle(title: string) {
       if (doc.y > doc.page.height - 120) addPage();
       doc.moveDown(0.8);
-      doc.fontSize(14).fillColor(blue).text(title);
+      doc.fontSize(18).fillColor(blue).text(title);
       doc.moveDown(0.3);
-      doc.moveTo(50, doc.y).lineTo(doc.page.width - 50, doc.y).strokeColor("#e2e8f0").lineWidth(1).stroke();
+      doc.moveTo(50, doc.y).lineTo(doc.page.width - 50, doc.y).strokeColor("#e2e8f0").lineWidth(2).stroke();
       doc.moveDown(0.5);
     }
 
     function bodyText(text: string) {
-      doc.fontSize(10).fillColor(medGray).text(text, { lineGap: 3 });
+      doc.fontSize(14).fillColor(medGray).text(text, { lineGap: 4 });
     }
 
     function labelValue(label: string, value: string) {
-      doc.fontSize(9).fillColor(lightGray).text(label, { continued: true });
+      doc.fontSize(13).fillColor(lightGray).text(label, { continued: true });
       doc.fillColor(darkGray).text(`  ${value}`);
     }
 
     // ── COVER / HEADER ──
-    doc.rect(0, 0, doc.page.width, 130).fill(blue);
-    doc.fontSize(28).fillColor("#ffffff").text("Reputation Report", 50, 40);
-    doc.fontSize(14).fillColor("#bfdbfe").text(name, 50, 75);
+    doc.rect(0, 0, doc.page.width, 150).fill(blue);
+    // Reputation500 logo text
+    doc.fontSize(11).fillColor("#93c5fd").text("REPUTATION500", 50, 25);
+    doc.fontSize(8).fillColor("#bfdbfe").text("Online Reputation Report", 50, 40);
+    // Main title
+    doc.fontSize(28).fillColor("#ffffff").text("Reputation Report", 50, 60);
+    doc.fontSize(14).fillColor("#bfdbfe").text(name, 50, 95);
     doc.fontSize(10).fillColor("#93c5fd").text(
       `${entityType.charAt(0).toUpperCase() + entityType.slice(1)} • Generated ${new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}`,
-      50, 98
+      50, 118
     );
 
     // Score box
     const scoreColor = score >= 90 ? "#22c55e" : score >= 70 ? "#84cc16" : score >= 50 ? "#eab308" : score >= 30 ? "#f97316" : "#ef4444";
     const scoreLabel = score >= 90 ? "Excellent" : score >= 70 ? "Good" : score >= 50 ? "Fair" : score >= 30 ? "Poor" : "Critical";
-    doc.roundedRect(doc.page.width - 170, 35, 120, 80, 8).fill("#ffffff");
-    doc.fontSize(36).fillColor(scoreColor).text(String(score), doc.page.width - 170, 45, { width: 120, align: "center" });
-    doc.fontSize(10).fillColor(medGray).text(`/ 100 — ${scoreLabel}`, doc.page.width - 170, 87, { width: 120, align: "center" });
+    doc.roundedRect(doc.page.width - 170, 50, 120, 80, 8).fill("#ffffff");
+    doc.fontSize(36).fillColor(scoreColor).text(String(score), doc.page.width - 170, 60, { width: 120, align: "center" });
+    doc.fontSize(10).fillColor(medGray).text(`/ 100 — ${scoreLabel}`, doc.page.width - 170, 102, { width: 120, align: "center" });
 
-    doc.y = 150;
+    doc.y = 170;
 
     // Risk level & summary
     doc.fontSize(10).fillColor(darkGray).text(`Risk Level: `, 50, doc.y, { continued: true });
@@ -298,6 +302,18 @@ export async function POST(req: NextRequest) {
 
     // Generate PDF
     const pdfBuffer = await generatePDF(report);
+
+    // Direct download mode (no email sent)
+    if (email === "__download__") {
+      return new NextResponse(new Uint8Array(pdfBuffer), {
+        status: 200,
+        headers: {
+          "Content-Type": "application/pdf",
+          "Content-Disposition": `attachment; filename="Reputation500-Report-${(report.name || "Report").replace(/[^a-zA-Z0-9]/g, "-")}.pdf"`,
+        },
+      });
+    }
+
     const pdfBase64 = pdfBuffer.toString("base64");
 
     const reportName = report.name || "Unknown";
