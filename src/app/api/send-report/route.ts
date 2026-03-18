@@ -227,6 +227,51 @@ function generatePDF(report: Record<string, unknown>): Promise<Buffer> {
       }
     }
 
+    // ── PERSONAL INFLUENCE ──
+    const personalInfluence = report.personalInfluence as Record<string, unknown> | undefined;
+    if (personalInfluence) {
+      sectionTitle("Personal Influence");
+      labelValue("Score", `${personalInfluence.score || 0}/10 — ${personalInfluence.verdict || "N/A"}`);
+      bodyText(String(personalInfluence.analysis || ""));
+    }
+
+    // ── CRISIS DETECTION ──
+    const crisisDetection = report.crisisDetection as Record<string, unknown> | undefined;
+    if (crisisDetection) {
+      sectionTitle("Risk & Crisis Detection");
+      labelValue("Alert Level", String(crisisDetection.alertLevel || "none").toUpperCase());
+      bodyText(String(crisisDetection.summary || ""));
+    }
+
+    // ── BACKLINK PROFILE ──
+    const backlinkProfile = report.backlinkProfile as Record<string, unknown> | undefined;
+    if (backlinkProfile) {
+      sectionTitle("Backlink Profile");
+      labelValue("Health Score", `${backlinkProfile.healthScore || 0}/10`);
+      labelValue("Est. Backlinks", String(backlinkProfile.totalBacklinks || "Unknown"));
+      if (backlinkProfile.toxicLinksDetected) {
+        labelValue("Toxic Links", `${backlinkProfile.toxicLinksCount || 0} detected — ${backlinkProfile.toxicLinksStatus || "unknown"}`);
+      }
+      bodyText(String(backlinkProfile.analysis || ""));
+    }
+
+    // ── CONVERSATION SENTIMENT ──
+    const convSentiment = report.conversationSentiment as Record<string, unknown> | undefined;
+    if (convSentiment) {
+      sectionTitle("Conversation Sentiment");
+      labelValue("Score", `${convSentiment.score || 0}/10 — ${convSentiment.verdict || "N/A"}`);
+      bodyText(String(convSentiment.analysis || ""));
+    }
+
+    // ── REVIEW DASHBOARD ──
+    const reviewDash = report.reviewDashboard as Record<string, unknown> | undefined;
+    if (reviewDash && report.entityType === "company") {
+      sectionTitle("Reviews Dashboard");
+      labelValue("Aggregated Rating", `${(reviewDash.aggregatedRating as number)?.toFixed?.(1) || "N/A"}/5.0`);
+      labelValue("Total Reviews", String(reviewDash.totalReviews || 0));
+      bodyText(String(reviewDash.trendAnalysis || ""));
+    }
+
     // ── SEARCH RESULTS ──
     if (results.length > 0) {
       sectionTitle(`Search Results Analyzed (${results.length})`);

@@ -589,10 +589,14 @@ Perform a comprehensive reputation analysis. Respond ONLY with valid JSON (no ma
         "summary": "1-sentence analysis of the video's tone and content regarding the entity",
         "link": "url",
         "isOwned": true/false,
-        "views": number
+        "views": number,
+        "saves": "estimated saves/bookmarks or 'N/A'",
+        "shares": "estimated shares or 'N/A'",
+        "commentSentiment": "positive" | "neutral" | "negative" | "mixed" | "disabled",
+        "commentHighlights": ["1-2 notable comment themes if visible"]
       }
     ],
-    "analysis": "2-3 sentences about video/voice presence on YouTube. Consider whether the entity controls their own YouTube narrative or if third parties dominate.",
+    "analysis": "2-3 sentences about video/voice presence on YouTube. Consider whether the entity controls their own YouTube narrative or if third parties dominate. Include observations about engagement (saves, shares, comments).",
     "concerns": ["any negative or concerning videos found"]
   },
   "geographicPresence": {
@@ -615,6 +619,118 @@ Perform a comprehensive reputation analysis. Respond ONLY with valid JSON (no ma
       }
     ],
     "analysis": "2-3 sentences about future reputation vulnerability. Consider: content control gaps (if they don't own enough results, a competitor can attack), media presence gaps, crisis preparedness, and one-mistake resilience."
+  },
+  "influencerMentions": {
+    "mentions": [
+      {
+        "influencerName": "name of influencer or account",
+        "platform": "youtube" | "instagram" | "tiktok" | "twitter" | "linkedin" | "reddit" | "blog",
+        "sentiment": "positive" | "neutral" | "negative",
+        "isSponsored": true/false,
+        "summary": "1-sentence summary of the mention",
+        "link": "url if available",
+        "daysAgo": number,
+        "dateFound": "date string"
+      }
+    ],
+    "analysis": "2-3 sentences about influencer activity and brand mentions by third parties in the past 3 months. If #sponsored or #ad tags are found, note it.",
+    "platformsChecked": ["YouTube", "Instagram", "TikTok", "Twitter/X", "LinkedIn", "Reddit", "Blogs"]
+  },
+  "personalInfluence": {
+    "score": 1-10,
+    "verdict": "strong" | "moderate" | "weak" | "absent",
+    "authorProfiles": { "found": true/false, "details": "brief note" },
+    "guestPosts": { "found": true/false, "details": "brief note" },
+    "podcasts": { "found": true/false, "details": "brief note" },
+    "publicSpeaking": { "found": true/false, "details": "brief note" },
+    "wikipediaPresence": { "found": true/false, "details": "brief note" },
+    "interviews": { "found": true/false, "details": "brief note" },
+    "mediaFeatures": { "found": true/false, "details": "brief note" },
+    "linkedinActivity": { "found": true/false, "details": "brief note on post frequency/engagement" },
+    "forumMentions": { "found": true/false, "details": "brief note" },
+    "analysis": "3-4 sentences summary of personal influence covering what exists, what is good, bad, neutral, and what needs to be done to increase positivity.",
+    "recommendations": ["specific actions to improve personal influence"]
+  },
+  "serpVolatility": {
+    "level": "stable" | "moderate" | "volatile",
+    "score": 1-10,
+    "trend": "improving" | "stable" | "declining",
+    "analysis": "2-3 sentences about SERP stability in the past 3 months. Are rankings changing? Are new negative results appearing? Are positive results dropping?",
+    "monthlyChanges": [
+      { "month": "Month YYYY", "sentiment": "positive" | "neutral" | "negative" | "mixed", "changeNote": "brief note on what changed" }
+    ],
+    "corrections": ["actions to stabilize or improve SERP positioning over time"]
+  },
+  "mediaBrandSentiment": {
+    "outlets": [
+      {
+        "name": "outlet name",
+        "sentimentScore": 1-10,
+        "tier": "premium" | "mid-tier" | "low-tier",
+        "context": "brief note on how the entity was covered"
+      }
+    ],
+    "analysis": "2-3 sentences. Score each media outlet's brand sentiment (how professional and trustworthy readers perceive content from that outlet). Forbes=9/10, specialized luxury/business magazines=7-8/10, regional news=4-6/10. Higher scores for premium publications.",
+    "averageScore": 1-10
+  },
+  "reviewDashboard": {
+    "aggregatedRating": 0-5,
+    "totalReviews": number,
+    "platforms": [
+      {
+        "name": "Trustpilot" | "Google Reviews" | "Yelp" | "TripAdvisor" | "G2" | "Glassdoor" | "Reviews.io" | "BBB" | "other",
+        "rating": 0-5,
+        "reviewCount": number,
+        "sentiment": "positive" | "mixed" | "negative" | "no_data",
+        "recentTrend": "improving" | "stable" | "declining" | "unknown"
+      }
+    ],
+    "risks": [
+      { "platform": "platform name", "review": "brief summary of concerning review", "risk": "why this is a risk", "link": "url if available" }
+    ],
+    "trendAnalysis": "2-3 sentences about overall review trajectory. Only fill meaningfully if entityType is company."
+  },
+  "backlinkProfile": {
+    "healthScore": 1-10,
+    "totalBacklinks": "estimated range like 100-500 or 1K-5K based on domain authority signals in search results",
+    "toxicLinksDetected": true/false,
+    "toxicLinksCount": number,
+    "toxicLinksStatus": "resolved" | "pending" | "unknown" | "none",
+    "toxicLinksSolution": "If toxic links exist, explain how to solve. If none, leave empty.",
+    "isVulnerable": true/false,
+    "vulnerabilityNote": "If not enough backlinks, explain vulnerability to future toxic link attacks. If strong, leave empty.",
+    "analysis": "2-3 sentences about backlink health based on what can be inferred from search results, domain authority signals, and web presence.",
+    "recommendations": ["specific backlink-related actions"]
+  },
+  "crisisDetection": {
+    "alertLevel": "none" | "low" | "moderate" | "high" | "critical",
+    "alerts": [
+      {
+        "title": "alert title",
+        "type": "negative_spike" | "viral_content" | "review_crisis" | "media_attack" | "forum_escalation" | "content_gap",
+        "source": "where detected",
+        "impact": "low" | "medium" | "high",
+        "priority": "immediate" | "urgent" | "monitor",
+        "date": "date string if available",
+        "link": "url if available"
+      }
+    ],
+    "viralContent": [
+      { "title": "content title", "platform": "platform", "reach": "estimated reach", "sentiment": "positive" | "negative" | "neutral", "link": "url" }
+    ],
+    "threats": [
+      { "threat": "description", "likelihood": "low" | "medium" | "high", "impact": "low" | "medium" | "high", "mitigation": "action" }
+    ],
+    "summary": "3-4 sentences summarizing the crisis landscape. If no crises, mention if lack of media control or content control itself is a risk. Pull from forums, YouTube, SERPs."
+  },
+  "conversationSentiment": {
+    "score": 1-10,
+    "verdict": "positive" | "mostly_positive" | "neutral" | "mixed" | "negative",
+    "topNegativeTopics": [
+      { "topic": "what people complain about", "source": "forum/review/social", "frequency": "how often mentioned", "impact": "low" | "medium" | "high" }
+    ],
+    "analysis": "2-3 sentences about overall conversation tone across forums, reviews, and comments.",
+    "improvementTips": ["specific actions to improve conversation sentiment"]
   }
 }
 
@@ -633,7 +749,7 @@ Be brutally honest. Do not inflate scores. A mediocre online presence should sco
 
   const msg = await client.messages.create({
     model: "claude-sonnet-4-20250514",
-    max_tokens: 6000,
+    max_tokens: 8000,
     messages: [{ role: "user", content: prompt }],
   });
 
@@ -1101,6 +1217,14 @@ export async function POST(req: NextRequest) {
       geographicPresence: analysis.geographicPresence || { scope: "local", primaryMarket: "Unknown", markets: [], analysis: "Insufficient data." },
       sentimentTimeline: analysis.sentimentTimeline || { trend: "insufficient_data", trendAnalysis: "Not enough data.", recentNegatives: [], monthlyTrend: [] },
       futureRiskAssessment: analysis.futureRiskAssessment || { overallRisk: "moderate", riskScore: 5, risks: [], analysis: "Insufficient data for risk assessment." },
+      influencerMentions: analysis.influencerMentions || { mentions: [], analysis: "No influencer mentions detected.", platformsChecked: [] },
+      personalInfluence: analysis.personalInfluence || null,
+      serpVolatility: analysis.serpVolatility || { level: "stable", score: 3, trend: "stable", analysis: "Insufficient data for volatility analysis.", monthlyChanges: [], corrections: [] },
+      mediaBrandSentiment: analysis.mediaBrandSentiment || { outlets: [], analysis: "No media coverage to analyze.", averageScore: 0 },
+      reviewDashboard: entityType === "company" ? (analysis.reviewDashboard || { aggregatedRating: 0, totalReviews: 0, platforms: [], risks: [], trendAnalysis: "No review data available." }) : undefined,
+      backlinkProfile: analysis.backlinkProfile || { healthScore: 5, totalBacklinks: "Unknown", toxicLinksDetected: false, toxicLinksCount: 0, toxicLinksStatus: "unknown", toxicLinksSolution: "", isVulnerable: false, vulnerabilityNote: "", analysis: "Insufficient data.", recommendations: [] },
+      crisisDetection: analysis.crisisDetection || { alertLevel: "none", alerts: [], viralContent: [], threats: [], summary: "No active crisis detected." },
+      conversationSentiment: analysis.conversationSentiment || { score: 5, verdict: "neutral", topNegativeTopics: [], analysis: "Insufficient conversation data.", improvementTips: [] },
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);

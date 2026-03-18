@@ -73,6 +73,99 @@ interface TopSerpLink {
   isOwned: boolean;
 }
 
+interface InfluencerMention {
+  influencerName: string;
+  platform: string;
+  sentiment: "positive" | "neutral" | "negative";
+  isSponsored: boolean;
+  summary: string;
+  link: string;
+  daysAgo: number;
+  dateFound: string;
+}
+
+interface PersonalInfluence {
+  score: number;
+  verdict: string;
+  authorProfiles: { found: boolean; details: string };
+  guestPosts: { found: boolean; details: string };
+  podcasts: { found: boolean; details: string };
+  publicSpeaking: { found: boolean; details: string };
+  wikipediaPresence: { found: boolean; details: string };
+  interviews: { found: boolean; details: string };
+  mediaFeatures: { found: boolean; details: string };
+  linkedinActivity: { found: boolean; details: string };
+  forumMentions: { found: boolean; details: string };
+  analysis: string;
+  recommendations: string[];
+}
+
+interface SerpVolatility {
+  level: "stable" | "moderate" | "volatile";
+  score: number;
+  trend: "improving" | "stable" | "declining";
+  analysis: string;
+  monthlyChanges: { month: string; sentiment: string; changeNote: string }[];
+  corrections: string[];
+}
+
+interface MediaBrandSentiment {
+  outlets: { name: string; sentimentScore: number; tier: string; context: string }[];
+  analysis: string;
+  averageScore: number;
+}
+
+interface ReviewDashboard {
+  aggregatedRating: number;
+  totalReviews: number;
+  platforms: { name: string; rating: number; reviewCount: number; sentiment: string; recentTrend: string }[];
+  risks: { platform: string; review: string; risk: string; link: string }[];
+  trendAnalysis: string;
+}
+
+interface BacklinkProfile {
+  healthScore: number;
+  totalBacklinks: string;
+  toxicLinksDetected: boolean;
+  toxicLinksCount: number;
+  toxicLinksStatus: string;
+  toxicLinksSolution: string;
+  isVulnerable: boolean;
+  vulnerabilityNote: string;
+  analysis: string;
+  recommendations: string[];
+}
+
+interface CrisisDetection {
+  alertLevel: "none" | "low" | "moderate" | "high" | "critical";
+  alerts: { title: string; type: string; source: string; impact: string; priority: string; date: string; link: string }[];
+  viralContent: { title: string; platform: string; reach: string; sentiment: string; link: string }[];
+  threats: { threat: string; likelihood: string; impact: string; mitigation: string }[];
+  summary: string;
+}
+
+interface ConversationSentiment {
+  score: number;
+  verdict: string;
+  topNegativeTopics: { topic: string; source: string; frequency: string; impact: string }[];
+  analysis: string;
+  improvementTips: string[];
+}
+
+interface VideoDetail {
+  title: string;
+  channel: string;
+  sentiment: string;
+  summary: string;
+  link: string;
+  isOwned: boolean;
+  views: number;
+  saves: string;
+  shares: string;
+  commentSentiment: string;
+  commentHighlights: string[];
+}
+
 interface ReportData {
   name: string;
   entityType: string;
@@ -153,15 +246,7 @@ interface ReportData {
   videoSentimentAnalysis?: {
     hasVideos: boolean;
     overallSentiment: string;
-    videos: {
-      title: string;
-      channel: string;
-      sentiment: string;
-      summary: string;
-      link: string;
-      isOwned: boolean;
-      views: number;
-    }[];
+    videos: VideoDetail[];
     analysis: string;
     concerns: string[];
   };
@@ -193,6 +278,18 @@ interface ReportData {
     analysis: string;
     recommendation: string;
   };
+  influencerMentions?: {
+    mentions: InfluencerMention[];
+    analysis: string;
+    platformsChecked: string[];
+  };
+  personalInfluence?: PersonalInfluence;
+  serpVolatility?: SerpVolatility;
+  mediaBrandSentiment?: MediaBrandSentiment;
+  reviewDashboard?: ReviewDashboard;
+  backlinkProfile?: BacklinkProfile;
+  crisisDetection?: CrisisDetection;
+  conversationSentiment?: ConversationSentiment;
   mediaPresenceWarning?: {
     hasAdequateMedia: boolean;
     mediaCount: number;
@@ -285,7 +382,7 @@ function LoadingProgress() {
       </div>
 
       <h3 className="text-2xl font-bold mb-2 text-gray-900">Preparing Your Reputation Report</h3>
-      <p className="text-gray-500 text-sm mb-1">This usually takes 20-30 seconds. Please don&apos;t close this page.</p>
+      <p className="text-gray-500 text-sm mb-1">This usually takes 60–140 seconds, as we analyse 10+ Million touchpoints across the web. Please don&apos;t close this page.</p>
       <p className="text-gray-400 text-xs mb-6">Elapsed: {elapsed}s &middot; {progress}% complete</p>
 
       {/* Progress bar */}
@@ -472,7 +569,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [report, setReport] = useState<ReportData | null>(null);
-  const [activeTab, setActiveTab] = useState<"overview" | "ai-llm" | "suspicious" | "results" | "problems" | "strengths">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "ai-llm" | "influencers" | "reviews" | "backlinks" | "crisis" | "suspicious" | "results" | "problems" | "strengths">("overview");
   const [contactModal, setContactModal] = useState<{ open: boolean; packageName: string }>({ open: false, packageName: "" });
   const [contactForm, setContactForm] = useState({ name: "", email: "" });
   const [contactSent, setContactSent] = useState(false);
@@ -507,6 +604,11 @@ export default function Home() {
         domainInfo: report.domainInfo,
         packageRecommendations: report.packageRecommendations,
         dataStats: report.dataStats,
+        personalInfluence: report.personalInfluence,
+        crisisDetection: report.crisisDetection,
+        backlinkProfile: report.backlinkProfile,
+        conversationSentiment: report.conversationSentiment,
+        reviewDashboard: report.reviewDashboard,
       };
       const res = await fetch("/api/send-report", {
         method: "POST",
@@ -581,6 +683,10 @@ export default function Home() {
   const tabs = [
     { key: "overview" as const, label: "Overview" },
     { key: "ai-llm" as const, label: "AI / LLM Appearance" },
+    { key: "influencers" as const, label: "Influencers" },
+    ...(report?.entityType === "company" ? [{ key: "reviews" as const, label: "Reviews Dashboard" }] : []),
+    { key: "backlinks" as const, label: "Backlink Profile" },
+    { key: "crisis" as const, label: "Risk & Crisis" },
     { key: "suspicious" as const, label: "Suspicious Activity" },
     { key: "results" as const, label: "Search Results" },
     { key: "problems" as const, label: "Problems", count: report?.problems.length },
@@ -604,10 +710,10 @@ export default function Home() {
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-4 py-10 flex-1 w-full">
+      <main className="max-w-5xl mx-auto px-4 flex-1 w-full" style={{ paddingTop: "5px" }}>
         {/* Search form */}
         {!report && !loading && (
-          <div className="max-w-2xl mx-auto text-center">
+          <div className="max-w-2xl mx-auto text-center pt-10">
             <h2 className="text-4xl font-bold mb-4" style={{ fontSize: "2.4rem" }}>Check your Online Reputation in seconds</h2>
             <p className="text-gray-500 mb-8" style={{ fontSize: "1.2rem", lineHeight: "1.7" }}>
               Enter a person or company name to get a comprehensive AI-powered reputation analysis based on Google Search, AI answers, News, Magazines, Reviews, Forums and all Social Media.
@@ -999,6 +1105,107 @@ export default function Home() {
                     </Card>
                   )}
 
+                  {/* Personal Influence */}
+                  {report.personalInfluence && (
+                    <Card title="Personal Influence">
+                      <div className="flex items-center gap-3 mb-3">
+                        <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${
+                          report.personalInfluence.verdict === "strong" ? "bg-green-100 text-green-700"
+                          : report.personalInfluence.verdict === "moderate" ? "bg-yellow-100 text-yellow-700"
+                          : "bg-red-100 text-red-700"
+                        }`}>{report.personalInfluence.verdict}</span>
+                        <span className="text-sm text-gray-500">Score: {report.personalInfluence.score}/10</span>
+                      </div>
+                      <BulletText text={report.personalInfluence.analysis} className="text-sm text-gray-600 mb-3 leading-relaxed" />
+                      <div className="grid grid-cols-3 gap-2 mt-3">
+                        {[
+                          { k: "authorProfiles", label: "Author Profiles" },
+                          { k: "guestPosts", label: "Guest Posts" },
+                          { k: "podcasts", label: "Podcasts" },
+                          { k: "publicSpeaking", label: "Public Speaking" },
+                          { k: "wikipediaPresence", label: "Wikipedia" },
+                          { k: "interviews", label: "Interviews" },
+                          { k: "mediaFeatures", label: "Media Features" },
+                          { k: "linkedinActivity", label: "LinkedIn Activity" },
+                          { k: "forumMentions", label: "Forum Mentions" },
+                        ].map((item) => {
+                          const val = report.personalInfluence?.[item.k as keyof PersonalInfluence] as { found: boolean; details: string } | undefined;
+                          return (
+                            <div key={item.k} className={`rounded-lg p-2 border text-center ${val?.found ? "border-green-200 bg-green-50" : "border-gray-200 bg-gray-50"}`}>
+                              <span className={`block text-xs font-medium ${val?.found ? "text-green-700" : "text-gray-400"}`}>{val?.found ? "Found" : "Missing"}</span>
+                              <span className="text-xs text-gray-600">{item.label}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </Card>
+                  )}
+
+                  {/* SERP Volatility */}
+                  {report.serpVolatility && (
+                    <Card title="SERP Volatility (Past 3 Months)">
+                      <div className="flex items-center gap-3 mb-3">
+                        <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${
+                          report.serpVolatility.level === "stable" ? "bg-green-100 text-green-700"
+                          : report.serpVolatility.level === "moderate" ? "bg-yellow-100 text-yellow-700"
+                          : "bg-red-100 text-red-700"
+                        }`}>{report.serpVolatility.level}</span>
+                        <span className={`text-xs font-medium ${
+                          report.serpVolatility.trend === "improving" ? "text-green-600" : report.serpVolatility.trend === "declining" ? "text-red-600" : "text-gray-500"
+                        }`}>{report.serpVolatility.trend === "improving" ? "Trend: Improving" : report.serpVolatility.trend === "declining" ? "Trend: Declining" : "Trend: Stable"}</span>
+                      </div>
+                      <BulletText text={report.serpVolatility.analysis} className="text-sm text-gray-600 mb-3 leading-relaxed" />
+                      {report.serpVolatility.monthlyChanges.length > 0 && (
+                        <div className="flex items-end gap-1.5 mb-3 h-20">
+                          {report.serpVolatility.monthlyChanges.map((m, i) => (
+                            <div key={i} className="flex-1 flex flex-col items-center gap-1" title={m.changeNote}>
+                              <div className={`w-full rounded-t ${
+                                m.sentiment === "positive" ? "bg-green-400" : m.sentiment === "negative" ? "bg-red-400" : m.sentiment === "mixed" ? "bg-yellow-400" : "bg-gray-300"
+                              }`} style={{ height: m.sentiment === "positive" ? "100%" : m.sentiment === "mixed" ? "60%" : m.sentiment === "negative" ? "30%" : "50%" }} />
+                              <span className="text-xs text-gray-400 truncate w-full text-center" style={{ fontSize: "10px" }}>{m.month.split(" ")[0]?.slice(0, 3)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {report.serpVolatility.corrections.length > 0 && (
+                        <div className="mt-3 pt-3 border-t border-gray-200">
+                          <p className="text-xs font-semibold text-blue-600 mb-2">Corrections to Improve:</p>
+                          {report.serpVolatility.corrections.map((c, i) => (
+                            <p key={i} className="text-xs text-gray-600 flex gap-1.5 mb-1"><span className="text-blue-500 shrink-0">{i + 1}.</span> {c}</p>
+                          ))}
+                        </div>
+                      )}
+                    </Card>
+                  )}
+
+                  {/* Conversation Sentiment */}
+                  {report.conversationSentiment && (
+                    <Card title="Conversation Sentiment">
+                      <div className="flex items-center gap-3 mb-3">
+                        <span className={`text-2xl font-bold ${
+                          report.conversationSentiment.score >= 7 ? "text-green-600" : report.conversationSentiment.score >= 4 ? "text-yellow-600" : "text-red-600"
+                        }`}>{report.conversationSentiment.score}/10</span>
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+                          report.conversationSentiment.verdict === "positive" || report.conversationSentiment.verdict === "mostly_positive" ? "bg-green-100 text-green-700"
+                          : report.conversationSentiment.verdict === "negative" ? "bg-red-100 text-red-700"
+                          : "bg-gray-100 text-gray-600"
+                        }`}>{report.conversationSentiment.verdict.replace(/_/g, " ")}</span>
+                      </div>
+                      <BulletText text={report.conversationSentiment.analysis} className="text-sm text-gray-600 mb-3 leading-relaxed" />
+                      {report.conversationSentiment.topNegativeTopics.length > 0 && (
+                        <div className="mt-3 pt-3 border-t border-gray-200">
+                          <p className="text-xs font-semibold text-red-600 uppercase tracking-wide mb-2">Top Negative Topics</p>
+                          {report.conversationSentiment.topNegativeTopics.map((t, i) => (
+                            <div key={i} className="mb-2 bg-red-50 rounded-lg p-2 border border-red-200">
+                              <p className="text-sm font-medium text-gray-800">{t.topic}</p>
+                              <p className="text-xs text-gray-500">Source: {t.source} | Frequency: {t.frequency} | Impact: {t.impact}</p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </Card>
+                  )}
+
                   {/* Top 6 SERP Links */}
                   {report.topSerpLinks && report.topSerpLinks.length > 0 && (
                     <Card title="Top SERP Links (Google Page 1)">
@@ -1173,6 +1380,13 @@ export default function Home() {
                                 className="text-sm text-blue-600 hover:underline font-medium line-clamp-1">{v.title}</a>
                               <p className="text-xs text-gray-500 mt-0.5">by {v.channel}</p>
                               <p className="text-xs text-gray-500 mt-0.5 italic">{v.summary}</p>
+                              {(v.saves || v.shares || v.commentSentiment) && (
+                                <div className="flex gap-3 mt-1 text-xs text-gray-400">
+                                  {v.saves && <span>Saves: {v.saves}</span>}
+                                  {v.shares && <span>Shares: {v.shares}</span>}
+                                  {v.commentSentiment && <span>Comments: <span className={v.commentSentiment === "positive" ? "text-green-600" : v.commentSentiment === "negative" ? "text-red-600" : "text-gray-500"}>{v.commentSentiment}</span></span>}
+                                </div>
+                              )}
                             </div>
                           ))}
                         </div>
@@ -1245,7 +1459,7 @@ export default function Home() {
                       </div>
                     )}
                     <div className="flex flex-wrap gap-1.5">
-                      {report.autocomplete.filter(s => !report.autocompleteSentiment.negative_terms.includes(s)).map((s, i) => (
+                      {(report.autocomplete || []).filter(s => !report.autocompleteSentiment?.negative_terms?.includes(s)).map((s, i) => (
                         <span key={i} className="px-2.5 py-1 bg-gray-100 rounded-full text-xs text-gray-600">{s}</span>
                       ))}
                     </div>
@@ -1353,8 +1567,90 @@ export default function Home() {
                     </Card>
                   )}
 
+                  {/* Media Brand Sentiment */}
+                  {report.mediaBrandSentiment && report.mediaBrandSentiment.outlets.length > 0 && (
+                    <Card title="Media Brand Sentiment">
+                      <p className="text-xs text-gray-400 mb-3">How professional and trustworthy readers perceive each media outlet covering {report.name}.</p>
+                      <div className="space-y-2">
+                        {report.mediaBrandSentiment.outlets.map((o, i) => (
+                          <div key={i} className="flex items-center gap-3 pb-2 border-b border-gray-100 last:border-0">
+                            <span className="text-sm font-medium text-gray-800 flex-1">{o.name}</span>
+                            <span className={`px-2 py-0.5 rounded text-xs font-medium ${o.tier === "premium" ? "bg-green-100 text-green-700" : o.tier === "mid-tier" ? "bg-blue-100 text-blue-600" : "bg-gray-100 text-gray-500"}`}>{o.tier}</span>
+                            <span className={`text-sm font-bold ${o.sentimentScore >= 7 ? "text-green-600" : o.sentimentScore >= 5 ? "text-yellow-600" : "text-red-600"}`}>{o.sentimentScore}/10</span>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="mt-3 pt-3 border-t border-gray-200">
+                        <p className="text-xs text-gray-500">Average media sentiment: <span className="font-bold">{report.mediaBrandSentiment.averageScore}/10</span></p>
+                      </div>
+                      <BulletText text={report.mediaBrandSentiment.analysis} className="text-sm text-gray-600 mt-2 leading-relaxed" />
+                    </Card>
+                  )}
+
+                  {/* Backlink Profile (overview) */}
+                  {report.backlinkProfile && (
+                    <Card title="Backlink Profile">
+                      <div className="flex items-center gap-4 mb-3">
+                        <span className={`text-2xl font-bold ${
+                          report.backlinkProfile.healthScore >= 7 ? "text-green-600" : report.backlinkProfile.healthScore >= 4 ? "text-yellow-600" : "text-red-600"
+                        }`}>{report.backlinkProfile.healthScore}/10</span>
+                        <div className="flex-1">
+                          <p className="text-sm text-gray-600">Est. backlinks: <span className="font-semibold">{report.backlinkProfile.totalBacklinks}</span></p>
+                          {report.backlinkProfile.toxicLinksDetected && (
+                            <p className="text-xs text-red-500 font-medium">Toxic links detected ({report.backlinkProfile.toxicLinksCount})</p>
+                          )}
+                          {report.backlinkProfile.isVulnerable && !report.backlinkProfile.toxicLinksDetected && (
+                            <p className="text-xs text-yellow-600 font-medium">Vulnerable to toxic link attacks</p>
+                          )}
+                        </div>
+                      </div>
+                      <BulletText text={report.backlinkProfile.analysis} className="text-sm text-gray-600 leading-relaxed" />
+                    </Card>
+                  )}
+
+                  {/* Risk & Crisis Detection Summary */}
+                  {report.crisisDetection && (
+                    <Card title="Risk & Crisis Detection Summary">
+                      <div className="flex items-center gap-3 mb-3">
+                        <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${
+                          report.crisisDetection.alertLevel === "critical" || report.crisisDetection.alertLevel === "high" ? "bg-red-100 text-red-700"
+                          : report.crisisDetection.alertLevel === "moderate" ? "bg-yellow-100 text-yellow-700"
+                          : "bg-green-100 text-green-700"
+                        }`}>{report.crisisDetection.alertLevel === "none" ? "All Clear" : `${report.crisisDetection.alertLevel}`}</span>
+                      </div>
+                      <BulletText text={report.crisisDetection.summary} className="text-sm text-gray-600 mb-3 leading-relaxed" />
+                      {report.crisisDetection.alerts.slice(0, 5).map((a, i) => (
+                        <div key={i} className="mb-2 flex items-start gap-2">
+                          <span className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${a.impact === "high" ? "bg-red-500" : a.impact === "medium" ? "bg-yellow-500" : "bg-green-500"}`} />
+                          <div>
+                            <p className="text-sm text-gray-700">{a.title}</p>
+                            <p className="text-xs text-gray-400">{a.source}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </Card>
+                  )}
+
+                  {/* Reviews Dashboard (companies only — overview) */}
+                  {report.reviewDashboard && report.entityType === "company" && (
+                    <Card title="Reviews Dashboard">
+                      <div className="flex items-center gap-4 mb-3">
+                        <span className={`text-3xl font-bold ${
+                          report.reviewDashboard.aggregatedRating >= 4 ? "text-green-600" : report.reviewDashboard.aggregatedRating >= 3 ? "text-yellow-600" : "text-red-600"
+                        }`}>{report.reviewDashboard.aggregatedRating > 0 ? (report.reviewDashboard.aggregatedRating || 0).toFixed(1) : "N/A"}</span>
+                        <div>
+                          <p className="text-sm text-gray-600">{report.reviewDashboard.totalReviews} reviews across {report.reviewDashboard.platforms.length} platforms</p>
+                          {report.reviewDashboard.risks.length > 0 && (
+                            <p className="text-xs text-red-500 font-medium">{report.reviewDashboard.risks.length} potential risks detected</p>
+                          )}
+                        </div>
+                      </div>
+                      <BulletText text={report.reviewDashboard.trendAnalysis} className="text-sm text-gray-600 leading-relaxed" />
+                    </Card>
+                  )}
+
                   {/* People Also Ask */}
-                  {report.peopleAlsoAsk.length > 0 && (
+                  {report.peopleAlsoAsk?.length > 0 && (
                     <Card title="People Also Ask">
                       <ul className="space-y-1.5">
                         {report.peopleAlsoAsk.map((q, i) => (
@@ -1615,6 +1911,260 @@ export default function Home() {
               </div>
             )}
 
+            {/* ── INFLUENCERS TAB ────────────────────────────── */}
+            {activeTab === "influencers" && (
+              <div className="report-section space-y-6">
+                <Card title="Influencer & Third-Party Mentions">
+                  <p className="text-xs text-gray-400 mb-4 border-b border-gray-100 pb-3">
+                    Analysis covers the past 3 months across: YouTube, Instagram, TikTok, Twitter/X, LinkedIn, Reddit, and Blogs. For YouTube video details, see the Video section in the Overview tab.
+                  </p>
+                  {report.influencerMentions?.mentions && report.influencerMentions.mentions.length > 0 ? (
+                    <>
+                      <BulletText text={report.influencerMentions.analysis} className="text-sm text-gray-600 mb-4 leading-relaxed" />
+                      <div className="space-y-3">
+                        {report.influencerMentions.mentions.map((m, i) => (
+                          <div key={i} className={`rounded-lg p-4 border ${
+                            m.sentiment === "negative" ? "border-red-200 bg-red-50" : m.sentiment === "positive" ? "border-green-200 bg-green-50" : "border-gray-200 bg-gray-50"
+                          }`}>
+                            <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                              <span className="font-semibold text-sm text-gray-800">{m.influencerName}</span>
+                              <span className="px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-600 uppercase">{m.platform}</span>
+                              <SentimentDot sentiment={m.sentiment} />
+                              {m.isSponsored && (
+                                <span className="px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded text-xs font-bold">SPONSORED</span>
+                              )}
+                              <span className="text-xs text-gray-400 ml-auto">{m.dateFound} ({m.daysAgo}d ago)</span>
+                            </div>
+                            <p className="text-sm text-gray-600">{m.summary}</p>
+                            {m.link && (
+                              <a href={m.link} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-500 hover:underline mt-1 inline-block">{m.link}</a>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-center py-8">
+                      <p className="text-sm text-gray-400 font-medium">No influencer mentions detected in the past 3 months.</p>
+                      <p className="text-xs text-gray-400 mt-1">This could mean the brand lacks third-party advocacy — consider an influencer outreach strategy.</p>
+                    </div>
+                  )}
+                </Card>
+              </div>
+            )}
+
+            {/* ── REVIEWS DASHBOARD TAB (companies only) ───── */}
+            {activeTab === "reviews" && report.reviewDashboard && (
+              <div className="report-section space-y-6">
+                {/* Aggregated score header */}
+                <div className="bg-white rounded-2xl border-2 border-gray-300 p-8">
+                  <div className="flex items-center gap-8">
+                    <div className="text-center">
+                      <p className="text-5xl font-bold" style={{ color: report.reviewDashboard.aggregatedRating >= 4 ? "#22c55e" : report.reviewDashboard.aggregatedRating >= 3 ? "#eab308" : "#ef4444" }}>
+                        {(report.reviewDashboard.aggregatedRating || 0).toFixed(1)}
+                      </p>
+                      <p className="text-sm text-gray-400">/ 5.0</p>
+                      <p className="text-xs text-gray-500 mt-1">{report.reviewDashboard.totalReviews} total reviews</p>
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-xl font-bold text-gray-900 mb-2">Aggregated Review Score</h3>
+                      <BulletText text={report.reviewDashboard.trendAnalysis} className="text-sm text-gray-600 leading-relaxed" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Platform breakdown */}
+                <Card title="Platform Breakdown">
+                  <div className="space-y-3">
+                    {report.reviewDashboard.platforms.map((p, i) => (
+                      <div key={i} className="flex items-center gap-4 pb-3 border-b border-gray-100 last:border-0">
+                        <span className="font-semibold text-sm text-gray-800 w-28 shrink-0">{p.name}</span>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <div className="h-2.5 bg-gray-200 rounded-full overflow-hidden flex-1">
+                              <div className={`h-full rounded-full ${p.rating >= 4 ? "bg-green-500" : p.rating >= 3 ? "bg-yellow-400" : "bg-red-500"}`}
+                                style={{ width: `${(p.rating / 5) * 100}%` }} />
+                            </div>
+                            <span className="text-sm font-bold w-10 text-right">{p.rating > 0 ? p.rating.toFixed(1) : "N/A"}</span>
+                          </div>
+                        </div>
+                        <span className="text-xs text-gray-400 w-20 text-right">{p.reviewCount} reviews</span>
+                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                          p.sentiment === "positive" ? "bg-green-100 text-green-700" : p.sentiment === "negative" ? "bg-red-100 text-red-700" : "bg-gray-100 text-gray-600"
+                        }`}>{p.sentiment}</span>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+
+                {/* Review risks */}
+                {report.reviewDashboard.risks.length > 0 && (
+                  <Card title="Potential Review Risks">
+                    <div className="space-y-3">
+                      {report.reviewDashboard.risks.map((r, i) => (
+                        <div key={i} className="border border-red-200 bg-red-50 rounded-lg p-4">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="px-2 py-0.5 bg-red-100 text-red-600 rounded text-xs font-medium">{r.platform}</span>
+                            <span className="text-xs text-red-500 font-medium">Potential Risk</span>
+                          </div>
+                          <p className="text-sm text-gray-700">{r.review}</p>
+                          <p className="text-xs text-red-600 mt-1">{r.risk}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </Card>
+                )}
+              </div>
+            )}
+
+            {/* ── BACKLINK PROFILE TAB ─────────────────────── */}
+            {activeTab === "backlinks" && report.backlinkProfile && (
+              <div className="report-section space-y-6">
+                <div className="bg-white rounded-2xl border-2 border-gray-300 p-8">
+                  <div className="flex flex-col md:flex-row items-center gap-8">
+                    <div className="flex flex-col items-center">
+                      <div className="relative w-36 h-36">
+                        <svg width="144" height="144" viewBox="0 0 144 144">
+                          <circle cx="72" cy="72" r="60" fill="none" stroke="#e5e7eb" strokeWidth="10" />
+                          <circle cx="72" cy="72" r="60" fill="none"
+                            stroke={report.backlinkProfile.healthScore >= 7 ? "#22c55e" : report.backlinkProfile.healthScore >= 4 ? "#eab308" : "#ef4444"}
+                            strokeWidth="10" strokeLinecap="round"
+                            strokeDasharray={`${2 * Math.PI * 60}`}
+                            strokeDashoffset={`${2 * Math.PI * 60 * (1 - report.backlinkProfile.healthScore / 10)}`}
+                            transform="rotate(-90 72 72)"
+                            style={{ transition: "stroke-dashoffset 1s ease" }}
+                          />
+                          <text x="72" y="68" textAnchor="middle" fontSize="36" fontWeight="700"
+                            fill={report.backlinkProfile.healthScore >= 7 ? "#22c55e" : report.backlinkProfile.healthScore >= 4 ? "#eab308" : "#ef4444"}>
+                            {report.backlinkProfile.healthScore}
+                          </text>
+                          <text x="72" y="88" textAnchor="middle" fontSize="12" fill="#94a3b8">/ 10</text>
+                        </svg>
+                      </div>
+                      <p className="text-sm text-gray-500 mt-2">Est. backlinks: {report.backlinkProfile.totalBacklinks}</p>
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-xl font-bold text-gray-900 mb-2">Backlink Health Score</h3>
+                      <BulletText text={report.backlinkProfile.analysis} className="text-gray-700 leading-relaxed" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Toxic links alert */}
+                {report.backlinkProfile.toxicLinksDetected && (
+                  <div className="bg-red-50 border-2 border-red-200 rounded-xl p-5">
+                    <div className="flex items-start gap-3">
+                      <span className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+                        <svg className="w-4 h-4 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg>
+                      </span>
+                      <div>
+                        <p className="font-bold text-red-800 mb-1">Toxic Links Detected ({report.backlinkProfile.toxicLinksCount})</p>
+                        <p className="text-sm text-red-700 mb-1">Status: <span className="font-semibold uppercase">{report.backlinkProfile.toxicLinksStatus}</span></p>
+                        <p className="text-sm text-red-700 leading-relaxed">{report.backlinkProfile.toxicLinksSolution}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Vulnerability warning */}
+                {report.backlinkProfile.isVulnerable && !report.backlinkProfile.toxicLinksDetected && (
+                  <div className="bg-yellow-50 border-2 border-yellow-200 rounded-xl p-5">
+                    <div className="flex items-start gap-3">
+                      <span className="w-8 h-8 rounded-full bg-yellow-100 flex items-center justify-center shrink-0">
+                        <svg className="w-4 h-4 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg>
+                      </span>
+                      <div>
+                        <p className="font-bold text-yellow-800 mb-1">Backlink Vulnerability</p>
+                        <p className="text-sm text-yellow-700 leading-relaxed">{report.backlinkProfile.vulnerabilityNote}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Recommendations */}
+                {report.backlinkProfile.recommendations.length > 0 && (
+                  <Card title="Backlink Recommendations">
+                    <div className="space-y-3">
+                      {report.backlinkProfile.recommendations.map((rec, i) => (
+                        <div key={i} className="flex gap-3 pb-3 border-b border-gray-100 last:border-0 last:pb-0">
+                          <span className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-xs font-bold shrink-0">{i + 1}</span>
+                          <p className="text-sm text-gray-700">{rec}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </Card>
+                )}
+              </div>
+            )}
+
+            {/* ── RISK & CRISIS DETECTION TAB ──────────────── */}
+            {activeTab === "crisis" && report.crisisDetection && (
+              <div className="report-section space-y-6">
+                {/* Alert level header */}
+                <div className={`rounded-2xl border-2 p-8 ${
+                  report.crisisDetection.alertLevel === "critical" ? "border-red-400 bg-red-50"
+                  : report.crisisDetection.alertLevel === "high" ? "border-orange-300 bg-orange-50"
+                  : report.crisisDetection.alertLevel === "moderate" ? "border-yellow-300 bg-yellow-50"
+                  : "border-gray-300 bg-white"
+                }`}>
+                  <div className="flex items-center gap-4 mb-4">
+                    <span className={`px-4 py-2 rounded-full text-sm font-bold uppercase ${
+                      report.crisisDetection.alertLevel === "critical" ? "bg-red-500 text-white"
+                      : report.crisisDetection.alertLevel === "high" ? "bg-orange-500 text-white"
+                      : report.crisisDetection.alertLevel === "moderate" ? "bg-yellow-400 text-yellow-900"
+                      : report.crisisDetection.alertLevel === "low" ? "bg-blue-100 text-blue-700"
+                      : "bg-green-100 text-green-700"
+                    }`}>
+                      {report.crisisDetection.alertLevel === "none" ? "All Clear" : `${report.crisisDetection.alertLevel} Alert`}
+                    </span>
+                  </div>
+                  <BulletText text={report.crisisDetection.summary} className="text-gray-700 leading-relaxed" />
+                </div>
+
+                {/* Active alerts */}
+                {report.crisisDetection.alerts.length > 0 && (
+                  <Card title="Active Alerts">
+                    <div className="space-y-3">
+                      {report.crisisDetection.alerts.map((a, i) => (
+                        <div key={i} className={`rounded-lg p-4 border ${
+                          a.priority === "immediate" ? "border-red-300 bg-red-50" : a.priority === "urgent" ? "border-orange-200 bg-orange-50" : "border-gray-200 bg-gray-50"
+                        }`}>
+                          <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                            <span className={`px-2 py-0.5 rounded text-xs font-bold uppercase ${
+                              a.priority === "immediate" ? "bg-red-500 text-white" : a.priority === "urgent" ? "bg-orange-500 text-white" : "bg-blue-100 text-blue-600"
+                            }`}>{a.priority}</span>
+                            <span className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-xs font-medium">{a.type.replace(/_/g, " ")}</span>
+                            {a.date && <span className="text-xs text-gray-400">{a.date}</span>}
+                          </div>
+                          <p className="text-sm font-medium text-gray-800">{a.title}</p>
+                          <p className="text-xs text-gray-500 mt-0.5">Source: {a.source} | Impact: {a.impact}</p>
+                          {a.link && <a href={a.link} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-500 hover:underline mt-1 inline-block">{a.link}</a>}
+                        </div>
+                      ))}
+                    </div>
+                  </Card>
+                )}
+
+                {/* Threats */}
+                {report.crisisDetection.threats.length > 0 && (
+                  <Card title="Reputation Threats">
+                    <div className="space-y-3">
+                      {report.crisisDetection.threats.map((t, i) => (
+                        <div key={i} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                          <p className="text-sm font-medium text-gray-800 mb-1">{t.threat}</p>
+                          <div className="flex gap-3 text-xs text-gray-400">
+                            <span>Likelihood: <span className="font-medium text-gray-600">{t.likelihood}</span></span>
+                            <span>Impact: <span className="font-medium text-gray-600">{t.impact}</span></span>
+                          </div>
+                          <p className="text-xs text-blue-600 mt-1">{t.mitigation}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </Card>
+                )}
+              </div>
+            )}
+
             {/* ── RESULTS TAB ──────────────────────────────── */}
             {activeTab === "results" && (
               <div className="space-y-3">
@@ -1750,10 +2300,10 @@ export default function Home() {
                     </div>
                     <div>
                       <h3 className="text-xl font-bold mb-2">How Reputation500 Can Help</h3>
-                      <p className="text-blue-100 leading-relaxed" style={{ fontSize: "1.05rem", lineHeight: "1.7" }}>
+                      <p className="text-blue-100 leading-relaxed" style={{ fontSize: "1.35rem", lineHeight: "1.8" }}>
                         {report.packageRecommendations.urgencyMessage}
                       </p>
-                      <p className="text-white font-medium mt-3" style={{ fontSize: "0.95rem", lineHeight: "1.5" }}>
+                      <p className="text-white font-medium mt-3" style={{ fontSize: "1.15rem", lineHeight: "1.6" }}>
                         Trusted by 300+ companies and individuals with a 100% satisfaction rate. Led by ex-Google reputation experts.
                       </p>
                     </div>
@@ -1846,11 +2396,11 @@ export default function Home() {
                 </div>
 
                 {/* Trust footer */}
-                <div className="mt-8 text-center py-6 border-t-2 border-gray-300">
-                  <p className="text-gray-900 font-bold" style={{ fontSize: "1.1rem", lineHeight: "1.6" }}>
+                <div className="mt-8 text-center py-8 border-t-2 border-gray-300">
+                  <p className="text-gray-900 font-extrabold" style={{ fontSize: "1.6rem", lineHeight: "1.5" }}>
                     Featured in Forbes, GQ, Entrepreneur, USA Today, Rolling Stone, and 3,481+ more publications.
                   </p>
-                  <p className="text-gray-700 font-medium mt-2" style={{ fontSize: "1rem" }}>
+                  <p className="text-gray-900 font-bold mt-3" style={{ fontSize: "1.2rem" }}>
                     All features are guaranteed. Money back if we don&apos;t deliver.
                   </p>
                 </div>
