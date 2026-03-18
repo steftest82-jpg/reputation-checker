@@ -753,10 +753,16 @@ Be brutally honest. Do not inflate scores. A mediocre online presence should sco
     messages: [{ role: "user", content: prompt }],
   });
 
-  const text = msg.content[0].type === "text" ? msg.content[0].text : "";
+  const text = msg.content?.[0]?.type === "text" ? msg.content[0].text : "";
+  if (!text) throw new Error("Claude returned empty response");
   // Strip markdown fences if Claude adds them despite instructions
   const cleaned = text.replace(/```json\s*/g, "").replace(/```\s*/g, "").trim();
-  return JSON.parse(cleaned);
+  try {
+    return JSON.parse(cleaned);
+  } catch (parseErr) {
+    console.error("JSON parse failed. Raw response:", cleaned.slice(0, 500));
+    throw new Error("Failed to parse AI response as JSON");
+  }
 }
 
 // ── Package recommendation engine ───────────────────────────────────

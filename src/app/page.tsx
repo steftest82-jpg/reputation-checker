@@ -1033,9 +1033,9 @@ export default function Home() {
                       <p className="text-sm text-gray-600 mb-4 leading-relaxed">{report.sentimentTimeline.trendAnalysis}</p>
 
                       {/* Monthly trend bars */}
-                      {report.sentimentTimeline.monthlyTrend.length > 0 && (
+                      {report.sentimentTimeline?.monthlyTrend?.length > 0 && (
                         <div className="flex items-end gap-1.5 mb-4 h-20">
-                          {report.sentimentTimeline.monthlyTrend.map((m, i) => (
+                          {report.sentimentTimeline?.monthlyTrend?.map((m, i) => (
                             <div key={i} className="flex-1 flex flex-col items-center gap-1">
                               <div className={`w-full rounded-t ${
                                 m.sentiment === "positive" ? "bg-green-400" : m.sentiment === "negative" ? "bg-red-400" : m.sentiment === "mixed" ? "bg-yellow-400" : "bg-gray-300"
@@ -1047,11 +1047,11 @@ export default function Home() {
                       )}
 
                       {/* Recent negatives / crisis alerts */}
-                      {report.sentimentTimeline.recentNegatives.length > 0 && (
+                      {report.sentimentTimeline?.recentNegatives?.length > 0 && (
                         <div className="mt-3 pt-3 border-t border-gray-200">
                           <p className="text-xs font-semibold text-red-600 uppercase tracking-wide mb-2">Recent Negative Events</p>
                           <div className="space-y-2">
-                            {report.sentimentTimeline.recentNegatives.map((neg, i) => (
+                            {report.sentimentTimeline?.recentNegatives?.map((neg, i) => (
                               <div key={i} className={`rounded-lg p-3 border ${neg.isPotentialCrisis ? "border-red-300 bg-red-50" : "border-yellow-200 bg-yellow-50"}`}>
                                 <div className="flex items-center gap-2 mb-1">
                                   {neg.isPotentialCrisis && (
@@ -1085,9 +1085,9 @@ export default function Home() {
                         <span className="text-sm text-gray-500">Score: {report.futureRiskAssessment.riskScore}/10</span>
                       </div>
                       <BulletText text={report.futureRiskAssessment.analysis} className="text-sm text-gray-600 mb-4 leading-relaxed" />
-                      {report.futureRiskAssessment.risks.length > 0 && (
+                      {report.futureRiskAssessment?.risks?.length > 0 && (
                         <div className="space-y-2.5">
-                          {report.futureRiskAssessment.risks.map((risk, i) => (
+                          {report.futureRiskAssessment?.risks?.map((risk, i) => (
                             <div key={i} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
                               <div className="flex items-center gap-2 mb-1">
                                 <span className={`w-2 h-2 rounded-full ${risk.impact === "high" ? "bg-red-500" : risk.impact === "medium" ? "bg-yellow-500" : "bg-green-500"}`} />
@@ -1155,9 +1155,9 @@ export default function Home() {
                         }`}>{report.serpVolatility.trend === "improving" ? "Trend: Improving" : report.serpVolatility.trend === "declining" ? "Trend: Declining" : "Trend: Stable"}</span>
                       </div>
                       <BulletText text={report.serpVolatility.analysis} className="text-sm text-gray-600 mb-3 leading-relaxed" />
-                      {report.serpVolatility.monthlyChanges.length > 0 && (
+                      {report.serpVolatility?.monthlyChanges?.length > 0 && (
                         <div className="flex items-end gap-1.5 mb-3 h-20">
-                          {report.serpVolatility.monthlyChanges.map((m, i) => (
+                          {report.serpVolatility?.monthlyChanges?.map((m, i) => (
                             <div key={i} className="flex-1 flex flex-col items-center gap-1" title={m.changeNote}>
                               <div className={`w-full rounded-t ${
                                 m.sentiment === "positive" ? "bg-green-400" : m.sentiment === "negative" ? "bg-red-400" : m.sentiment === "mixed" ? "bg-yellow-400" : "bg-gray-300"
@@ -1167,10 +1167,10 @@ export default function Home() {
                           ))}
                         </div>
                       )}
-                      {report.serpVolatility.corrections.length > 0 && (
+                      {report.serpVolatility?.corrections?.length > 0 && (
                         <div className="mt-3 pt-3 border-t border-gray-200">
                           <p className="text-xs font-semibold text-blue-600 mb-2">Corrections to Improve:</p>
-                          {report.serpVolatility.corrections.map((c, i) => (
+                          {report.serpVolatility?.corrections?.map((c, i) => (
                             <p key={i} className="text-xs text-gray-600 flex gap-1.5 mb-1"><span className="text-blue-500 shrink-0">{i + 1}.</span> {c}</p>
                           ))}
                         </div>
@@ -1192,10 +1192,10 @@ export default function Home() {
                         }`}>{report.conversationSentiment.verdict.replace(/_/g, " ")}</span>
                       </div>
                       <BulletText text={report.conversationSentiment.analysis} className="text-sm text-gray-600 mb-3 leading-relaxed" />
-                      {report.conversationSentiment.topNegativeTopics.length > 0 && (
+                      {report.conversationSentiment?.topNegativeTopics?.length > 0 && (
                         <div className="mt-3 pt-3 border-t border-gray-200">
                           <p className="text-xs font-semibold text-red-600 uppercase tracking-wide mb-2">Top Negative Topics</p>
-                          {report.conversationSentiment.topNegativeTopics.map((t, i) => (
+                          {report.conversationSentiment?.topNegativeTopics?.map((t, i) => (
                             <div key={i} className="mb-2 bg-red-50 rounded-lg p-2 border border-red-200">
                               <p className="text-sm font-medium text-gray-800">{t.topic}</p>
                               <p className="text-xs text-gray-500">Source: {t.source} | Frequency: {t.frequency} | Impact: {t.impact}</p>
@@ -1298,11 +1298,11 @@ export default function Home() {
                         </span>
                       </div>
                       <p className="text-sm text-gray-600 leading-relaxed">{report.googleImagesAnalysis.analysis}</p>
-                      {report.googleImagesAnalysis.concerns.length > 0 && (
+                      {report.googleImagesAnalysis?.concerns?.length > 0 && (
                         <div className="mt-3">
                           <p className="text-xs font-medium text-red-500 mb-1">Concerns:</p>
                           <ul className="space-y-1">
-                            {report.googleImagesAnalysis.concerns.map((c, i) => (
+                            {report.googleImagesAnalysis?.concerns?.map((c, i) => (
                               <li key={i} className="text-xs text-red-600 flex gap-1.5">
                                 <span className="shrink-0">&#9888;</span> {c}
                               </li>
@@ -1318,7 +1318,7 @@ export default function Home() {
                   {/* Social Presence */}
                   <Card title="Social Media Presence">
                     <p className="text-sm text-gray-600 mb-3">{report.socialPresenceDetail.assessment}</p>
-                    {report.socialPresenceDetail.found.length > 0 && (
+                    {report.socialPresenceDetail?.found?.length > 0 && (
                       <div className="mb-3">
                         <p className="text-xs font-medium text-gray-500 mb-1.5">Found:</p>
                         <div className="flex flex-wrap gap-1.5">
@@ -1328,7 +1328,7 @@ export default function Home() {
                         </div>
                       </div>
                     )}
-                    {report.socialPresenceDetail.missing.length > 0 && (
+                    {report.socialPresenceDetail?.missing?.length > 0 && (
                       <div>
                         <p className="text-xs font-medium text-gray-500 mb-1.5">Missing:</p>
                         <div className="flex flex-wrap gap-1.5">
@@ -1343,7 +1343,7 @@ export default function Home() {
                   {/* Review Summary */}
                   <Card title="Review Sites">
                     <p className="text-sm text-gray-600 mb-2">{report.reviewSummary.assessment}</p>
-                    {report.reviewSummary.platforms_found.length > 0 && (
+                    {report.reviewSummary?.platforms_found?.length > 0 && (
                       <div className="flex flex-wrap gap-1.5">
                         {report.reviewSummary.platforms_found.map((p, i) => (
                           <span key={i} className="px-2.5 py-1 bg-indigo-50 text-indigo-600 rounded-full text-xs font-medium">{p}</span>
@@ -1365,7 +1365,7 @@ export default function Home() {
                         }`}>{report.videoSentimentAnalysis.overallSentiment}</span>
                       </div>
                       <p className="text-sm text-gray-600 mb-3 leading-relaxed">{report.videoSentimentAnalysis.analysis}</p>
-                      {report.videoSentimentAnalysis.videos.length > 0 ? (
+                      {report.videoSentimentAnalysis?.videos?.length > 0 ? (
                         <div className="space-y-2">
                           {report.videoSentimentAnalysis.videos.slice(0, 5).map((v, i) => (
                             <div key={i} className={`rounded-lg p-3 border ${
@@ -1393,10 +1393,10 @@ export default function Home() {
                       ) : (
                         <p className="text-sm text-gray-400 text-center py-3">No YouTube videos found for this entity.</p>
                       )}
-                      {report.videoSentimentAnalysis.concerns.length > 0 && (
+                      {report.videoSentimentAnalysis?.concerns?.length > 0 && (
                         <div className="mt-3 pt-3 border-t border-gray-200">
                           <p className="text-xs font-semibold text-red-500 mb-1">Concerns:</p>
-                          {report.videoSentimentAnalysis.concerns.map((c, i) => (
+                          {report.videoSentimentAnalysis?.concerns?.map((c, i) => (
                             <p key={i} className="text-xs text-red-600">&#9888; {c}</p>
                           ))}
                         </div>
@@ -1406,7 +1406,7 @@ export default function Home() {
 
                   {/* Reddit & Quora Conversations */}
                   <Card title="Reddit & Quora Conversations">
-                    {report.forumSentiment && report.forumSentiment.conversations.length > 0 ? (
+                    {report.forumSentiment && report.forumSentiment?.conversations?.length > 0 ? (
                       <>
                         <div className="flex items-center gap-2 mb-3">
                           <span className="text-sm text-gray-600">Forum sentiment:</span>
@@ -1448,7 +1448,7 @@ export default function Home() {
                   {/* Autocomplete */}
                   <Card title="Google Autocomplete">
                     <p className="text-sm text-gray-600 mb-3">{report.autocompleteSentiment.analysis}</p>
-                    {report.autocompleteSentiment.negative_terms.length > 0 && (
+                    {report.autocompleteSentiment?.negative_terms?.length > 0 && (
                       <div className="mb-2">
                         <p className="text-xs font-medium text-red-500 mb-1">Concerning:</p>
                         <div className="flex flex-wrap gap-1.5">
@@ -1524,7 +1524,7 @@ export default function Home() {
                         <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
                           <p className="text-xs font-semibold text-blue-700 mb-1.5">Gap to Market Leader: {report.industryBenchmark.gap} points</p>
                           <ul className="space-y-1">
-                            {report.industryBenchmark.recommendations.map((r, i) => (
+                            {report.industryBenchmark?.recommendations?.map((r, i) => (
                               <li key={i} className="text-xs text-blue-600 flex gap-1.5">
                                 <span className="text-blue-500 shrink-0">{i + 1}.</span> {r}
                               </li>
@@ -1548,7 +1548,7 @@ export default function Home() {
                         <span className="text-sm text-gray-500">Primary: {report.geographicPresence.primaryMarket}</span>
                       </div>
                       <p className="text-sm text-gray-600 mb-3 leading-relaxed">{report.geographicPresence.analysis}</p>
-                      {report.geographicPresence.markets.length > 0 && (
+                      {report.geographicPresence?.markets?.length > 0 && (
                         <div>
                           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Top Markets</p>
                           <div className="space-y-1.5">
@@ -1568,7 +1568,7 @@ export default function Home() {
                   )}
 
                   {/* Media Brand Sentiment */}
-                  {report.mediaBrandSentiment && report.mediaBrandSentiment.outlets.length > 0 && (
+                  {report.mediaBrandSentiment && report.mediaBrandSentiment?.outlets?.length > 0 && (
                     <Card title="Media Brand Sentiment">
                       <p className="text-xs text-gray-400 mb-3">How professional and trustworthy readers perceive each media outlet covering {report.name}.</p>
                       <div className="space-y-2">
@@ -1639,9 +1639,9 @@ export default function Home() {
                           report.reviewDashboard.aggregatedRating >= 4 ? "text-green-600" : report.reviewDashboard.aggregatedRating >= 3 ? "text-yellow-600" : "text-red-600"
                         }`}>{report.reviewDashboard.aggregatedRating > 0 ? (report.reviewDashboard.aggregatedRating || 0).toFixed(1) : "N/A"}</span>
                         <div>
-                          <p className="text-sm text-gray-600">{report.reviewDashboard.totalReviews} reviews across {report.reviewDashboard.platforms.length} platforms</p>
-                          {report.reviewDashboard.risks.length > 0 && (
-                            <p className="text-xs text-red-500 font-medium">{report.reviewDashboard.risks.length} potential risks detected</p>
+                          <p className="text-sm text-gray-600">{report.reviewDashboard.totalReviews} reviews across {report.reviewDashboard?.platforms?.length} platforms</p>
+                          {report.reviewDashboard?.risks?.length > 0 && (
+                            <p className="text-xs text-red-500 font-medium">{report.reviewDashboard?.risks?.length} potential risks detected</p>
                           )}
                         </div>
                       </div>
@@ -1730,7 +1730,7 @@ export default function Home() {
                 <div className="grid md:grid-cols-2 gap-6">
                   {/* Strengths */}
                   <Card title="What&apos;s Helping AI Find You">
-                    {report.aiLlmAppearance.strengths.length > 0 ? (
+                    {report.aiLlmAppearance?.strengths?.length > 0 ? (
                       <ul className="space-y-2">
                         {report.aiLlmAppearance.strengths.map((s, i) => (
                           <li key={i} className="flex gap-2 text-sm text-gray-700">
@@ -1748,7 +1748,7 @@ export default function Home() {
 
                   {/* Weaknesses */}
                   <Card title="What&apos;s Missing for AI Visibility">
-                    {report.aiLlmAppearance.weaknesses.length > 0 ? (
+                    {report.aiLlmAppearance?.weaknesses?.length > 0 ? (
                       <ul className="space-y-2">
                         {report.aiLlmAppearance.weaknesses.map((w, i) => (
                           <li key={i} className="flex gap-2 text-sm text-gray-700">
@@ -1766,7 +1766,7 @@ export default function Home() {
                 </div>
 
                 {/* Recommendations */}
-                {report.aiLlmAppearance.recommendations.length > 0 && (
+                {report.aiLlmAppearance?.recommendations?.length > 0 && (
                   <Card title="How to Improve AI Visibility">
                     <div className="space-y-3">
                       {report.aiLlmAppearance.recommendations.map((rec, i) => (
@@ -1864,10 +1864,10 @@ export default function Home() {
                 )}
 
                 {/* Detected patterns */}
-                {report.suspiciousActivityAnalysis.patterns.length > 0 ? (
+                {report.suspiciousActivityAnalysis?.patterns?.length > 0 ? (
                   <Card title="Detected Patterns">
                     <div className="space-y-3">
-                      {report.suspiciousActivityAnalysis.patterns.map((p, i) => (
+                      {report.suspiciousActivityAnalysis?.patterns?.map((p, i) => (
                         <div key={i} className={`rounded-lg p-4 border ${
                           p.severity === "high" ? "border-red-200 bg-red-50" : p.severity === "medium" ? "border-yellow-200 bg-yellow-50" : "border-gray-200 bg-gray-50"
                         }`}>
@@ -1998,7 +1998,7 @@ export default function Home() {
                 </Card>
 
                 {/* Review risks */}
-                {report.reviewDashboard.risks.length > 0 && (
+                {report.reviewDashboard?.risks?.length > 0 && (
                   <Card title="Potential Review Risks">
                     <div className="space-y-3">
                       {report.reviewDashboard.risks.map((r, i) => (
@@ -2082,7 +2082,7 @@ export default function Home() {
                 )}
 
                 {/* Recommendations */}
-                {report.backlinkProfile.recommendations.length > 0 && (
+                {report.backlinkProfile?.recommendations?.length > 0 && (
                   <Card title="Backlink Recommendations">
                     <div className="space-y-3">
                       {report.backlinkProfile.recommendations.map((rec, i) => (
@@ -2122,7 +2122,7 @@ export default function Home() {
                 </div>
 
                 {/* Active alerts */}
-                {report.crisisDetection.alerts.length > 0 && (
+                {report.crisisDetection?.alerts?.length > 0 && (
                   <Card title="Active Alerts">
                     <div className="space-y-3">
                       {report.crisisDetection.alerts.map((a, i) => (
@@ -2146,7 +2146,7 @@ export default function Home() {
                 )}
 
                 {/* Threats */}
-                {report.crisisDetection.threats.length > 0 && (
+                {report.crisisDetection?.threats?.length > 0 && (
                   <Card title="Reputation Threats">
                     <div className="space-y-3">
                       {report.crisisDetection.threats.map((t, i) => (
@@ -2262,7 +2262,7 @@ export default function Home() {
                         : "bg-red-100 text-red-700"
                       }`}>{report.serpBreakdown.firstPageDominance}</span>
                     </div>
-                    {report.serpBreakdown.ownedProperties.length > 0 && (
+                    {report.serpBreakdown?.ownedProperties?.length > 0 && (
                       <div className="mb-3">
                         <p className="text-xs font-medium text-gray-500 mb-1">Owned/Controlled Properties:</p>
                         <ul className="space-y-1">
@@ -2272,7 +2272,7 @@ export default function Home() {
                         </ul>
                       </div>
                     )}
-                    {report.serpBreakdown.riskyResults.length > 0 && (
+                    {report.serpBreakdown?.riskyResults?.length > 0 && (
                       <div>
                         <p className="text-xs font-medium text-gray-500 mb-1">Risky Results:</p>
                         <ul className="space-y-1">
