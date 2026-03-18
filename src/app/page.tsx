@@ -348,7 +348,6 @@ function LoadingProgress() {
   const [elapsed, setElapsed] = useState(0);
 
   useEffect(() => {
-    // Stop advancing at the last step — it stays spinning until the report loads
     if (step >= LOADING_STEPS.length - 1) return;
     const timer = setTimeout(() => setStep((s) => s + 1), LOADING_STEPS[step].duration);
     return () => clearTimeout(timer);
@@ -364,59 +363,66 @@ function LoadingProgress() {
     return () => clearInterval(tick);
   }, []);
 
-  // Cap at 95% — the last step stays spinning until the report actually loads
   const progress = Math.min(Math.round((step / LOADING_STEPS.length) * 100), 95);
+  const currentStep = LOADING_STEPS[Math.min(step, LOADING_STEPS.length - 1)];
 
   return (
-    <div className="max-w-lg mx-auto text-center py-16">
-      {/* Animated shield icon */}
-      <div className="relative inline-block mb-6">
-        <div className="w-20 h-20 rounded-full bg-blue-50 flex items-center justify-center">
-          <div className="w-16 h-16 rounded-full border-4 border-blue-500 border-t-transparent animate-spin" />
+    <div className="flex flex-col items-center justify-center" style={{ minHeight: "calc(100vh - 80px)" }}>
+      <div className="max-w-lg w-full mx-auto text-center px-4">
+        {/* Compact spinner + title */}
+        <div className="relative inline-block mb-4">
+          <div className="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center">
+            <div className="w-12 h-12 rounded-full border-[3px] border-blue-500 border-t-transparent animate-spin" />
+          </div>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-blue-500 loading-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+          </div>
         </div>
-        <div className="absolute inset-0 flex items-center justify-center">
-          <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 text-blue-500 loading-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-          </svg>
+
+        <h3 className="text-xl font-bold mb-1 text-gray-900">Preparing Your Reputation Report</h3>
+        <p className="text-gray-500 text-xs mb-1 leading-snug">This usually takes 60–140 seconds, as we analyse 10+ Million touchpoints across the web. Please don&apos;t close this page.</p>
+        <p className="text-gray-400 text-xs mb-4">Elapsed: {elapsed}s &middot; {progress}% complete</p>
+
+        {/* Progress bar */}
+        <div className="h-2 bg-gray-200 rounded-full overflow-hidden mb-4">
+          <div className="h-full bg-gradient-to-r from-blue-500 to-blue-400 rounded-full transition-all duration-700 ease-out" style={{ width: `${progress}%` }} />
         </div>
-      </div>
 
-      <h3 className="text-2xl font-bold mb-2 text-gray-900">Preparing Your Reputation Report</h3>
-      <p className="text-gray-500 text-sm mb-1">This usually takes 60–140 seconds, as we analyse 10+ Million touchpoints across the web. Please don&apos;t close this page.</p>
-      <p className="text-gray-400 text-xs mb-6">Elapsed: {elapsed}s &middot; {progress}% complete</p>
-
-      {/* Progress bar */}
-      <div className="h-2 bg-gray-200 rounded-full overflow-hidden mb-8 mx-4">
-        <div className="h-full bg-gradient-to-r from-blue-500 to-blue-400 rounded-full transition-all duration-700 ease-out" style={{ width: `${progress}%` }} />
-      </div>
-
-      {/* Steps */}
-      <div className="space-y-2.5 text-left px-4">
-        {LOADING_STEPS.map((s, i) => (
-          <div key={i} className={`flex items-start gap-3 transition-all duration-300 ${i > step + 1 ? "opacity-30" : ""}`}>
-            {i < step ? (
-              <span className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center text-white text-xs shrink-0 mt-0.5">&#10003;</span>
-            ) : i === step ? (
-              <span className="w-6 h-6 rounded-full border-2 border-blue-500 border-t-transparent animate-spin shrink-0 mt-0.5" />
-            ) : (
-              <span className="w-6 h-6 rounded-full bg-gray-200 shrink-0 mt-0.5" />
-            )}
-            <div>
-              <span className={`text-sm font-medium ${i < step ? "text-green-700" : i === step ? "text-gray-900" : "text-gray-400"}`}>
-                {s.label}
-              </span>
-              {i === step && (
-                <p className="text-xs text-blue-500 loading-pulse mt-0.5">{s.sublabel}</p>
-              )}
+        {/* Current step - animated swap instead of full list */}
+        <div className="bg-white rounded-xl border border-gray-200 p-4 mb-4 min-h-[70px] flex items-center justify-center">
+          <div className="flex items-center gap-3">
+            <span className="w-6 h-6 rounded-full border-2 border-blue-500 border-t-transparent animate-spin shrink-0" />
+            <div className="text-left">
+              <p className="text-sm font-semibold text-gray-900 loading-pulse">{currentStep.label}</p>
+              <p className="text-xs text-blue-500">{currentStep.sublabel}</p>
             </div>
           </div>
-        ))}
-      </div>
+        </div>
 
-      {/* Rotating tips */}
-      <div className="mt-8 mx-4 bg-blue-50 rounded-xl p-4 border border-blue-100">
-        <p className="text-xs text-blue-400 font-medium uppercase tracking-wide mb-1">Did you know?</p>
-        <p className="text-sm text-blue-700 leading-relaxed transition-all duration-500">{LOADING_TIPS[tipIndex]}</p>
+        {/* Step dots - compact progress indicator */}
+        <div className="flex items-center justify-center gap-1.5 mb-4">
+          {LOADING_STEPS.map((_, i) => (
+            <div
+              key={i}
+              className={`rounded-full transition-all duration-300 ${
+                i < step ? "w-2 h-2 bg-green-500" : i === step ? "w-3 h-3 bg-blue-500" : "w-2 h-2 bg-gray-200"
+              }`}
+            />
+          ))}
+        </div>
+
+        {/* Completed count */}
+        <p className="text-xs text-gray-400 mb-4">
+          Step {Math.min(step + 1, LOADING_STEPS.length)} of {LOADING_STEPS.length} &mdash; {step > 0 ? `${step} completed` : "Starting..."}
+        </p>
+
+        {/* Rotating tips */}
+        <div className="bg-blue-50 rounded-lg p-3 border border-blue-100">
+          <p className="text-xs text-blue-400 font-medium uppercase tracking-wide mb-0.5">Did you know?</p>
+          <p className="text-sm text-blue-700 leading-snug transition-all duration-500">{LOADING_TIPS[tipIndex]}</p>
+        </div>
       </div>
     </div>
   );
