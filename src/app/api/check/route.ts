@@ -8,6 +8,8 @@ const _q = ["-0ZosSdXsaUQlCrQ-8pK85nwL9g04NXT", "-cpMw-SEmR4QAA"];
 const _sp = ["d8650cb01b3dc806a3c690e9", "659b3723a9c64abd3034b58d", "de62d6df6e50175a"];
 const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY || [..._p, ..._q].join("");
 const SERP_KEY = process.env.SERPAPI_KEY || _sp.join("");
+const NEWSAPI_KEY = process.env.NEWSAPI_KEY || "31be5517c1234a20854dafa842d2db8b";
+const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY || "AIzaSyCiAPzAJmuCtZik8uhkWYfsFSUaXFo4ykw";
 
 // ── Rate-limit store (in-memory; resets on cold start) ──────────────
 const ipHits: Record<string, { count: number; firstHit: number }> = {};
@@ -114,6 +116,126 @@ async function serpImages(query: string) {
     position: i + 1,
   }));
   return { results, totalEstimate: data.search_information?.total_results || 0 };
+}
+
+// ── NewsAPI - Broad news coverage (500K+ sources) ──────────────────
+interface NewsApiArticle {
+  title: string;
+  description: string;
+  url: string;
+  source: { name: string };
+  publishedAt: string;
+  author: string | null;
+}
+
+async function fetchNewsAPI(query: string): Promise<{
+  articles: { title: string; description: string; url: string; source: string; publishedAt: string; author: string }[];
+  totalResults: number;
+}> {
+  try {
+    // Search last 30 days of news
+    const fromDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+    const params = new URLSearchParams({
+      q: `"${query}"`,
+      apiKey: NEWSAPI_KEY,
+      language: "en",
+      sortBy: "relevancy",
+      pageSize: "20",
+      from: fromDate,
+    });
+    const res = await fetch(`https://newsapi.org/v2/everything?${params}`, {
+      headers: { "User-Agent": "Reputation500/2.0" },
+    });
+    if (!res.ok) {
+      console.error("NewsAPI error:", res.status);
+      return { articles: [], totalResults: 0 };
+    }
+    const data = await res.json();
+    const articles = ((data.articles || []) as NewsApiArticle[]).slice(0, 20).map((a) => ({
+      title: a.title || "",
+      description: a.description || "",
+      url: a.url || "",
+      source: a.source?.name || "",
+      publishedAt: a.publishedAt || "",
+      author: a.author || "",
+    }));
+    return { articles, totalResults: data.totalResults || 0 };
+  } catch (err) {
+    console.error("NewsAPI fetch error:", err);
+    return { articles: [], totalResults: 0 };
+  }
+}
+
+// ── YouTube Data API v3 - Real video stats ─────────────────────────
+interface YTVideoStats {
+  videoId: string;
+  title: string;
+  channelTitle: string;
+  description: string;
+  publishedAt: string;
+  viewCount: number;
+  likeCount: number;
+  commentCount: number;
+  thumbnailUrl: string;
+  link: string;
+}
+
+async function fetchYouTubeData(query: string): Promise<YTVideoStats[]> {
+  try {
+    // Step 1: Search for videos
+    const searchParams = new URLSearchParams({
+      part: "snippet",
+      q: query,
+      type: "video",
+      maxResults: "10",
+      order: "relevance",
+      key: YOUTUBE_API_KEY,
+    });
+    const searchRes = await fetch(`https://www.googleapis.com/youtube/v3/search?${searchParams}`);
+    if (!searchRes.ok) {
+      console.error("YouTube Search API error:", searchRes.status);
+      return [];
+    }
+    const searchData = await searchRes.json();
+    const items = searchData.items || [];
+    if (items.length === 0) return [];
+
+    // Step 2: Get detailed stats for each video
+    const videoIds = items.map((item: { id?: { videoId?: string } }) => item.id?.videoId).filter(Boolean).join(",");
+    if (!videoIds) return [];
+
+    const statsParams = new URLSearchParams({
+      part: "statistics,snippet",
+      id: videoIds,
+      key: YOUTUBE_API_KEY,
+    });
+    const statsRes = await fetch(`https://www.googleapis.com/youtube/v3/videos?${statsParams}`);
+    if (!statsRes.ok) {
+      console.error("YouTube Stats API error:", statsRes.status);
+      return [];
+    }
+    const statsData = await statsRes.json();
+
+    return ((statsData.items || []) as {
+      id: string;
+      snippet: { title: string; channelTitle: string; description: string; publishedAt: string; thumbnails?: { medium?: { url: string } } };
+      statistics: { viewCount?: string; likeCount?: string; commentCount?: string };
+    }[]).map((v) => ({
+      videoId: v.id,
+      title: v.snippet.title || "",
+      channelTitle: v.snippet.channelTitle || "",
+      description: (v.snippet.description || "").slice(0, 300),
+      publishedAt: v.snippet.publishedAt || "",
+      viewCount: parseInt(v.statistics.viewCount || "0", 10),
+      likeCount: parseInt(v.statistics.likeCount || "0", 10),
+      commentCount: parseInt(v.statistics.commentCount || "0", 10),
+      thumbnailUrl: v.snippet.thumbnails?.medium?.url || "",
+      link: `https://www.youtube.com/watch?v=${v.id}`,
+    }));
+  } catch (err) {
+    console.error("YouTube API fetch error:", err);
+    return [];
+  }
 }
 
 // ── Social media profile search ─────────────────────────────────────
@@ -334,7 +456,10 @@ function buildDataPacket(
   forumResults: ForumResult[] = [],
   imageData: { results: ImageResult[]; totalEstimate: number } = { results: [], totalEstimate: 0 },
   youtubeResults: { position: number; title: string; link: string; channel: string; description: string; views: number; publishedDate: string; length: string }[] = [],
-  socialProfiles: { platform: string; url: string; title: string; found: boolean }[] = []
+  socialProfiles: { platform: string; url: string; title: string; found: boolean }[] = [],
+  newsApiArticles: { title: string; description: string; url: string; source: string; publishedAt: string; author: string }[] = [],
+  newsApiTotalResults: number = 0,
+  youtubeApiVideos: YTVideoStats[] = []
 ) {
   const classified = organic.map((r, i) => {
     const url = r.link || "";
@@ -383,16 +508,22 @@ function buildDataPacket(
     imageData,
     youtubeResults,
     socialProfiles,
+    newsApiArticles,
+    newsApiTotalResults,
+    youtubeApiVideos,
     stats: {
       totalResults: classified.length,
       complaintCount: complaintResults.length,
       reviewCount: reviewResults.length,
       socialCount: socialResults.length + socialProfiles.filter((p) => p.found).length,
-      newsCount: newsInOrganic.length + newsResults.length,
+      newsCount: newsInOrganic.length + newsResults.length + newsApiArticles.length,
       uniqueDomainsInTop10: uniqueTop10.size,
       forumCount: forumResults.length,
       imageCount: imageData.results.length,
-      youtubeCount: youtubeResults.length,
+      youtubeCount: youtubeResults.length + youtubeApiVideos.length,
+      newsApiCount: newsApiArticles.length,
+      newsApiTotal: newsApiTotalResults,
+      youtubeApiCount: youtubeApiVideos.length,
     },
     entityType,
     name,
@@ -443,6 +574,21 @@ ${
     : "No recent news found."
 }
 
+=== NEWS — ENRICHED (NewsAPI — ${dataPacket.newsApiTotalResults.toLocaleString()} total results from 500K+ sources, last 30 days) ===
+${dataPacket.newsApiArticles.length
+  ? dataPacket.newsApiArticles
+      .map(
+        (a: { title: string; description: string; url: string; source: string; publishedAt: string; author: string }, i: number) =>
+          `#${i + 1} "${a.title}"
+  Source: ${a.source}${a.author ? ` | Author: ${a.author}` : ""}
+  Published: ${a.publishedAt ? new Date(a.publishedAt).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }) : "N/A"}
+  URL: ${a.url}
+  Summary: ${a.description || "N/A"}`
+      )
+      .join("\n\n")
+  : "No additional news from NewsAPI."
+}
+
 === AUTOCOMPLETE SUGGESTIONS ===
 ${dataPacket.autocomplete.length ? dataPacket.autocomplete.join("\n") : "None found."}
 
@@ -486,7 +632,7 @@ ${dataPacket.imageData.results.length
       .join("\n")
   : "No image results found."}
 
-=== YOUTUBE VIDEOS ===
+=== YOUTUBE VIDEOS (SerpAPI) ===
 ${dataPacket.youtubeResults.length
   ? dataPacket.youtubeResults
       .map(
@@ -497,16 +643,32 @@ ${dataPacket.youtubeResults.length
       .join("\n\n")
   : "No YouTube videos found."}
 
+=== YOUTUBE VIDEOS — ENRICHED (YouTube Data API v3 — Real Stats) ===
+${dataPacket.youtubeApiVideos.length
+  ? dataPacket.youtubeApiVideos
+      .map(
+        (v: YTVideoStats, i: number) =>
+          `#${i + 1} "${v.title}" by ${v.channelTitle}
+  Views: ${v.viewCount.toLocaleString()} | Likes: ${v.likeCount.toLocaleString()} | Comments: ${v.commentCount.toLocaleString()}
+  Published: ${v.publishedAt ? new Date(v.publishedAt).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }) : "N/A"}
+  URL: ${v.link}
+  Description: ${v.description}`
+      )
+      .join("\n\n")
+  : "No YouTube Data API results."}
+
 === DATA SUMMARY ===
 - Total organic results analyzed: ${dataPacket.stats.totalResults}
 - Results on complaint sites: ${dataPacket.stats.complaintCount}
 - Results on review sites: ${dataPacket.stats.reviewCount}
 - Social media profiles found: ${dataPacket.stats.socialCount}
-- News mentions: ${dataPacket.stats.newsCount}
+- News mentions (SERP): ${dataPacket.stats.newsCount - dataPacket.newsApiArticles.length}
+- News articles (NewsAPI — 500K+ sources): ${dataPacket.newsApiArticles.length} (${dataPacket.newsApiTotalResults.toLocaleString()} total available)
 - Unique domains in top 10: ${dataPacket.stats.uniqueDomainsInTop10}
 - Forum discussions (Reddit/Quora): ${dataPacket.stats.forumCount}
 - Google Images results: ${dataPacket.stats.imageCount}
-- YouTube videos: ${dataPacket.stats.youtubeCount}
+- YouTube videos (SerpAPI): ${dataPacket.stats.youtubeCount}
+- YouTube videos (Data API v3 with real stats): ${dataPacket.youtubeApiVideos.length}
 
 === YOUR TASK ===
 Perform a comprehensive reputation analysis. Respond ONLY with valid JSON (no markdown fences, no commentary outside JSON).
@@ -1261,8 +1423,8 @@ export async function POST(req: NextRequest) {
     // If industry was provided, append it to refine the search
     const query = industry && industry !== "other" ? `${baseQuery} ${industry}` : baseQuery;
 
-    // Fire ALL data-gathering requests in parallel (8 API calls total)
-    const [organicData, newsData, autocomplete, domainInfo, forumResults, imageData, youtubeResults, socialProfiles] = await Promise.all(
+    // Fire ALL data-gathering requests in parallel (10 API calls total)
+    const [organicData, newsData, autocomplete, domainInfo, forumResults, imageData, youtubeResults, socialProfiles, newsApiData, youtubeApiData] = await Promise.all(
       [
         serpSearch(query),
         serpSearch(`${query}`, { tbm: "nws", num: "10" }),
@@ -1272,6 +1434,8 @@ export async function POST(req: NextRequest) {
         serpImages(query),
         serpYouTube(query),
         serpSocialProfiles(query),
+        fetchNewsAPI(query),
+        fetchYouTubeData(query),
       ]
     );
 
@@ -1318,7 +1482,10 @@ export async function POST(req: NextRequest) {
       forumResults,
       imageData,
       youtubeResults,
-      socialProfiles
+      socialProfiles,
+      newsApiData.articles,
+      newsApiData.totalResults,
+      youtubeApiData
     );
 
     // Analyze with Claude
