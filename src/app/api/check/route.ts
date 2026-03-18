@@ -127,16 +127,41 @@ async function checkDomain(name: string): Promise<{
     .replace(/[^a-z0-9]+/g, "")
     .trim();
   const domain = `${slug}.com`;
-  try {
-    const res = await fetch(`https://${domain}`, {
-      method: "HEAD",
-      signal: AbortSignal.timeout(5000),
-      redirect: "follow",
-    });
-    return { domain, available: false, hasSite: res.ok };
-  } catch {
-    return { domain, available: true, hasSite: false };
+
+  // Try HEAD first, then GET as fallback. Accept any HTTP response (even 403/301)
+  // as evidence the site exists — only DNS/connection failures mean "no site".
+  async function probe(url: string): Promise<boolean> {
+    try {
+      await fetch(url, {
+        method: "HEAD",
+        signal: AbortSignal.timeout(5000),
+        redirect: "follow",
+        headers: { "User-Agent": "Mozilla/5.0 (compatible; Reputation500Bot/1.0)" },
+      });
+      return true;
+    } catch {
+      try {
+        await fetch(url, {
+          method: "GET",
+          signal: AbortSignal.timeout(5000),
+          redirect: "follow",
+          headers: { "User-Agent": "Mozilla/5.0 (compatible; Reputation500Bot/1.0)" },
+        });
+        return true;
+      } catch {
+        return false;
+      }
+    }
   }
+
+  // Try https first, then http
+  const hasHttps = await probe(`https://${domain}`);
+  if (hasHttps) return { domain, available: false, hasSite: true };
+
+  const hasHttp = await probe(`http://${domain}`);
+  if (hasHttp) return { domain, available: false, hasSite: true };
+
+  return { domain, available: true, hasSite: false };
 }
 
 // ── Complaint / review site classifier ──────────────────────────────
@@ -1089,7 +1114,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { name, type } = await req.json();
+    const { name, type, industry } = await req.json();
     if (!name || typeof name !== "string" || name.trim().length < 2) {
       return NextResponse.json(
         { error: "Please provide a valid name (at least 2 characters)." },
@@ -1098,7 +1123,68 @@ export async function POST(req: NextRequest) {
     }
 
     const entityType = type === "company" ? "company" : "person";
-    const query = name.trim();
+    const baseQuery = name.trim();
+
+    // ── Disambiguation: detect if this name refers to multiple entities ──
+    // Skip if user already selected an industry
+    if (!industry && entityType === "company") {
+      try {
+        const disambigData = await serpSearch(baseQuery, { num: "10" });
+        const kgTitle = disambigData.knowledge_graph?.title || "";
+        const kgType = disambigData.knowledge_graph?.type || "";
+        const organic = (disambigData.organic_results || []).slice(0, 10);
+
+        // Extract unique industries/descriptions from top results
+        const industries = new Set<string>();
+        for (const r of organic) {
+          const snippet = (r.snippet || "").toLowerCase();
+          const title = (r.title || "").toLowerCase();
+          const combined = `${title} ${snippet}`;
+          // Detect distinct industry sectors
+          const sectors = [
+            { key: "trading", match: /trading|forex|broker|investment|financial services|cfd/i },
+            { key: "technology", match: /software|tech|saas|platform|app|digital/i },
+            { key: "consulting", match: /consulting|advisory|consultancy|professional services/i },
+            { key: "healthcare", match: /health|medical|pharma|hospital|clinic/i },
+            { key: "retail", match: /retail|shop|store|ecommerce|e-commerce/i },
+            { key: "food", match: /restaurant|food|catering|beverage|dining/i },
+            { key: "real estate", match: /real estate|property|housing|realty/i },
+            { key: "media", match: /media|news|publishing|entertainment|broadcast/i },
+            { key: "education", match: /education|university|school|training|academy/i },
+            { key: "construction", match: /construction|building|engineering|architecture/i },
+            { key: "automotive", match: /automotive|car|vehicle|motor|auto/i },
+            { key: "travel", match: /travel|tourism|hotel|airline|hospitality/i },
+            { key: "energy", match: /energy|oil|gas|solar|renewable/i },
+            { key: "telecom", match: /telecom|mobile|wireless|internet provider/i },
+          ];
+          for (const s of sectors) {
+            if (s.match.test(combined)) industries.add(s.key);
+          }
+        }
+
+        // If 2+ distinct industries found, this name is ambiguous
+        if (industries.size >= 2) {
+          const options = Array.from(industries).map((ind) => ({
+            industry: ind,
+            label: `${baseQuery} (${ind.charAt(0).toUpperCase() + ind.slice(1)})`,
+          }));
+          // Add a generic "other" option
+          options.push({ industry: "other", label: `${baseQuery} (Other / Not listed)` });
+
+          return NextResponse.json({
+            disambiguation: true,
+            name: baseQuery,
+            options,
+            message: `Multiple entities found for "${baseQuery}". Please select the correct industry to get accurate results.`,
+          });
+        }
+      } catch {
+        // Disambiguation failed — continue with normal flow
+      }
+    }
+
+    // If industry was provided, append it to refine the search
+    const query = industry && industry !== "other" ? `${baseQuery} ${industry}` : baseQuery;
 
     // Fire ALL data-gathering requests in parallel (7 API calls total)
     const [organicData, newsData, autocomplete, domainInfo, forumResults, imageData, youtubeResults] = await Promise.all(

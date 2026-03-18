@@ -584,6 +584,7 @@ export default function Home() {
   const [gateSending, setGateSending] = useState(false);
   const [gateError, setGateError] = useState("");
   const [pdfDownloading, setPdfDownloading] = useState(false);
+  const [disambiguation, setDisambiguation] = useState<{ name: string; options: { industry: string; label: string }[]; message: string } | null>(null);
 
   async function handleDownloadPdf() {
     if (!report) return;
@@ -660,20 +661,27 @@ export default function Home() {
     window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, "_blank");
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!name.trim()) return;
+  async function runCheck(checkName: string, checkType: string, industry?: string) {
     setLoading(true);
     setError("");
     setReport(null);
+    setDisambiguation(null);
     try {
       const res = await fetch("/api/check", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: name.trim(), type }),
+        body: JSON.stringify({ name: checkName, type: checkType, industry }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Request failed");
+
+      // Check if API returned disambiguation options
+      if (data.disambiguation) {
+        setLoading(false);
+        setDisambiguation({ name: data.name, options: data.options, message: data.message });
+        return;
+      }
+
       setReport(data);
       setActiveTab("overview");
       setEmailGated(true);
@@ -684,6 +692,17 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!name.trim()) return;
+    await runCheck(name.trim(), type);
+  }
+
+  function handleDisambiguationSelect(industry: string) {
+    if (!disambiguation) return;
+    runCheck(disambiguation.name, type, industry);
   }
 
   const tabs = [
@@ -718,7 +737,7 @@ export default function Home() {
 
       <main className="max-w-5xl mx-auto px-4 flex-1 w-full" style={{ paddingTop: "2px" }}>
         {/* Search form */}
-        {!report && !loading && (
+        {!report && !loading && !disambiguation && (
           <div className="max-w-2xl mx-auto text-center pt-10">
             <h2 className="text-4xl font-bold mb-4" style={{ fontSize: "2.4rem" }}>Check your Online Reputation in seconds</h2>
             <p className="text-gray-500 mb-8" style={{ fontSize: "1.2rem", lineHeight: "1.7" }}>
@@ -768,6 +787,42 @@ export default function Home() {
                   <p className="text-gray-400" style={{ fontSize: "0.85rem" }}>{f.desc}</p>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* Disambiguation */}
+        {disambiguation && !loading && !report && (
+          <div className="max-w-lg mx-auto" style={{ paddingTop: "20px" }}>
+            <button onClick={() => { setDisambiguation(null); }}
+              className="mb-4 text-sm text-blue-500 hover:underline flex items-center gap-1">&larr; Back to search</button>
+            <div className="bg-white rounded-2xl border-2 border-blue-200 shadow-sm p-6">
+              <div className="text-center mb-5">
+                <div className="w-14 h-14 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-7 h-7 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-1">Which &ldquo;{disambiguation.name}&rdquo;?</h3>
+                <p className="text-sm text-gray-500">{disambiguation.message}</p>
+              </div>
+              <div className="space-y-2">
+                {disambiguation.options.map((opt) => (
+                  <button
+                    key={opt.industry}
+                    onClick={() => handleDisambiguationSelect(opt.industry)}
+                    className="w-full text-left px-4 py-3 rounded-xl border-2 border-gray-200 hover:border-blue-400 hover:bg-blue-50 transition flex items-center justify-between group"
+                  >
+                    <div>
+                      <p className="font-semibold text-gray-800 text-sm">{opt.label}</p>
+                      <p className="text-xs text-gray-400 capitalize">{opt.industry} industry</p>
+                    </div>
+                    <svg className="w-5 h-5 text-gray-300 group-hover:text-blue-500 transition shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         )}
