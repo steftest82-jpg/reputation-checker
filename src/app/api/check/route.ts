@@ -116,17 +116,76 @@ async function serpImages(query: string) {
   return { results, totalEstimate: data.search_information?.total_results || 0 };
 }
 
+// ── Social media profile search ─────────────────────────────────────
+async function serpSocialProfiles(query: string) {
+  // Run targeted searches for major social platforms in parallel
+  const platforms = [
+    { name: "LinkedIn", searchQuery: `${query} site:linkedin.com`, domain: "linkedin.com" },
+    { name: "Twitter/X", searchQuery: `${query} site:twitter.com OR site:x.com`, domain: "twitter.com" },
+    { name: "Facebook", searchQuery: `${query} site:facebook.com`, domain: "facebook.com" },
+    { name: "Instagram", searchQuery: `${query} site:instagram.com`, domain: "instagram.com" },
+    { name: "YouTube", searchQuery: `${query} site:youtube.com`, domain: "youtube.com" },
+    { name: "TikTok", searchQuery: `${query} site:tiktok.com`, domain: "tiktok.com" },
+  ];
+
+  const results: { platform: string; url: string; title: string; found: boolean }[] = [];
+
+  // Single SerpAPI call with site: operators combined
+  try {
+    const combinedQuery = `"${query}" (site:linkedin.com OR site:twitter.com OR site:x.com OR site:facebook.com OR site:instagram.com OR site:youtube.com OR site:tiktok.com)`;
+    const params = new URLSearchParams({
+      q: combinedQuery,
+      api_key: SERP_KEY,
+      engine: "google",
+      num: "15",
+    });
+    const res = await fetch(`https://serpapi.com/search.json?${params}`);
+    if (res.ok) {
+      const data = await res.json();
+      const organic = (data.organic_results || []) as { title?: string; link?: string }[];
+      for (const r of organic) {
+        const link = (r.link || "").toLowerCase();
+        for (const p of platforms) {
+          if (link.includes(p.domain) || (p.name === "Twitter/X" && link.includes("x.com"))) {
+            // Avoid duplicates for same platform
+            if (!results.some((existing) => existing.platform === p.name)) {
+              results.push({ platform: p.name, url: r.link || "", title: r.title || "", found: true });
+            }
+          }
+        }
+      }
+    }
+  } catch {
+    // Fallback: social profiles will rely on organic SERP results
+  }
+
+  // Mark platforms not found
+  for (const p of platforms) {
+    if (!results.some((r) => r.platform === p.name)) {
+      results.push({ platform: p.name, url: "", title: "", found: false });
+    }
+  }
+
+  return results;
+}
+
 // ── Domain check (free, no API needed) ──────────────────────────────
-async function checkDomain(name: string): Promise<{
+async function checkDomain(name: string, userDomain?: string): Promise<{
   domain: string;
   available: boolean;
   hasSite: boolean;
 }> {
-  const slug = name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "")
-    .trim();
-  const domain = `${slug}.com`;
+  // If user provided a domain, use it directly
+  let domain: string;
+  if (userDomain) {
+    domain = userDomain.replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/.*$/, "").trim();
+  } else {
+    const slug = name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "")
+      .trim();
+    domain = `${slug}.com`;
+  }
 
   // Try HEAD first, then GET as fallback. Accept any HTTP response (even 403/301)
   // as evidence the site exists — only DNS/connection failures mean "no site".
@@ -274,7 +333,8 @@ function buildDataPacket(
   knowledgeGraph: Record<string, unknown> | null,
   forumResults: ForumResult[] = [],
   imageData: { results: ImageResult[]; totalEstimate: number } = { results: [], totalEstimate: 0 },
-  youtubeResults: { position: number; title: string; link: string; channel: string; description: string; views: number; publishedDate: string; length: string }[] = []
+  youtubeResults: { position: number; title: string; link: string; channel: string; description: string; views: number; publishedDate: string; length: string }[] = [],
+  socialProfiles: { platform: string; url: string; title: string; found: boolean }[] = []
 ) {
   const classified = organic.map((r, i) => {
     const url = r.link || "";
@@ -322,11 +382,12 @@ function buildDataPacket(
     forumResults,
     imageData,
     youtubeResults,
+    socialProfiles,
     stats: {
       totalResults: classified.length,
       complaintCount: complaintResults.length,
       reviewCount: reviewResults.length,
-      socialCount: socialResults.length,
+      socialCount: socialResults.length + socialProfiles.filter((p) => p.found).length,
       newsCount: newsInOrganic.length + newsResults.length,
       uniqueDomainsInTop10: uniqueTop10.size,
       forumCount: forumResults.length,
@@ -394,6 +455,13 @@ Has active website: ${dataPacket.domainInfo.hasSite ? "Yes" : "No"}
 
 === KNOWLEDGE GRAPH ===
 ${dataPacket.knowledgeGraph ? JSON.stringify(dataPacket.knowledgeGraph, null, 2) : "Not available"}
+
+=== SOCIAL MEDIA PROFILES (Dedicated Search) ===
+${dataPacket.socialProfiles
+  .map((p: { platform: string; url: string; title: string; found: boolean }) =>
+    `${p.platform}: ${p.found ? `FOUND — ${p.url} (${p.title})` : "NOT FOUND"}`
+  )
+  .join("\n")}
 
 === REDDIT & QUORA FORUM DISCUSSIONS ===
 ${dataPacket.forumResults.length
@@ -1121,7 +1189,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { name, type, industry } = await req.json();
+    const { name, type, industry, domain: userDomain } = await req.json();
     if (!name || typeof name !== "string" || name.trim().length < 2) {
       return NextResponse.json(
         { error: "Please provide a valid name (at least 2 characters)." },
@@ -1193,16 +1261,17 @@ export async function POST(req: NextRequest) {
     // If industry was provided, append it to refine the search
     const query = industry && industry !== "other" ? `${baseQuery} ${industry}` : baseQuery;
 
-    // Fire ALL data-gathering requests in parallel (7 API calls total)
-    const [organicData, newsData, autocomplete, domainInfo, forumResults, imageData, youtubeResults] = await Promise.all(
+    // Fire ALL data-gathering requests in parallel (8 API calls total)
+    const [organicData, newsData, autocomplete, domainInfo, forumResults, imageData, youtubeResults, socialProfiles] = await Promise.all(
       [
         serpSearch(query),
         serpSearch(`${query}`, { tbm: "nws", num: "10" }),
         serpAutocomplete(query),
-        checkDomain(query),
+        checkDomain(query, userDomain),
         serpRedditQuora(query),
         serpImages(query),
         serpYouTube(query),
+        serpSocialProfiles(query),
       ]
     );
 
@@ -1248,7 +1317,8 @@ export async function POST(req: NextRequest) {
       knowledgeGraph,
       forumResults,
       imageData,
-      youtubeResults
+      youtubeResults,
+      socialProfiles
     );
 
     // Analyze with Claude

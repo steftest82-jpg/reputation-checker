@@ -579,6 +579,7 @@ function Card({ title, children, className = "" }: { title?: string; children: R
 export default function Home() {
   const [name, setName] = useState("");
   const [type, setType] = useState<"person" | "company">("person");
+  const [domain, setDomain] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [report, setReport] = useState<ReportData | null>(null);
@@ -674,10 +675,13 @@ export default function Home() {
     setReport(null);
     setDisambiguation(null);
     try {
+      const payload: Record<string, string> = { name: checkName, type: checkType };
+      if (industry) payload.industry = industry;
+      if (domain.trim()) payload.domain = domain.trim();
       const res = await fetch("/api/check", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: checkName, type: checkType, industry }),
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Request failed");
@@ -770,6 +774,20 @@ export default function Home() {
                   Check
                 </button>
               </div>
+              {/* Optional domain input for companies */}
+              {type === "company" && (
+                <div>
+                  <div className="relative">
+                    <input type="text" value={domain} onChange={(e) => setDomain(e.target.value)}
+                      placeholder="e.g. acmecorp.com"
+                      className="w-full h-12 pl-5 pr-5 rounded-xl border-2 border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent bg-white text-gray-700" style={{ fontSize: "1rem" }} />
+                    <span className="absolute right-4 top-3.5 text-xs font-medium text-gray-400 uppercase tracking-wide">Optional</span>
+                  </div>
+                  <p className="text-gray-400 mt-1.5" style={{ fontSize: "0.8rem" }}>
+                    Adding the company domain improves accuracy for domain ownership, backlink analysis, and website verification.
+                  </p>
+                </div>
+              )}
               {error && <p className="text-red-500" style={{ fontSize: "0.95rem" }}>{error}</p>}
             </form>
 
