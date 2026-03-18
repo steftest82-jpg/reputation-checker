@@ -319,6 +319,13 @@ interface ReportData {
     }[];
     analysis: string;
   };
+  disclaimer?: {
+    show: boolean;
+    severity: string;
+    title: string;
+    message: string;
+    affectedAreas: string[];
+  };
 }
 
 // ── Loading steps ───────────────────────────────────────────────────
@@ -739,7 +746,7 @@ export default function Home() {
         {/* Search form */}
         {!report && !loading && !disambiguation && (
           <div className="max-w-2xl mx-auto text-center pt-10">
-            <h2 className="text-4xl font-bold mb-4" style={{ fontSize: "2.4rem" }}>Check your Online Reputation in seconds</h2>
+            <h2 className="text-4xl font-bold mb-4" style={{ fontSize: "2.2rem" }}>Check your Online Reputation in seconds</h2>
             <p className="text-gray-500 mb-8" style={{ fontSize: "1.2rem", lineHeight: "1.7" }}>
               Enter a person or company name to get a comprehensive AI-powered reputation analysis based on Google Search, AI answers, News, Magazines, Reviews, Forums and all Social Media.
             </p>
@@ -989,6 +996,40 @@ export default function Home() {
                 </div>
               )}
               <div className={emailGated ? "blur-sm pointer-events-none select-none" : ""}>
+
+            {/* Disclaimer banner — shown when data is limited or ambiguous */}
+            {(() => {
+              const d = report.disclaimer;
+              if (!d?.show) return null;
+              const sev = d.severity;
+              const bg = sev === "severe" ? "bg-red-50 border-red-300" : sev === "warning" ? "bg-amber-50 border-amber-300" : "bg-blue-50 border-blue-200";
+              const iconBg = sev === "severe" ? "bg-red-100" : sev === "warning" ? "bg-amber-100" : "bg-blue-100";
+              const iconText = sev === "severe" ? "text-red-600" : sev === "warning" ? "text-amber-600" : "text-blue-600";
+              const titleColor = sev === "severe" ? "text-red-800" : sev === "warning" ? "text-amber-800" : "text-blue-800";
+              const tagColor = sev === "severe" ? "bg-red-100 text-red-700" : sev === "warning" ? "bg-amber-100 text-amber-700" : "bg-blue-100 text-blue-700";
+              return (
+                <div className={`rounded-xl p-5 mb-6 border-2 ${bg}`}>
+                  <div className="flex items-start gap-3">
+                    <span className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${iconBg}`}>
+                      <svg className={`w-5 h-5 ${iconText}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </span>
+                    <div>
+                      <h3 className={`font-bold mb-1 ${titleColor}`}>{d.title}</h3>
+                      <p className="text-sm text-gray-700 leading-relaxed">{d.message}</p>
+                      {d.affectedAreas?.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mt-2">
+                          {d.affectedAreas.map((area: string, i: number) => (
+                            <span key={i} className={`text-xs px-2 py-0.5 rounded-full font-medium ${tagColor}`}>{area}</span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Executive brief */}
             {report.executiveBrief && (

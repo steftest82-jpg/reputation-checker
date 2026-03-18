@@ -756,6 +756,13 @@ Perform a comprehensive reputation analysis. Respond ONLY with valid JSON (no ma
     ],
     "analysis": "2-3 sentences about overall conversation tone across forums, reviews, and comments.",
     "improvementTips": ["specific actions to improve conversation sentiment"]
+  },
+  "disclaimer": {
+    "show": true/false,
+    "severity": "info" | "warning" | "severe",
+    "title": "Clear disclaimer title. Use 'Limited Data Available' if few results found, 'Brand Name Ambiguity Detected' if results mix different entities, 'Emerging Online Presence' if very new entity with <5 results.",
+    "message": "1-3 sentences explaining the limitation. E.g.: 'Search results for this name return mixed entities across different industries, which may affect score accuracy.' or 'Very few search results were found, which limits the depth of this analysis. The score reflects available data only.' or 'This entity has minimal online footprint, making it difficult to assess reputation comprehensively.'",
+    "affectedAreas": ["list which sections are impacted, e.g. 'Score accuracy', 'Sentiment breakdown', 'Industry benchmark'"]
   }
 }
 
