@@ -710,7 +710,7 @@ export default function Home() {
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-4 flex-1 w-full" style={{ paddingTop: "5px" }}>
+      <main className="max-w-5xl mx-auto px-4 flex-1 w-full" style={{ paddingTop: "2px" }}>
         {/* Search form */}
         {!report && !loading && (
           <div className="max-w-2xl mx-auto text-center pt-10">
