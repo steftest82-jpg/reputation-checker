@@ -377,58 +377,58 @@ function LoadingProgress() {
     <div className="flex flex-col items-center justify-center" style={{ minHeight: "calc(100vh - 80px)" }}>
       <div className="max-w-lg w-full mx-auto text-center px-4">
         {/* Compact spinner + title */}
-        <div className="relative inline-block mb-4">
-          <div className="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center">
-            <div className="w-12 h-12 rounded-full border-[3px] border-blue-500 border-t-transparent animate-spin" />
+        <div className="relative inline-block mb-5">
+          <div className="w-20 h-20 rounded-full bg-blue-50 flex items-center justify-center">
+            <div className="w-14 h-14 rounded-full border-[3px] border-blue-500 border-t-transparent animate-spin" />
           </div>
           <div className="absolute inset-0 flex items-center justify-center">
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-blue-500 loading-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-7 h-7 text-blue-500 loading-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
             </svg>
           </div>
         </div>
 
-        <h3 className="text-xl font-bold mb-1 text-gray-900">Preparing Your Reputation Report</h3>
-        <p className="text-gray-500 text-xs mb-1 leading-snug">This usually takes 60–140 seconds, as we analyse 10+ Million touchpoints across the web. Please don&apos;t close this page.</p>
-        <p className="text-gray-400 text-xs mb-4">Elapsed: {elapsed}s &middot; {progress}% complete</p>
+        <h3 className="font-bold mb-1 text-gray-900" style={{ fontSize: "24px" }}>Preparing Your Reputation Report</h3>
+        <p className="text-gray-500 mb-1 leading-snug" style={{ fontSize: "14px" }}>This usually takes 60–140 seconds, as we analyse 10+ Million touchpoints across the web. Please don&apos;t close this page.</p>
+        <p className="text-gray-400 mb-4" style={{ fontSize: "14px" }}>Elapsed: {elapsed}s &middot; {progress}% complete</p>
 
         {/* Progress bar */}
-        <div className="h-2 bg-gray-200 rounded-full overflow-hidden mb-4">
+        <div className="h-2.5 bg-gray-200 rounded-full overflow-hidden mb-4">
           <div className="h-full bg-gradient-to-r from-blue-500 to-blue-400 rounded-full transition-all duration-700 ease-out" style={{ width: `${progress}%` }} />
         </div>
 
         {/* Current step - animated swap instead of full list */}
-        <div className="bg-white rounded-xl border border-gray-200 p-4 mb-4 min-h-[70px] flex items-center justify-center">
+        <div className="bg-white rounded-xl border border-gray-200 p-5 mb-4 min-h-[84px] flex items-center justify-center">
           <div className="flex items-center gap-3">
-            <span className="w-6 h-6 rounded-full border-2 border-blue-500 border-t-transparent animate-spin shrink-0" />
+            <span className="w-7 h-7 rounded-full border-2 border-blue-500 border-t-transparent animate-spin shrink-0" />
             <div className="text-left">
-              <p className="text-sm font-semibold text-gray-900 loading-pulse">{currentStep.label}</p>
-              <p className="text-xs text-blue-500">{currentStep.sublabel}</p>
+              <p className="font-semibold text-gray-900 loading-pulse" style={{ fontSize: "17px" }}>{currentStep.label}</p>
+              <p className="text-blue-500" style={{ fontSize: "14px" }}>{currentStep.sublabel}</p>
             </div>
           </div>
         </div>
 
         {/* Step dots - compact progress indicator */}
-        <div className="flex items-center justify-center gap-1.5 mb-4">
+        <div className="flex items-center justify-center gap-2 mb-4">
           {LOADING_STEPS.map((_, i) => (
             <div
               key={i}
               className={`rounded-full transition-all duration-300 ${
-                i < step ? "w-2 h-2 bg-green-500" : i === step ? "w-3 h-3 bg-blue-500" : "w-2 h-2 bg-gray-200"
+                i < step ? "w-2.5 h-2.5 bg-green-500" : i === step ? "w-3.5 h-3.5 bg-blue-500" : "w-2.5 h-2.5 bg-gray-200"
               }`}
             />
           ))}
         </div>
 
         {/* Completed count */}
-        <p className="text-xs text-gray-400 mb-4">
+        <p className="text-gray-400 mb-4" style={{ fontSize: "14px" }}>
           Step {Math.min(step + 1, LOADING_STEPS.length)} of {LOADING_STEPS.length} &mdash; {step > 0 ? `${step} completed` : "Starting..."}
         </p>
 
         {/* Rotating tips */}
-        <div className="bg-blue-50 rounded-lg p-3 border border-blue-100">
-          <p className="text-xs text-blue-400 font-medium uppercase tracking-wide mb-0.5">Did you know?</p>
-          <p className="text-sm text-blue-700 leading-snug transition-all duration-500">{LOADING_TIPS[tipIndex]}</p>
+        <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
+          <p className="text-blue-400 font-medium uppercase tracking-wide mb-0.5" style={{ fontSize: "14px" }}>Did you know?</p>
+          <p className="text-blue-700 leading-snug transition-all duration-500" style={{ fontSize: "17px" }}>{LOADING_TIPS[tipIndex]}</p>
         </div>
       </div>
     </div>
@@ -591,83 +591,7 @@ export default function Home() {
   const [gateEmail, setGateEmail] = useState("");
   const [gateSending, setGateSending] = useState(false);
   const [gateError, setGateError] = useState("");
-  const [pdfDownloading, setPdfDownloading] = useState(false);
   const [disambiguation, setDisambiguation] = useState<{ name: string; options: { industry: string; label: string }[]; message: string } | null>(null);
-
-  async function handleDownloadPdf() {
-    if (!report) return;
-    setPdfDownloading(true);
-    try {
-      // Send only essential report data to avoid payload size issues
-      const slimReport = {
-        name: report.name,
-        entityType: report.entityType,
-        score: report.score,
-        summary: report.summary,
-        executiveBrief: report.executiveBrief,
-        riskLevel: report.riskLevel,
-        sentimentBreakdown: report.sentimentBreakdown,
-        results: report.results?.slice(0, 20) || [],
-        problems: report.problems || [],
-        strengths: report.strengths || [],
-        recommendations: report.recommendations || [],
-        categoryScores: report.categoryScores,
-        serpBreakdown: report.serpBreakdown,
-        socialPresenceDetail: report.socialPresenceDetail,
-        reviewSummary: report.reviewSummary,
-        autocompleteSentiment: report.autocompleteSentiment,
-        domainInfo: report.domainInfo,
-        packageRecommendations: report.packageRecommendations,
-        dataStats: report.dataStats,
-        personalInfluence: report.personalInfluence,
-        crisisDetection: report.crisisDetection,
-        backlinkProfile: report.backlinkProfile,
-        conversationSentiment: report.conversationSentiment,
-        reviewDashboard: report.reviewDashboard,
-      };
-      const res = await fetch("/api/send-report", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: "__download__", report: slimReport }),
-      });
-      if (!res.ok) {
-        const errText = await res.text();
-        console.error("PDF API error:", res.status, errText);
-        return;
-      }
-      const blob = await res.blob();
-      if (blob.size === 0) {
-        console.error("PDF blob is empty");
-        return;
-      }
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `Reputation500-Report-${report.name.replace(/\s+/g, "-")}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
-    } catch (err) {
-      console.error("PDF download error:", err);
-    } finally {
-      setPdfDownloading(false);
-    }
-  }
-
-  function handleShareLinkedIn() {
-    if (!report) return;
-    const text = `I just scored ${report.score}/100 on my Online Reputation Check by @Reputation500! ${report.score >= 90 ? "Excellent" : "Good"} reputation confirmed. Check yours at`;
-    const url = "https://reputation500.com";
-    window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}&summary=${encodeURIComponent(text)}`, "_blank");
-  }
-
-  function handleShareX() {
-    if (!report) return;
-    const text = `I scored ${report.score}/100 on my Online Reputation Check by @Reputation500! ${report.score >= 90 ? "Excellent" : "Good"} reputation. Check yours:`;
-    const url = "https://reputation500.com";
-    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, "_blank");
-  }
 
   async function runCheck(checkName: string, checkType: string, industry?: string) {
     setLoading(true);
@@ -792,7 +716,7 @@ export default function Home() {
             </form>
 
             {/* Touchpoints statement */}
-            <p className="text-gray-400 mt-4" style={{ fontSize: "0.85rem" }}>
+            <p className="mt-4" style={{ fontSize: "15px", color: "#06402B" }}>
               Reputation Checker analyzes 10,000,000+ touchpoints across search engines, AI engines, forums, reviews, and social media.
             </p>
 
@@ -886,35 +810,6 @@ export default function Home() {
                   </div>
                   <BulletText text={report.summary} className="text-gray-600 leading-relaxed mb-4" />
                   {report.sentimentBreakdown && <SentimentChart breakdown={report.sentimentBreakdown} />}
-
-                  {/* Action buttons */}
-                  <div className="flex flex-wrap gap-2 mt-4">
-                    {/* Download PDF */}
-                    <button onClick={handleDownloadPdf} disabled={pdfDownloading}
-                      className="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 text-white rounded-lg text-sm font-medium transition">
-                      {pdfDownloading ? (
-                        <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Generating PDF...</>
-                      ) : (
-                        <><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg> Download PDF Report</>
-                      )}
-                    </button>
-
-                    {/* Share buttons (only if score >= 80) */}
-                    {report.score >= 80 && (
-                      <>
-                        <button onClick={handleShareLinkedIn}
-                          className="flex items-center gap-2 px-4 py-2 bg-[#0077b5] hover:bg-[#006097] text-white rounded-lg text-sm font-medium transition">
-                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
-                          Share on LinkedIn
-                        </button>
-                        <button onClick={handleShareX}
-                          className="flex items-center gap-2 px-4 py-2 bg-black hover:bg-gray-800 text-white rounded-lg text-sm font-medium transition">
-                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-                          Share on X
-                        </button>
-                      </>
-                    )}
-                  </div>
                 </div>
               </div>
 
