@@ -377,7 +377,7 @@ const AUDIT_MESSAGES = [
 function LoadingProgress() {
   const [trackProgress, setTrackProgress] = useState<number[]>(LOADING_TRACKS.map(() => 0));
   const [activeTrack, setActiveTrack] = useState(0);
-  const [auditLog, setAuditLog] = useState<{ message: string; time: string }[]>([]);
+  const [auditLog, setAuditLog] = useState<{ message: string; elapsed: string }[]>([]);
   const [elapsed, setElapsed] = useState(0);
 
   useEffect(() => {
@@ -421,119 +421,118 @@ function LoadingProgress() {
   // Add audit messages
   useEffect(() => {
     let msgIndex = 0;
+    let startTime = Date.now();
     const addMessage = () => {
-      const now = new Date();
-      const time = now.toLocaleTimeString("en-US", { hour12: false, hour: "2-digit", minute: "2-digit", second: "2-digit" });
-      setAuditLog((prev) => [...prev.slice(-12), { message: AUDIT_MESSAGES[msgIndex % AUDIT_MESSAGES.length], time }]);
+      const secs = ((Date.now() - startTime) / 1000).toFixed(2);
+      setAuditLog((prev) => [...prev.slice(-12), { message: AUDIT_MESSAGES[msgIndex % AUDIT_MESSAGES.length], elapsed: `+${secs}s` }]);
       msgIndex++;
     };
     addMessage();
+    startTime = Date.now();
     const interval = setInterval(addMessage, 4000 + Math.random() * 3000);
     return () => clearInterval(interval);
   }, []);
 
-  const overallProgress = Math.round(trackProgress.reduce((a, b) => a + b, 0) / LOADING_TRACKS.length);
-  const estimatedRemaining = Math.max(0, Math.round((100 - overallProgress) * 1.2));
+  const remainingSecs = Math.max(0, 120 - elapsed);
+  const remainingMin = Math.floor(remainingSecs / 60);
+  const remainingSecPart = remainingSecs % 60;
+  const timeStr = `${remainingMin}:${remainingSecPart.toString().padStart(2, "0")}`;
 
   return (
-    <div className="flex flex-col items-center justify-center px-4" style={{ minHeight: "calc(100vh - 80px)" }}>
-      <div className="max-w-5xl w-full mx-auto">
+    <div className="flex-grow flex flex-col items-center w-full">
+      <div className="max-w-4xl w-full mx-auto px-8 py-8 flex flex-col items-center">
         {/* Encrypted Session badge */}
-        <div className="text-center mb-8">
-          <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#f3f4f0] border border-[#c4c6cc]/15 text-[10px] font-bold uppercase tracking-[0.15em] text-[#44474c]" style={{fontFamily:"'Manrope',sans-serif"}}>
-            <span className="material-symbols-outlined text-[14px]" style={{fontVariationSettings:'"FILL" 1'}}>encrypted</span>
-            Encrypted Session
-          </span>
+        <div className="flex items-center gap-3 mb-6 bg-[#f3f4f0] px-4 py-2 rounded-full border border-[#c4c6cc]/30">
+          <div className="w-2 h-2 rounded-full bg-[#002c24] animate-pulse"></div>
+          <span className="text-[10px] uppercase tracking-[0.25em] font-bold text-slate-800" style={{fontFamily:"'Manrope',sans-serif"}}>Encrypted Session</span>
+          <div className="w-2 h-2 rounded-full bg-[#002c24] animate-pulse"></div>
         </div>
 
-        {/* Big heading */}
-        <div className="text-center mb-4">
-          <h2 className="text-4xl md:text-5xl tracking-tight text-[#1B263B] leading-tight" style={{fontFamily:"'Newsreader',serif"}}>
-            Compiling Your<br/><span className="italic font-light">Reputation Intelligence</span>
+        {/* Main Heading */}
+        <div className="text-center space-y-4 mb-10 max-w-2xl">
+          <h2 className="text-4xl lg:text-5xl text-[#051125] leading-tight" style={{fontFamily:"'Newsreader',serif"}}>
+            Compiling Your<br/><span className="italic text-[#47607e]">Reputation Intelligence</span>
           </h2>
-          <p className="text-[#44474c] mt-4 text-sm" style={{fontFamily:"'Manrope',sans-serif"}}>
-            Analyzing 10M+ data points across search engines, AI platforms, media, and social channels.
-          </p>
-          <p className="text-[#74777d] mt-2 text-xs" style={{fontFamily:"'Manrope',sans-serif"}}>
-            Elapsed: {elapsed}s &middot; {overallProgress}% complete &middot; ~{estimatedRemaining}s remaining
+          <p className="text-base text-[#44474c] leading-relaxed" style={{fontFamily:"'Manrope',sans-serif"}}>
+            Our AI is currently auditing 10,000,000+ data points across Google, global media, and LLMs. This process typically takes 2 minutes.<br/>Sessions are anonymous and encrypted. We cannot access or download your reports. Please keep this page open until the report loads.
           </p>
         </div>
 
-        {/* Progress bar */}
-        <div className="max-w-2xl mx-auto mb-10">
-          <div className="h-1.5 bg-[#e8e8e4] rounded-full overflow-hidden">
-            <div className="h-full bg-gradient-to-r from-[#101b30] to-[#3c475d] rounded-full transition-all duration-700 ease-out" style={{ width: `${overallProgress}%` }} />
-          </div>
-        </div>
+        {/* Two-column layout: 7/5 split */}
+        <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          {/* Left Side: Progress Tracks */}
+          <div className="lg:col-span-7 space-y-6">
+            {/* Time remaining */}
+            <div className="flex items-center gap-2 mb-4">
+              <span className="material-symbols-outlined text-[#74777d] text-sm">schedule</span>
+              <span className="text-[10px] uppercase tracking-widest font-bold text-[#74777d]" style={{fontFamily:"'Manrope',sans-serif"}}>
+                Estimated time remaining: <span className="text-[#051125]">{timeStr}</span>
+              </span>
+            </div>
 
-        {/* Two-column layout */}
-        <div className="grid md:grid-cols-2 gap-8">
-          {/* Left: Progress tracks */}
-          <div className="space-y-5">
-            <h4 className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#74777d] mb-4" style={{fontFamily:"'Manrope',sans-serif"}}>Intelligence Tracks</h4>
+            {/* Track items */}
             {LOADING_TRACKS.map((track, i) => {
               const pct = Math.round(trackProgress[i]);
-              const isActive = i === activeTrack;
-              const isDone = pct >= 100;
+              const isPending = i > activeTrack;
               return (
-                <div key={track.key} className="group">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <div className="flex items-center gap-2">
-                      {isDone ? (
-                        <span className="material-symbols-outlined text-emerald-600 text-[16px]" style={{fontVariationSettings:'"FILL" 1'}}>check_circle</span>
-                      ) : isActive ? (
-                        <span className="w-4 h-4 border-2 border-[#1B263B] border-t-transparent rounded-full animate-spin" />
-                      ) : (
-                        <span className="w-4 h-4 rounded-full border border-[#c4c6cc]/30" />
-                      )}
-                      <span className={`text-sm font-medium ${isDone ? "text-emerald-700" : isActive ? "text-[#1B263B]" : "text-[#74777d]"}`} style={{fontFamily:"'Manrope',sans-serif"}}>
-                        {track.label}
-                      </span>
-                    </div>
-                    <span className={`text-xs font-bold tabular-nums ${isDone ? "text-emerald-600" : "text-[#74777d]"}`} style={{fontFamily:"'Manrope',sans-serif"}}>{pct}%</span>
+                <div key={track.key} className={`space-y-2 ${isPending ? "opacity-40" : ""}`}>
+                  <div className="flex justify-between items-end">
+                    <span className="text-[10px] uppercase tracking-wider font-semibold text-[#051125]" style={{fontFamily:"'Manrope',sans-serif"}}>{track.label}</span>
+                    <span className="text-[10px] text-[#47607e]" style={{fontFamily:"'Public Sans',sans-serif"}}>
+                      {isPending ? <span className="italic">Pending</span> : `${pct}%`}
+                    </span>
                   </div>
-                  <div className="h-1.5 bg-[#e8e8e4] rounded-full overflow-hidden ml-6">
-                    <div className={`h-full rounded-full transition-all duration-500 ${isDone ? "bg-emerald-500" : "bg-gradient-to-r from-[#101b30] to-[#3c475d]"}`} style={{ width: `${pct}%` }} />
+                  <div className="h-1 w-full bg-[#edeeea] overflow-hidden rounded-full">
+                    {!isPending && (
+                      <div className="h-full bg-[#1b263b] transition-all duration-1000" style={{width:`${pct}%`}}></div>
+                    )}
                   </div>
                 </div>
               );
             })}
-          </div>
 
-          {/* Right: Live Audit Stream */}
-          <div className="bg-[#f3f4f0] rounded-xl border border-[#c4c6cc]/15 p-5 flex flex-col">
-            <h4 className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#74777d] mb-4" style={{fontFamily:"'Manrope',sans-serif"}}>Live Audit Stream</h4>
-            <div className="flex-1 space-y-3 overflow-y-auto max-h-[280px] pr-1">
-              {auditLog.map((entry, i) => (
-                <div key={i} className="flex gap-3">
-                  <div className="flex flex-col items-center shrink-0">
-                    <span className={`w-2 h-2 rounded-full ${i === auditLog.length - 1 ? "bg-[#1B263B] animate-pulse" : "bg-[#c4c6cc]/40"}`} />
-                    {i < auditLog.length - 1 && <span className="w-px h-full bg-[#c4c6cc]/20 mt-1" />}
-                  </div>
-                  <div>
-                    <p className={`text-xs leading-relaxed ${i === auditLog.length - 1 ? "text-[#1B263B] font-medium" : "text-[#74777d]"}`} style={{fontFamily:"'Manrope',sans-serif"}}>{entry.message}</p>
-                    <p className="text-[10px] text-[#c4c6cc] mt-0.5 font-mono">{entry.time}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-            {/* Spinner at bottom */}
-            <div className="mt-4 pt-4 border-t border-[#c4c6cc]/15 flex items-center gap-3">
-              <div className="relative">
-                <span className="w-6 h-6 border-2 border-[#1B263B] border-t-transparent rounded-full animate-spin inline-block" />
-                <span className="absolute inset-0 w-6 h-6 rounded-full border border-[#1B263B]/20 animate-ping" />
-              </div>
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#1B263B]" style={{fontFamily:"'Manrope',sans-serif"}}>System Intensive Process</p>
-                <p className="text-[10px] text-[#74777d]" style={{fontFamily:"'Manrope',sans-serif"}}>Do not close this window</p>
-              </div>
+            <div className="pt-2">
+              <p className="text-[11px] text-[#74777d] italic text-center" style={{fontFamily:"'Manrope',sans-serif"}}>Securing your digital legacy. Your comprehensive report will be ready momentarily.</p>
             </div>
           </div>
-        </div>
 
-        {/* Footer note */}
-        <div className="text-center mt-10">
-          <p className="text-xs text-[#c4c6cc] italic" style={{fontFamily:"'Manrope',sans-serif"}}>Securing your digital legacy...</p>
+          {/* Right Side: Live Audit Stream */}
+          <aside className="lg:col-span-5 bg-[#f3f4f0] p-6 rounded-xl border border-[#c4c6cc]/30 flex flex-col gap-4">
+            <div className="flex items-center gap-2 border-b border-[#c4c6cc]/50 pb-3">
+              <span className="material-symbols-outlined text-[#002c24] text-lg" style={{fontVariationSettings:'"FILL" 1'}}>analytics</span>
+              <h3 className="font-bold text-[10px] tracking-widest uppercase" style={{fontFamily:"'Public Sans',sans-serif"}}>Live Audit Stream</h3>
+            </div>
+            <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+              {auditLog.map((entry, i) => {
+                const isLast = i === auditLog.length - 1;
+                return (
+                  <div key={i} className="flex gap-3">
+                    <div className="flex flex-col items-center">
+                      <div className={`w-1.5 h-1.5 rounded-full ${isLast ? "bg-[#47607e]" : "bg-[#001510]"}`}></div>
+                      <div className="w-px h-full bg-[#c4c6cc]/50 my-1"></div>
+                    </div>
+                    <div>
+                      <p className={`text-[11px] text-[#44474c] leading-tight ${isLast ? "italic" : ""} ${i === auditLog.length - 2 ? "font-semibold" : ""}`} style={{fontFamily:"'Manrope',sans-serif"}}>{entry.message}</p>
+                      <span className="text-[9px] text-[#74777d]" style={{fontFamily:"'Public Sans',sans-serif"}}>TIMESTAMP: {entry.elapsed}</span>
+                      {isLast && (
+                        <div className="mt-1 h-1 w-16 bg-[#edeeea] overflow-hidden rounded-full">
+                          <div className="h-full bg-[#47607e] shimmer w-full"></div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            {/* Spinner with pulse ring */}
+            <div className="pt-4 border-t border-[#c4c6cc]/30 flex flex-col items-center">
+              <div className="relative flex items-center justify-center">
+                <div className="absolute w-12 h-12 border border-[#1b263b]/10 rounded-full pulse-ring"></div>
+                <div className="w-8 h-8 rounded-full border border-t-[#051125] border-r-[#1b263b] border-b-[#47607e] border-l-[#e2e3df] animate-spin"></div>
+              </div>
+              <p className="mt-3 text-[8px] uppercase tracking-[0.2em] text-[#c4c6cc]" style={{fontFamily:"'Manrope',sans-serif"}}>System Intensive Process</p>
+            </div>
+          </aside>
         </div>
       </div>
     </div>
@@ -1203,7 +1202,7 @@ export default function Home() {
 
       {/* Loading */}
       {loading && (
-        <main className="max-w-7xl mx-auto px-8 flex-1 w-full pt-24">
+        <main className="flex-1 w-full pt-20">
           <LoadingProgress />
         </main>
       )}
