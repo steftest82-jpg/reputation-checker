@@ -5,6 +5,9 @@ export const metadata: Metadata = {
   title: "Rep500 — Executive Reputation Intelligence",
   description:
     "Comprehensive online reputation analysis. Understand how a person or company is perceived across Google, AI platforms, media, and social channels.",
+  icons: {
+    icon: "/icon.svg",
+  },
 };
 
 export default function RootLayout({
