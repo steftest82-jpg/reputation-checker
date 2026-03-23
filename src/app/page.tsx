@@ -810,7 +810,7 @@ export default function Home() {
                   {/* Action Button */}
                   <button type="submit"
                     className="w-full md:w-auto px-10 py-4 rounded-full text-white font-bold text-lg tracking-tight hover:shadow-lg transition-all active:scale-95 duration-150 bg-gradient-to-r from-[#101b30] to-[#3c475d]" style={{fontFamily:"'Manrope',sans-serif"}}>
-                    Analyze
+                    Analyze ($12,99)
                   </button>
                 </div>
 
@@ -857,6 +857,276 @@ export default function Home() {
                   <p className="text-[#44474c] leading-relaxed text-[16px]" style={{fontFamily:"'Manrope',sans-serif"}}>{item.desc}</p>
                 </div>
               ))}
+            </div>
+          </section>
+
+          {/* ── SAMPLE REPORT SECTION ── */}
+          <div className="max-w-7xl mx-auto px-8 mb-20">
+            <div className="relative flex items-center py-5">
+              <div className="flex-grow border-t-2 border-[#1B263B]"></div>
+              <span className="flex-shrink mx-4 font-bold text-[#1B263B] uppercase tracking-[0.3em] text-xl md:text-2xl" style={{fontFamily:"'Newsreader',serif"}}>Sample Report</span>
+              <div className="flex-grow border-t-2 border-[#1B263B]"></div>
+            </div>
+          </div>
+          <div className="max-w-4xl mx-auto px-8 -mt-12 mb-20 text-center">
+            <div className="bg-white border border-[#c4c6cc]/10 shadow-sm rounded-xl py-10 px-8 md:px-16">
+              <p className="text-[#1B263B]/80 leading-relaxed font-medium tracking-normal" style={{fontFamily:"'Public Sans',sans-serif",fontSize:'1.5rem',lineHeight:'2rem'}}>This report represents just 12% of the full output, offering only a glimpse of the depth and detail included in the complete report.</p>
+            </div>
+          </div>
+
+          {/* Sample Tab Navigation */}
+          <section className="max-w-7xl mx-auto mb-16">
+            <div className="border-b border-[#c4c6cc]/20">
+              <div className="flex flex-col items-center gap-8 pb-6">
+                <div className="flex flex-wrap justify-center gap-2">
+                  {[
+                    { icon: "home", label: "Overview", active: true },
+                    { icon: "desktop_windows", label: "AI / LLM", active: false },
+                    { icon: "groups", label: "Influencers", active: false },
+                    { icon: "star", label: "Reviews", active: false },
+                    { icon: "link", label: "Backlinks", active: false },
+                    { icon: "warning", label: "Risk & Crisis", active: false },
+                    { icon: "visibility", label: "Suspicious", active: false },
+                    { icon: "search", label: "SERP Results", active: false },
+                  ].map((tab, i) => (
+                    <button key={i} className={`flex items-center gap-2 px-6 py-3 rounded-t-lg text-xs font-bold uppercase tracking-widest transition-all border-b-2 ${tab.active ? "bg-[#1B263B] text-white border-[#D4AF37]" : "text-[#1B263B] border-transparent hover:bg-[#e8e8e4]"}`} style={{fontFamily:"'Public Sans',sans-serif"}}>
+                      <span className="material-symbols-outlined text-[18px]" style={tab.active ? {fontVariationSettings:'"FILL" 1'} : {}}>{tab.icon}</span>
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex items-center justify-center gap-6">
+                  <button className="flex items-center gap-3 px-4 py-2 rounded border border-[#ba1a1a]/30 text-[#ba1a1a] text-[11px] font-bold uppercase tracking-widest hover:bg-[#ba1a1a]/5 transition-colors" style={{fontFamily:"'Public Sans',sans-serif"}}>
+                    <span className="material-symbols-outlined text-[16px]">error</span>
+                    Critical Vulnerabilities
+                    <span className="bg-[#ba1a1a] text-white px-2 py-0.5 rounded text-[10px]">3</span>
+                  </button>
+                  <button className="flex items-center gap-3 px-4 py-2 rounded border border-emerald-600/30 text-emerald-700 text-[11px] font-bold uppercase tracking-widest hover:bg-emerald-50 transition-colors" style={{fontFamily:"'Public Sans',sans-serif"}}>
+                    <span className="material-symbols-outlined text-[16px]">verified</span>
+                    Strategic Assets
+                    <span className="bg-emerald-600 text-white px-2 py-0.5 rounded text-[10px]">3</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Sample Report Cards Grid */}
+          <section className="max-w-7xl mx-auto px-8">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+              {/* Executive Brief */}
+              <div className="md:col-span-12 bg-[#101b30] text-white rounded-xl p-10 border border-[#c4c6cc]/10 shadow-xl mb-6">
+                <h2 className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#79849d]/60 mb-8" style={{fontFamily:"'Public Sans',sans-serif"}}>Executive Brief</h2>
+                <div className="space-y-8" style={{fontFamily:"'Public Sans',sans-serif"}}>
+                  <div className="flex gap-6">
+                    <div className="w-0.5 h-auto bg-emerald-500 rounded-full flex-shrink-0"></div>
+                    <p className="text-lg leading-relaxed text-[#79849d] font-light">Plus500 Trading maintains strong search engine dominance with excellent domain control and positioning as the UK&apos;s #1 CFD broker, supported by active US market expansion and transparency-focused marketing campaigns.</p>
+                  </div>
+                  <div className="flex gap-6">
+                    <div className="w-0.5 h-auto bg-amber-400 rounded-full flex-shrink-0"></div>
+                    <p className="text-lg leading-relaxed text-[#79849d] font-light">However, the company faces moderate reputation risks from negative Reddit discussions and allegations about trading practices, combined with Google&apos;s prominent CFD risk warnings that could deter potential customers.</p>
+                  </div>
+                  <div className="flex gap-6">
+                    <div className="w-0.5 h-auto bg-red-400 rounded-full flex-shrink-0"></div>
+                    <p className="text-lg leading-relaxed text-[#79849d] font-light">The biggest vulnerability is limited social media presence on professional platforms like LinkedIn and Twitter, creating gaps for competitor attacks and reducing crisis response capabilities.</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Digital Footprint + Risk Score */}
+              <div className="md:col-span-8 bg-[#f3f4f0] rounded-xl p-10 flex flex-col justify-between min-h-[400px] border border-[#c4c6cc]/5">
+                <div>
+                  <div className="w-12 h-12 rounded-lg bg-white flex items-center justify-center mb-10 shadow-sm">
+                    <span className="material-symbols-outlined text-[#1B263B] text-3xl">hub</span>
+                  </div>
+                  <h3 className="text-3xl mb-4" style={{fontFamily:"'Newsreader',serif"}}>Digital Footprint Analysis</h3>
+                  <p className="text-[#44474c] leading-relaxed max-w-md" style={{fontFamily:"'Manrope',sans-serif"}}>Comprehensive audit of global search results, social media presence, magazines, news sites and domain ownership.</p>
+                </div>
+                <div className="mt-12">
+                  <div className="flex items-center gap-6">
+                    <div className="flex flex-col">
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-[#74777d] mb-2" style={{fontFamily:"'Manrope',sans-serif"}}>Social Reach</span>
+                      <div className="flex gap-2">
+                        <span className="px-2 py-1 bg-green-100 text-green-700 rounded text-[10px] font-bold">LinkedIn</span>
+                        <span className="px-2 py-1 bg-green-100 text-green-700 rounded text-[10px] font-bold">Instagram</span>
+                        <span className="px-2 py-1 bg-red-100 text-red-700 rounded text-[10px] font-bold">Twitter/X Missing</span>
+                      </div>
+                    </div>
+                    <div className="h-10 w-px bg-[#c4c6cc]/30"></div>
+                    <div className="flex flex-col">
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-[#74777d] mb-2" style={{fontFamily:"'Manrope',sans-serif"}}>Domains</span>
+                      <span className="text-xs font-medium text-[#ba1a1a] flex items-center gap-1" style={{fontFamily:"'Manrope',sans-serif"}}>
+                        <span className="material-symbols-outlined text-xs">error</span>technical error in &apos;reg&apos; subdomain
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="md:col-span-4 bg-[#101b30] text-white rounded-xl p-10 flex flex-col justify-between min-h-[400px] shadow-xl">
+                <div className="flex justify-between items-start">
+                  <span className="material-symbols-outlined text-[#c2dcff] text-4xl" style={{fontVariationSettings:'"FILL" 1'}}>shield_with_heart</span>
+                  <span className="bg-[#c2dcff]/20 text-[#c2dcff] px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase">Proprietary Score</span>
+                </div>
+                <div>
+                  <h3 className="text-3xl mb-4 text-white" style={{fontFamily:"'Newsreader',serif"}}>Reputation Risk Score</h3>
+                  <p className="text-[#79849d] leading-relaxed text-sm mb-6" style={{fontFamily:"'Manrope',sans-serif"}}>Our algorithm calculates a 0-100 health score compared against industry benchmarks.</p>
+                </div>
+                <div className="pt-8 border-t border-[#79849d]/20">
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-end"><span className="text-xs text-[#79849d] uppercase tracking-widest" style={{fontFamily:"'Manrope',sans-serif"}}>Market Leaders</span><span className="text-sm font-bold">90/100</span></div>
+                    <div className="w-full bg-[#79849d]/20 h-1 rounded-full"><div className="bg-green-400 h-full w-[90%]"></div></div>
+                    <div className="flex justify-between items-end"><span className="text-xs text-[#79849d] uppercase tracking-widest" style={{fontFamily:"'Manrope',sans-serif"}}>Industry Average</span><span className="text-sm font-bold">65/100</span></div>
+                    <div className="w-full bg-[#79849d]/20 h-1 rounded-full"><div className="bg-yellow-400 h-full w-[65%]"></div></div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Score Breakdown + Video Sentiment */}
+              <div className="md:col-span-12 grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                <div className="bg-white rounded-xl p-10 border border-[#c4c6cc]/15 flex flex-col">
+                  <div className="flex items-center gap-3 mb-8">
+                    <span className="material-symbols-outlined text-[#1B263B]">bar_chart_4_bars</span>
+                    <h3 className="text-2xl font-bold" style={{fontFamily:"'Newsreader',serif"}}>Score Breakdown</h3>
+                  </div>
+                  <div className="space-y-6">
+                    {[
+                      { label: "Search Results Sentiment", score: "22/25", pct: 88 },
+                      { label: "News Sentiment", score: "12/15", pct: 80 },
+                      { label: "Review Ratings", score: "8/10", pct: 80 },
+                      { label: "AI / LLM Appearance", score: "6/10", pct: 60 },
+                      { label: "Autocomplete Safety", score: "7/10", pct: 70 },
+                      { label: "Social Media Presence", score: "4/10", pct: 40 },
+                      { label: "Complaint Sites", score: "10/10", pct: 100 },
+                      { label: "Content Control", score: "5/5", pct: 100 },
+                      { label: "Domain Ownership", score: "5/5", pct: 100 },
+                    ].map((item, i) => (
+                      <div key={i}>
+                        <div className="flex justify-between mb-2">
+                          <span className="text-xs font-bold uppercase tracking-wider text-[#74777d]" style={{fontFamily:"'Manrope',sans-serif"}}>{item.label}</span>
+                          <span className="text-xs font-bold text-[#1B263B]" style={{fontFamily:"'Manrope',sans-serif"}}>{item.score}</span>
+                        </div>
+                        <div className="w-full bg-[#e8e8e4] h-2 rounded-full">
+                          <div className={`h-full rounded-full ${item.pct >= 80 ? "bg-green-500" : item.pct >= 60 ? "bg-[#FFC107]" : "bg-[#FFC107]"}`} style={{width:`${item.pct}%`}}></div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="bg-white rounded-xl p-10 border border-[#c4c6cc]/15 flex flex-col">
+                  <div className="flex items-center justify-between mb-8">
+                    <div className="flex items-center gap-3">
+                      <span className="material-symbols-outlined text-[#1B263B]">video_library</span>
+                      <h3 className="text-2xl font-bold" style={{fontFamily:"'Newsreader',serif"}}>Video Sentiment</h3>
+                    </div>
+                    <span className="px-3 py-1 bg-amber-100 text-amber-700 rounded text-[10px] font-bold tracking-widest uppercase">Mixed</span>
+                  </div>
+                  <div className="space-y-4">
+                    {[
+                      { title: "COMPLETE Plus 500 Tutorial - How To Use Plus500...", views: "225,763", channel: "Marcus Reviews", sentiment: "positive", summary: "Educational tutorial showing platform functionality with positive tone" },
+                      { title: "Plus500 scam.", views: "74,632", channel: "Anonymous", sentiment: "negative", summary: "Video explicitly labeling Plus500 as a scam with significant viewership" },
+                      { title: "How to trade with Plus500 | Trader's Guide...", views: "364,751", channel: "Plus500", sentiment: "positive", summary: "Official Plus500 tutorial showing platform features", owned: true },
+                    ].map((v, i) => (
+                      <div key={i} className={`p-4 rounded-lg border ${v.sentiment === "positive" ? "bg-green-50/50 border-green-100" : "bg-red-50/50 border-red-100"}`}>
+                        <div className="flex justify-between items-start mb-2">
+                          <div className="flex-1 pr-4">
+                            <h4 className="text-sm font-bold text-[#1B263B] leading-tight" style={{fontFamily:"'Manrope',sans-serif"}}>{v.title}</h4>
+                            <span className="text-[10px] font-bold text-[#74777d] uppercase">{v.views} Views</span>
+                          </div>
+                          <button className="flex items-center gap-1.5 px-3 py-1.5 border border-[#c4c6cc] text-[#44474c] text-[9px] font-bold uppercase tracking-widest rounded-full hover:bg-white transition-all" style={{fontFamily:"'Manrope',sans-serif"}}>
+                            Check Video <span className="material-symbols-outlined text-[10px]">open_in_new</span>
+                          </button>
+                        </div>
+                        <p className="text-xs text-[#44474c] italic mb-2" style={{fontFamily:"'Manrope',sans-serif"}}>by {v.channel}</p>
+                        <p className="text-xs text-[#44474c] leading-relaxed" style={{fontFamily:"'Manrope',sans-serif"}}>{v.summary}</p>
+                        {v.owned && (
+                          <div className="flex items-center gap-1.5 mt-2">
+                            <span className="px-1.5 py-0.5 bg-green-500 text-white text-[9px] font-bold rounded uppercase">Owned</span>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* AI & LLM Appearance */}
+              <div className="md:col-span-12 bg-[#f3f4f0] rounded-xl p-10 flex flex-col md:flex-row items-center gap-10 border border-[#c4c6cc]/15 mt-6">
+                <div className="md:w-1/2">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="w-10 h-10 rounded-full bg-[#1B263B] flex items-center justify-center">
+                      <span className="material-symbols-outlined text-white text-xl">psychology</span>
+                    </div>
+                    <span className="text-xs font-bold tracking-widest uppercase text-[#74777d]" style={{fontFamily:"'Manrope',sans-serif"}}>What AI machines are Citing you for</span>
+                  </div>
+                  <h3 className="text-3xl mb-4" style={{fontFamily:"'Newsreader',serif"}}>AI &amp; LLM Appearance</h3>
+                  <p className="text-[#44474c] leading-relaxed mb-6" style={{fontFamily:"'Manrope',sans-serif"}}>Understand how AI platforms (GPT-4, Claude, and Gemini) perceive your brand. AI visibility is now the primary discovery layer for 67% of searches.</p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-white p-4 rounded-lg border border-[#c4c6cc]/10"><span className="text-[10px] font-bold uppercase tracking-widest text-[#74777d]" style={{fontFamily:"'Manrope',sans-serif"}}>Visibility Score</span><div className="text-2xl mt-1" style={{fontFamily:"'Newsreader',serif"}}>6 / 10</div></div>
+                    <div className="bg-white p-4 rounded-lg border border-[#c4c6cc]/10"><span className="text-[10px] font-bold uppercase tracking-widest text-[#74777d]" style={{fontFamily:"'Manrope',sans-serif"}}>Context Rating</span><div className="text-2xl mt-1 text-[#48617e]" style={{fontFamily:"'Newsreader',serif"}}>Neutral</div></div>
+                  </div>
+                </div>
+                <div className="md:w-1/2 w-full flex flex-col justify-center">
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center text-sm uppercase tracking-wider text-[#74777d]" style={{fontFamily:"'Manrope',sans-serif"}}><span>Training Data Saturation</span><span>45%</span></div>
+                    <div className="w-full bg-[#e8e8e4] h-2 rounded-full overflow-hidden"><div className="bg-[#1B263B] h-full w-[45%]"></div></div>
+                    <div className="flex justify-between items-center text-sm uppercase tracking-wider text-[#74777d] mt-6" style={{fontFamily:"'Manrope',sans-serif"}}><span>Reference Accuracy</span><span>82%</span></div>
+                    <div className="w-full bg-[#e8e8e4] h-2 rounded-full overflow-hidden"><div className="bg-[#1B263B] h-full w-[82%]"></div></div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Crisis + Recommendations side by side */}
+              <div className="md:col-span-6 bg-white rounded-xl p-10 flex flex-col border border-[#ba1a1a]/20 shadow-lg relative overflow-hidden">
+                <div className="absolute top-0 right-0 px-4 py-1 bg-[#ba1a1a] text-white text-[10px] font-bold tracking-[0.2em] uppercase">Critical Alert</div>
+                <div className="flex items-center gap-3 mb-10">
+                  <div className="w-10 h-10 rounded-full bg-[#ba1a1a]/10 flex items-center justify-center">
+                    <span className="material-symbols-outlined text-[#ba1a1a] text-xl" style={{fontVariationSettings:'"FILL" 1'}}>warning</span>
+                  </div>
+                  <span className="text-xs font-bold tracking-widest uppercase text-[#ba1a1a]" style={{fontFamily:"'Manrope',sans-serif"}}>Potential Crisis Detected</span>
+                </div>
+                <h3 className="text-2xl mb-4" style={{fontFamily:"'Newsreader',serif"}}>Sentiment Instability</h3>
+                <p className="text-[#44474c] leading-relaxed mb-8" style={{fontFamily:"'Manrope',sans-serif"}}>Recent negative events have significantly impacted sentiment stability. Direct scam accusations and price manipulation allegations require immediate intervention.</p>
+                <div className="space-y-3 mb-8">
+                  <div className="flex items-center gap-3 p-3 bg-red-50 rounded-lg border-l-2 border-[#ba1a1a]">
+                    <span className="material-symbols-outlined text-[#ba1a1a] text-sm">report</span>
+                    <p className="text-xs font-medium text-[#ba1a1a]" style={{fontFamily:"'Manrope',sans-serif"}}>&quot;XYZ is a scam&quot; – Direct deposit accusations</p>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 bg-red-50 rounded-lg border-l-2 border-[#ba1a1a]">
+                    <span className="material-symbols-outlined text-[#ba1a1a] text-sm">report</span>
+                    <p className="text-xs font-medium text-[#ba1a1a]" style={{fontFamily:"'Manrope',sans-serif"}}>&quot;Price Manipulation&quot; – Allegations of client pattern monitoring</p>
+                  </div>
+                </div>
+                <div className="mt-auto p-5 bg-[#ba1a1a] text-white rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <span className="italic text-lg" style={{fontFamily:"'Newsreader',serif"}}>Current Status: VOLATILE</span>
+                    <div className="flex items-center text-xs font-bold gap-1 uppercase tracking-tighter"><span className="material-symbols-outlined text-sm">error</span> Urgent Action Required</div>
+                  </div>
+                </div>
+              </div>
+              <div className="md:col-span-6 bg-white rounded-xl p-10 flex flex-col border border-[#c4c6cc]/15 shadow-sm">
+                <div className="flex items-center gap-3 mb-10">
+                  <div className="w-10 h-10 rounded-full bg-[#f3f4f0] flex items-center justify-center">
+                    <span className="material-symbols-outlined text-[#1B263B] text-xl">assignment_turned_in</span>
+                  </div>
+                  <span className="text-xs font-bold tracking-widest uppercase text-[#74777d]" style={{fontFamily:"'Manrope',sans-serif"}}>High-Priority Directives</span>
+                </div>
+                <h3 className="text-2xl mb-4" style={{fontFamily:"'Newsreader',serif"}}>Strategic Recommendations</h3>
+                <p className="text-[#44474c] leading-relaxed mb-6" style={{fontFamily:"'Manrope',sans-serif"}}>Mitigating the current surge in negative sentiment requires a multi-pronged tactical response to restore institutional trust.</p>
+                <div className="space-y-3">
+                  <div className="flex items-start gap-3 p-4 bg-red-50/50 rounded-lg border border-red-100">
+                    <span className="px-2 py-0.5 bg-red-600 text-white text-[10px] font-bold rounded">URGENT</span>
+                    <div><p className="text-sm font-bold text-[#1a1c1a] mb-1" style={{fontFamily:"'Manrope',sans-serif"}}>Reddit Monitoring &amp; Response Strategy</p><p className="text-xs text-[#44474c]" style={{fontFamily:"'Manrope',sans-serif"}}>Address scam accusations directly to curb viral spread.</p></div>
+                  </div>
+                  <div className="flex items-start gap-3 p-4 bg-red-50/50 rounded-lg border border-red-100">
+                    <span className="px-2 py-0.5 bg-red-600 text-white text-[10px] font-bold rounded">URGENT</span>
+                    <div><p className="text-sm font-bold text-[#1a1c1a] mb-1" style={{fontFamily:"'Manrope',sans-serif"}}>Verify and Resolve Inactive Domain Issues</p><p className="text-xs text-[#44474c]" style={{fontFamily:"'Manrope',sans-serif"}}>Main domain accessibility is critical for brand credibility.</p></div>
+                  </div>
+                  <div className="flex items-start gap-3 p-4 bg-[#f3f4f0] rounded-lg">
+                    <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-[10px] font-bold rounded">MED</span>
+                    <div><p className="text-sm font-bold text-[#1a1c1a] mb-1" style={{fontFamily:"'Manrope',sans-serif"}}>Establish Multi-Platform Content Control</p><p className="text-xs text-[#44474c]" style={{fontFamily:"'Manrope',sans-serif"}}>Activate primary social handles to push authoritative counter-narratives.</p></div>
+                  </div>
+                </div>
+              </div>
             </div>
           </section>
 
