@@ -238,6 +238,26 @@ async function fetchYouTubeData(query: string): Promise<YTVideoStats[]> {
   }
 }
 
+// ── YouTube Transcript Fetcher ───────────────────────────────────────
+async function fetchYouTubeTranscripts(videos: YTVideoStats[]): Promise<{ videoId: string; transcript: string }[]> {
+  const results: { videoId: string; transcript: string }[] = [];
+  try {
+    const { YoutubeTranscript } = await import("youtube-transcript");
+    for (const video of videos.slice(0, 5)) {
+      try {
+        const items = await YoutubeTranscript.fetchTranscript(video.videoId);
+        const fullText = items.map((item: { text: string }) => item.text).join(" ");
+        results.push({ videoId: video.videoId, transcript: fullText.slice(0, 2000) });
+      } catch {
+        results.push({ videoId: video.videoId, transcript: "" });
+      }
+    }
+  } catch {
+    console.error("youtube-transcript module not available");
+  }
+  return results;
+}
+
 // ── Social media profile search ─────────────────────────────────────
 async function serpSocialProfiles(query: string) {
   // Run targeted searches for major social platforms in parallel
@@ -459,7 +479,8 @@ function buildDataPacket(
   socialProfiles: { platform: string; url: string; title: string; found: boolean }[] = [],
   newsApiArticles: { title: string; description: string; url: string; source: string; publishedAt: string; author: string }[] = [],
   newsApiTotalResults: number = 0,
-  youtubeApiVideos: YTVideoStats[] = []
+  youtubeApiVideos: YTVideoStats[] = [],
+  youtubeTranscripts: { videoId: string; transcript: string }[] = []
 ) {
   const classified = organic.map((r, i) => {
     const url = r.link || "";
@@ -511,6 +532,7 @@ function buildDataPacket(
     newsApiArticles,
     newsApiTotalResults,
     youtubeApiVideos,
+    youtubeTranscripts,
     stats: {
       totalResults: classified.length,
       complaintCount: complaintResults.length,
@@ -657,6 +679,18 @@ ${dataPacket.youtubeApiVideos.length
       .join("\n\n")
   : "No YouTube Data API results."}
 
+=== YOUTUBE VIDEO TRANSCRIPTS (Auto-Captions) ===
+${dataPacket.youtubeTranscripts.filter((t: { transcript: string }) => t.transcript).length
+  ? dataPacket.youtubeTranscripts
+      .filter((t: { transcript: string }) => t.transcript)
+      .map((t: { videoId: string; transcript: string }) => {
+        const video = dataPacket.youtubeApiVideos.find((v: YTVideoStats) => v.videoId === t.videoId);
+        return `"${video?.title || "Unknown"}" (ID: ${t.videoId})
+  Transcript (first 2000 chars): ${t.transcript}`;
+      })
+      .join("\n\n")
+  : "No transcripts available (captions disabled or not found)."}
+
 === DATA SUMMARY ===
 - Total organic results analyzed: ${dataPacket.stats.totalResults}
 - Results on complaint sites: ${dataPacket.stats.complaintCount}
@@ -669,6 +703,7 @@ ${dataPacket.youtubeApiVideos.length
 - Google Images results: ${dataPacket.stats.imageCount}
 - YouTube videos (SerpAPI): ${dataPacket.stats.youtubeCount}
 - YouTube videos (Data API v3 with real stats): ${dataPacket.youtubeApiVideos.length}
+- YouTube transcripts analyzed: ${dataPacket.youtubeTranscripts.filter((t: { transcript: string }) => t.transcript).length}
 
 === YOUR TASK ===
 Perform a comprehensive reputation analysis. Respond ONLY with valid JSON (no markdown fences, no commentary outside JSON).
@@ -719,7 +754,8 @@ Perform a comprehensive reputation analysis. Respond ONLY with valid JSON (no ma
       "priority": "high" | "medium" | "low",
       "action": "specific, actionable recommendation",
       "reason": "why this matters",
-      "estimatedImpact": "what improvement to expect"
+      "estimatedImpact": "what improvement to expect",
+      "revenueImpact": "estimated revenue recovery if this action is taken, e.g. '+3-5% revenue recovery' or '+8-12% revenue protection'. Be specific and tie to the revenue impact analysis. Sort recommendations by revenue impact potential (highest first)."
     }
   ],
   "categoryScores": {
@@ -851,7 +887,7 @@ Perform a comprehensive reputation analysis. Respond ONLY with valid JSON (no ma
         "commentHighlights": ["1-2 notable comment themes if visible"]
       }
     ],
-    "analysis": "2-3 sentences about video/voice presence on YouTube. Consider whether the entity controls their own YouTube narrative or if third parties dominate. Include observations about engagement (saves, shares, comments).",
+    "analysis": "2-3 sentences about video/voice presence on YouTube. If transcripts are available, analyze the actual spoken content for sentiment, key themes, and any concerning statements about the entity. Consider whether the entity controls their own YouTube narrative or if third parties dominate. Include observations about engagement (saves, shares, comments).",
     "concerns": ["any negative or concerning videos found"]
   },
   "geographicPresence": {
@@ -987,6 +1023,30 @@ Perform a comprehensive reputation analysis. Respond ONLY with valid JSON (no ma
     "analysis": "2-3 sentences about overall conversation tone across forums, reviews, and comments.",
     "improvementTips": ["specific actions to improve conversation sentiment"]
   },
+  "revenueImpact": {
+    "totalEstimatedImpact": number (negative, e.g. -27 meaning 27% potential revenue at risk from reputation issues),
+    "categoryBreakdown": {
+      "search": number (negative % from search issues, e.g. -8),
+      "social": number (negative % from social media issues),
+      "media": number (negative % from media/news issues),
+      "aiLlm": number (negative % from AI/LLM visibility gaps),
+      "reviews": number (negative % from review issues),
+      "forums": number (negative % from forum discussions)
+    },
+    "items": [
+      {
+        "source": "description of the specific issue, e.g. 'Negative Reddit thread: XYZ is a scam'",
+        "category": "search" | "social" | "media" | "ai_llm" | "reviews" | "forums",
+        "impact": number (negative %, e.g. -12),
+        "explanation": "1-sentence CFO-level explanation of why this costs revenue, e.g. 'Potential customers who see this Reddit thread in Google results are 12% less likely to convert'",
+        "link": "url if applicable"
+      }
+    ],
+    "analysis": "2-3 sentences written for a CFO/CEO. Explain the total revenue exposure in percentage terms. Think: 'If 100 potential customers search your name, X% will not convert due to what they find.' Connect specific issues to customer trust and conversion rates. Be specific about which issues drive the most revenue loss.",
+    "topRisks": [
+      { "title": "risk title", "impact": number (negative %), "category": "category name" }
+    ]
+  },
   "disclaimer": {
     "show": true/false,
     "severity": "info" | "warning" | "severe",
@@ -1007,11 +1067,25 @@ SCORING GUIDE (be precise — total must equal 100 max):
 - domainOwnership (0-5): 5 = owns exact-match domain with active site. 3 = domain exists but no site. 0 = doesn't own it.
 - aiLlmPresence (0-10): How likely AI engines (ChatGPT, Claude, Gemini, Perplexity) are to reference/quote this entity. 10 = frequently cited with accurate info, strong media + Wikipedia + structured data. 7 = sometimes referenced. 4 = rarely mentioned. 0 = completely absent from AI. Base on: depth of media coverage, Wikipedia presence, authority site mentions, news frequency, and structured data availability.
 
+REVENUE IMPACT GUIDE (think like a CFO analyzing customer conversion friction):
+- Negative result in Google top 3: -8 to -15% (most searchers see this)
+- Negative result in Google positions 4-10: -3 to -8%
+- Negative Reddit thread (high engagement): -5 to -12% (AI engines also reference Reddit)
+- Negative news article (major outlet like FT, BBC, Forbes): -10 to -20%
+- Negative news article (minor outlet): -3 to -7%
+- Missing social profiles: -2 to -5% per major platform
+- Negative reviews (aggregate below 3.5): -15 to -25%
+- Absent or misrepresented in AI/LLM responses: -5 to -10% (AI is now 67%+ of discovery)
+- Negative autocomplete suggestions: -5 to -15%
+- Complaint site listings: -8 to -15% per listing
+- Negative YouTube video (high views): -3 to -10%
+Impacts are NOT additive linearly — there is overlap. Total should be a realistic composite, typically capped at -60% for worst cases. A clean reputation should show -0 to -5%.
+
 Be brutally honest. Do not inflate scores. A mediocre online presence should score 45-60, not 75.`;
 
   const msg = await client.messages.create({
     model: "claude-sonnet-4-20250514",
-    max_tokens: 8000,
+    max_tokens: 12000,
     messages: [{ role: "user", content: prompt }],
   });
 
@@ -1439,6 +1513,9 @@ export async function POST(req: NextRequest) {
       ]
     );
 
+    // Fetch YouTube transcripts (after we have video IDs)
+    const youtubeTranscripts = await fetchYouTubeTranscripts(youtubeApiData);
+
     // Extract organic results
     const organicResults: SerpResult[] = (organicData.organic_results || [])
       .slice(0, 20)
@@ -1485,7 +1562,8 @@ export async function POST(req: NextRequest) {
       socialProfiles,
       newsApiData.articles,
       newsApiData.totalResults,
-      youtubeApiData
+      youtubeApiData,
+      youtubeTranscripts
     );
 
     // Analyze with Claude
@@ -1561,6 +1639,7 @@ export async function POST(req: NextRequest) {
       backlinkProfile: analysis.backlinkProfile || { healthScore: 5, totalBacklinks: "Unknown", toxicLinksDetected: false, toxicLinksCount: 0, toxicLinksStatus: "unknown", toxicLinksSolution: "", isVulnerable: false, vulnerabilityNote: "", analysis: "Insufficient data.", recommendations: [] },
       crisisDetection: analysis.crisisDetection || { alertLevel: "none", alerts: [], viralContent: [], threats: [], summary: "No active crisis detected." },
       conversationSentiment: analysis.conversationSentiment || { score: 5, verdict: "neutral", topNegativeTopics: [], analysis: "Insufficient conversation data.", improvementTips: [] },
+      revenueImpact: analysis.revenueImpact || { totalEstimatedImpact: 0, categoryBreakdown: { search: 0, social: 0, media: 0, aiLlm: 0, reviews: 0, forums: 0 }, items: [], analysis: "Insufficient data for revenue impact analysis.", topRisks: [] },
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);

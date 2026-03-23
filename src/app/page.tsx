@@ -33,6 +33,30 @@ interface Recommendation {
   action: string;
   reason: string;
   estimatedImpact: string;
+  revenueImpact?: string;
+}
+
+interface RevenueImpactItem {
+  source: string;
+  category: "search" | "social" | "media" | "ai_llm" | "reviews" | "forums";
+  impact: number;
+  explanation: string;
+  link?: string;
+}
+
+interface RevenueImpact {
+  totalEstimatedImpact: number;
+  categoryBreakdown: {
+    search: number;
+    social: number;
+    media: number;
+    aiLlm: number;
+    reviews: number;
+    forums: number;
+  };
+  items: RevenueImpactItem[];
+  analysis: string;
+  topRisks: { title: string; impact: number; category: string }[];
 }
 
 interface CategoryScores {
@@ -326,6 +350,7 @@ interface ReportData {
     message: string;
     affectedAreas: string[];
   };
+  revenueImpact?: RevenueImpact;
 }
 
 // ── Loading tracks ───────────────────────────────────────────────────
@@ -662,14 +687,11 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [report, setReport] = useState<ReportData | null>(null);
-  const [activeTab, setActiveTab] = useState<"overview" | "ai-llm" | "influencers" | "reviews" | "backlinks" | "crisis" | "suspicious" | "results" | "problems" | "strengths">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "revenue" | "ai-llm" | "influencers" | "reviews" | "backlinks" | "crisis" | "suspicious" | "results" | "problems" | "strengths">("overview");
   const [contactModal, setContactModal] = useState<{ open: boolean; packageName: string }>({ open: false, packageName: "" });
   const [contactForm, setContactForm] = useState({ name: "", email: "" });
   const [contactSent, setContactSent] = useState(false);
-  const [emailGated, setEmailGated] = useState(true);
-  const [gateEmail, setGateEmail] = useState("");
-  const [gateSending, setGateSending] = useState(false);
-  const [gateError, setGateError] = useState("");
+  const [downloading, setDownloading] = useState(false);
   const [disambiguation, setDisambiguation] = useState<{ name: string; options: { industry: string; label: string }[]; message: string } | null>(null);
 
   async function runCheck(checkName: string, checkType: string, industry?: string) {
@@ -698,9 +720,6 @@ export default function Home() {
 
       setReport(data);
       setActiveTab("overview");
-      setEmailGated(true);
-      setGateEmail("");
-      setGateError("");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
     } finally {
@@ -721,6 +740,7 @@ export default function Home() {
 
   const tabs = [
     { key: "overview" as const, label: "Overview", icon: "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" },
+    { key: "revenue" as const, label: "Revenue Impact", icon: "M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" },
     { key: "ai-llm" as const, label: "AI / LLM", icon: "M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" },
     { key: "influencers" as const, label: "Influencers", icon: "M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" },
     ...(report?.entityType === "company" ? [{ key: "reviews" as const, label: "Reviews", icon: "M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" }] : []),
@@ -926,7 +946,7 @@ export default function Home() {
               className="mb-6 text-sm text-[#1B263B] hover:underline flex items-center gap-1" style={{fontFamily:"'Manrope',sans-serif"}}>&larr; New check</button>
 
             {/* Reputation500 report branding */}
-            <div className="flex items-center gap-3 mb-4 pb-4 border-b border-[#c4c6cc]/15">
+            <div className="flex items-center justify-between mb-4 pb-4 border-b border-[#c4c6cc]/15">
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-[#1B263B] text-2xl" style={{fontVariationSettings:'"FILL" 1'}}>shield_person</span>
                 <div>
@@ -934,6 +954,39 @@ export default function Home() {
                   <p className="text-xs text-[#74777d]" style={{fontFamily:"'Manrope',sans-serif"}}>Online Reputation Report</p>
                 </div>
               </div>
+              <button
+                onClick={async () => {
+                  setDownloading(true);
+                  try {
+                    const res = await fetch("/api/send-report", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ email: "__download__", report }),
+                    });
+                    if (res.ok) {
+                      const blob = await res.blob();
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement("a");
+                      a.href = url;
+                      a.download = `Rep500-Report-${(report.name || "Report").replace(/[^a-zA-Z0-9]/g, "-")}.pdf`;
+                      document.body.appendChild(a);
+                      a.click();
+                      document.body.removeChild(a);
+                      URL.revokeObjectURL(url);
+                    }
+                  } catch (err) {
+                    console.error("Download failed:", err);
+                  } finally {
+                    setDownloading(false);
+                  }
+                }}
+                disabled={downloading}
+                className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#101b30] to-[#3c475d] hover:shadow-lg disabled:opacity-50 text-white rounded-xl text-sm font-semibold transition"
+                style={{fontFamily:"'Manrope',sans-serif"}}
+              >
+                <span className="material-symbols-outlined text-lg">download</span>
+                {downloading ? "Generating..." : "Download PDF"}
+              </button>
             </div>
 
             {/* Score header */}
@@ -969,83 +1022,8 @@ export default function Home() {
               </div>
             </div>
 
-            {/* ── EMAIL GATE: everything below score is blurred until email provided ── */}
-            <div className="relative">
-              {emailGated && (
-                <div className="absolute inset-0 z-30 flex items-start justify-center pt-12">
-                  <div className="bg-white rounded-2xl shadow-2xl border border-[#c4c6cc]/15 w-full max-w-md p-8 mx-4">
-                    <div className="text-center mb-6">
-                      <div className="w-16 h-16 bg-[#f3f4f0] rounded-full flex items-center justify-center mx-auto mb-4">
-                        <span className="material-symbols-outlined text-[#1B263B] text-3xl">mail</span>
-                      </div>
-                      <h3 className="text-xl font-bold text-[#1a1c1a] mb-1" style={{fontFamily:"'Newsreader',serif"}}>Your Report is Ready!</h3>
-                      <p className="text-sm text-[#74777d]" style={{fontFamily:"'Manrope',sans-serif"}}>Enter your email to receive the full report as a PDF and unlock the detailed analysis below.</p>
-                    </div>
-                    <form
-                      onSubmit={async (e) => {
-                        e.preventDefault();
-                        if (!gateEmail.trim()) return;
-                        setGateSending(true);
-                        setGateError("");
-                        try {
-                          const res = await fetch("/api/contact", {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({
-                              name: gateEmail.trim(),
-                              email: gateEmail.trim(),
-                              packageName: "Report Unlock",
-                              reportName: report?.name || "",
-                              reportScore: report?.score || 0,
-                              reportData: report || null,
-                            }),
-                          });
-                          if (!res.ok) {
-                            const err = await res.json().catch(() => ({}));
-                            console.error("Lead email failed:", res.status, err);
-                          }
-                        } catch (err) {
-                          console.error("Lead email fetch error:", err);
-                        } finally {
-                          setGateSending(false);
-                          setEmailGated(false);
-                        }
-                      }}
-                      className="space-y-3"
-                    >
-                      <input
-                        type="email"
-                        required
-                        value={gateEmail}
-                        onChange={(e) => setGateEmail(e.target.value)}
-                        placeholder="your@email.com"
-                        className="w-full h-12 px-4 rounded-xl border border-[#c4c6cc]/30 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B263B]/20 focus:border-transparent"
-                        style={{fontFamily:"'Manrope',sans-serif"}}
-                      />
-                      {gateError && <p className="text-[#ba1a1a] text-xs" style={{fontFamily:"'Manrope',sans-serif"}}>{gateError}</p>}
-                      <button
-                        type="submit"
-                        disabled={gateSending}
-                        className="w-full h-12 bg-gradient-to-r from-[#101b30] to-[#3c475d] hover:shadow-lg disabled:opacity-50 text-white font-semibold rounded-xl text-sm transition flex items-center justify-center gap-2"
-                        style={{fontFamily:"'Manrope',sans-serif"}}
-                      >
-                        {gateSending ? (
-                          <>
-                            <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                            Unlocking Report...
-                          </>
-                        ) : (
-                          "Unlock Full Report"
-                        )}
-                      </button>
-                    </form>
-                    <p className="text-xs text-[#74777d] mt-3 text-center" style={{fontFamily:"'Manrope',sans-serif"}}>
-                      We&apos;ll email you the full PDF report. No spam, ever.
-                    </p>
-                  </div>
-                </div>
-              )}
-              <div className={emailGated ? "blur-sm pointer-events-none select-none" : ""}>
+            {/* ── Report content ── */}
+            <div>
 
             {/* Disclaimer banner */}
             {(() => {
@@ -1222,6 +1200,31 @@ export default function Home() {
                           </div>
                         </div>
                       )}
+                    </Card>
+                  )}
+
+                  {/* Revenue Impact Summary (overview) */}
+                  {report.revenueImpact && report.revenueImpact.totalEstimatedImpact < 0 && (
+                    <Card title="Revenue Impact Summary">
+                      <div className="flex items-center gap-4 mb-3">
+                        <span className="text-3xl font-bold text-red-600" style={{fontFamily:"'Public Sans',sans-serif"}}>{report.revenueImpact.totalEstimatedImpact}%</span>
+                        <span className="text-sm text-[#74777d]" style={{fontFamily:"'Manrope',sans-serif"}}>estimated revenue at risk</span>
+                      </div>
+                      <p className="text-sm text-[#44474c] leading-relaxed mb-3" style={{fontFamily:"'Manrope',sans-serif"}}>{report.revenueImpact.analysis}</p>
+                      {report.revenueImpact.topRisks.length > 0 && (
+                        <div className="space-y-2">
+                          <p className="text-[10px] font-bold uppercase tracking-widest text-red-600" style={{fontFamily:"'Manrope',sans-serif"}}>Top Revenue Risks</p>
+                          {report.revenueImpact.topRisks.slice(0, 3).map((risk, i) => (
+                            <div key={i} className="flex items-center justify-between p-2 bg-red-50 rounded-lg border border-red-100">
+                              <span className="text-xs text-[#1a1c1a] font-medium" style={{fontFamily:"'Manrope',sans-serif"}}>{risk.title}</span>
+                              <span className="text-xs font-bold text-red-600" style={{fontFamily:"'Manrope',sans-serif"}}>{risk.impact}%</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <button onClick={() => setActiveTab("revenue")} className="mt-3 text-xs text-[#1B263B] font-bold hover:underline" style={{fontFamily:"'Manrope',sans-serif"}}>
+                        View Full Revenue Impact Analysis &rarr;
+                      </button>
                     </Card>
                   )}
 
@@ -1619,18 +1622,22 @@ export default function Home() {
                   </Card>
 
                   {/* Recommendations (top 4) */}
-                  <Card title="Top Recommendations">
+                  <Card title="All Recommendations">
                     <div className="space-y-3">
-                      {report.recommendations.slice(0, 4).map((rec, i) => {
+                      {report.recommendations.map((rec, i) => {
                         const borderColor = rec.priority === "high" ? "border-l-red-500" : rec.priority === "medium" ? "border-l-yellow-400" : "border-l-[#1B263B]";
                         const bgColor = rec.priority === "high" ? "bg-red-50/50" : rec.priority === "medium" ? "bg-yellow-50/50" : "bg-[#f3f4f0]/50";
                         return (
                           <div key={i} className={`border-l-4 ${borderColor} ${bgColor} rounded-r-lg p-3`}>
                             <div className="flex items-center gap-2 mb-1">
                               <SeverityBadge level={rec.priority} />
+                              {rec.revenueImpact && (
+                                <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded text-[10px] font-bold uppercase" style={{fontFamily:"'Manrope',sans-serif"}}>{rec.revenueImpact}</span>
+                              )}
                             </div>
                             <p className="text-sm font-medium text-[#1a1c1a]" style={{fontFamily:"'Manrope',sans-serif"}}>{rec.action}</p>
                             <p className="text-xs text-[#74777d] mt-1" style={{fontFamily:"'Manrope',sans-serif"}}>{rec.reason}</p>
+                            <p className="text-xs text-[#44474c] mt-0.5" style={{fontFamily:"'Manrope',sans-serif"}}>Expected impact: {rec.estimatedImpact}</p>
                           </div>
                         );
                       })}
@@ -1816,6 +1823,107 @@ export default function Home() {
             )}
 
             {/* ── AI / LLM APPEARANCE TAB ─────────────────── */}
+            {/* ── REVENUE IMPACT TAB ──────────────────────── */}
+            {activeTab === "revenue" && report.revenueImpact && (
+              <div className="report-section space-y-6">
+                {/* Hero card */}
+                <div className="bg-[#101b30] text-white rounded-xl p-10">
+                  <h2 className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#79849d] mb-6" style={{fontFamily:"'Public Sans',sans-serif"}}>Revenue Impact Analysis</h2>
+                  <div className="flex items-center gap-6 mb-6">
+                    <span className="text-6xl font-bold" style={{fontFamily:"'Public Sans',sans-serif"}}>{report.revenueImpact.totalEstimatedImpact}%</span>
+                    <div>
+                      <p className="text-lg text-[#bbc6e2]" style={{fontFamily:"'Newsreader',serif"}}>Estimated Revenue at Risk</p>
+                      <p className="text-xs text-[#79849d] mt-1" style={{fontFamily:"'Manrope',sans-serif"}}>Based on reputation issues impacting customer trust and conversion</p>
+                    </div>
+                  </div>
+                  <p className="text-[#afc9ea] leading-relaxed" style={{fontFamily:"'Manrope',sans-serif"}}>{report.revenueImpact.analysis}</p>
+                </div>
+
+                {/* Category Breakdown */}
+                <Card title="Impact by Category">
+                  <div className="space-y-4">
+                    {[
+                      { label: "Search Results", key: "search" as const, icon: "search" },
+                      { label: "Social Media", key: "social" as const, icon: "forum" },
+                      { label: "News & Media", key: "media" as const, icon: "newspaper" },
+                      { label: "AI / LLM Visibility", key: "aiLlm" as const, icon: "psychology" },
+                      { label: "Reviews", key: "reviews" as const, icon: "star" },
+                      { label: "Forums (Reddit/Quora)", key: "forums" as const, icon: "chat" },
+                    ].map((cat) => {
+                      const val = report.revenueImpact!.categoryBreakdown[cat.key];
+                      if (val === 0) return null;
+                      const width = Math.min(Math.abs(val) * 2, 100);
+                      return (
+                        <div key={cat.key}>
+                          <div className="flex justify-between mb-1.5">
+                            <span className="text-xs font-bold uppercase tracking-wider text-[#74777d] flex items-center gap-2" style={{fontFamily:"'Manrope',sans-serif"}}>
+                              <span className="material-symbols-outlined text-sm">{cat.icon}</span>
+                              {cat.label}
+                            </span>
+                            <span className="text-xs font-bold text-red-600" style={{fontFamily:"'Manrope',sans-serif"}}>{val}%</span>
+                          </div>
+                          <div className="w-full bg-[#e8e8e4] h-2 rounded-full overflow-hidden">
+                            <div className="h-full bg-red-500 rounded-full transition-all duration-700" style={{ width: `${width}%` }} />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </Card>
+
+                {/* Individual Items */}
+                {report.revenueImpact.items.length > 0 && (
+                  <Card title="Specific Revenue Risks">
+                    <div className="space-y-3">
+                      {report.revenueImpact.items.map((item, i) => (
+                        <div key={i} className="flex items-start gap-4 p-4 bg-[#f3f4f0] rounded-lg border border-[#c4c6cc]/15">
+                          <span className="text-lg font-bold text-red-600 shrink-0 w-14 text-right" style={{fontFamily:"'Public Sans',sans-serif"}}>{item.impact}%</span>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="px-2 py-0.5 bg-[#e8e8e4] text-[#44474c] rounded text-[10px] font-bold uppercase tracking-wider" style={{fontFamily:"'Manrope',sans-serif"}}>{item.category.replace(/_/g, " ")}</span>
+                            </div>
+                            <p className="text-sm font-medium text-[#1a1c1a]" style={{fontFamily:"'Manrope',sans-serif"}}>{item.source}</p>
+                            <p className="text-xs text-[#74777d] mt-1" style={{fontFamily:"'Manrope',sans-serif"}}>{item.explanation}</p>
+                            {item.link && (
+                              <a href={item.link} target="_blank" rel="noopener noreferrer" className="text-xs text-[#47607e] hover:underline mt-1 inline-block break-all" style={{fontFamily:"'Manrope',sans-serif"}}>{item.link}</a>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </Card>
+                )}
+
+                {/* Top Risks */}
+                {report.revenueImpact.topRisks.length > 0 && (
+                  <Card title="Highest Impact Risks">
+                    <div className="space-y-2">
+                      {report.revenueImpact.topRisks.map((risk, i) => (
+                        <div key={i} className="flex items-center justify-between p-3 rounded-lg border border-red-200 bg-red-50">
+                          <div className="flex items-center gap-3">
+                            <span className="w-7 h-7 rounded-full bg-red-100 flex items-center justify-center text-red-600 text-xs font-bold shrink-0" style={{fontFamily:"'Public Sans',sans-serif"}}>{i + 1}</span>
+                            <div>
+                              <p className="text-sm font-medium text-[#1a1c1a]" style={{fontFamily:"'Manrope',sans-serif"}}>{risk.title}</p>
+                              <p className="text-[10px] text-[#74777d] uppercase tracking-wider font-bold" style={{fontFamily:"'Manrope',sans-serif"}}>{risk.category}</p>
+                            </div>
+                          </div>
+                          <span className="text-lg font-bold text-red-600" style={{fontFamily:"'Public Sans',sans-serif"}}>{risk.impact}%</span>
+                        </div>
+                      ))}
+                    </div>
+                  </Card>
+                )}
+
+                {/* Methodology note */}
+                <div className="bg-[#f3f4f0] rounded-xl border border-[#c4c6cc]/15 p-5">
+                  <h4 className="text-xs font-bold uppercase tracking-widest text-[#74777d] mb-2" style={{fontFamily:"'Manrope',sans-serif"}}>Methodology</h4>
+                  <p className="text-xs text-[#44474c] leading-relaxed" style={{fontFamily:"'Manrope',sans-serif"}}>
+                    Revenue impact percentages represent estimated conversion friction — the percentage of potential customers who may not convert due to specific reputation issues found during analysis. Estimates are based on industry research: negative Google results in top 3 positions impact 8-15% of potential conversions, negative forum discussions impact 5-12%, and missing AI/LLM presence impacts 5-10% as AI becomes the primary discovery channel. These are composite estimates, not linearly additive.
+                  </p>
+                </div>
+              </div>
+            )}
+
             {activeTab === "ai-llm" && report.aiLlmAppearance && (
               <div className="report-section space-y-6">
                 <div className="bg-white rounded-2xl border border-[#c4c6cc]/15 p-8">
@@ -2348,6 +2456,9 @@ export default function Home() {
                             <p className="text-sm font-medium text-[#1a1c1a]" style={{fontFamily:"'Manrope',sans-serif"}}>{rec.action}</p>
                             <p className="text-xs text-[#74777d] mt-0.5" style={{fontFamily:"'Manrope',sans-serif"}}>{rec.reason}</p>
                             <p className="text-xs text-green-600 mt-0.5" style={{fontFamily:"'Manrope',sans-serif"}}>Expected impact: {rec.estimatedImpact}</p>
+                            {rec.revenueImpact && (
+                              <p className="text-xs text-emerald-700 font-bold mt-0.5" style={{fontFamily:"'Manrope',sans-serif"}}>Revenue: {rec.revenueImpact}</p>
+                            )}
                           </div>
                         </div>
                       ))}
@@ -2513,8 +2624,7 @@ export default function Home() {
               </div>
             )}
 
-              </div>{/* end blur wrapper */}
-            </div>{/* end email gate relative container */}
+            </div>{/* end report content */}
           </div>
         </main>
       )}

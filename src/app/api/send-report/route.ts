@@ -223,7 +223,42 @@ function generatePDF(report: Record<string, unknown>): Promise<Buffer> {
         doc.fillColor(darkGray).text(String(rec.action));
         doc.fontSize(9).fillColor(medGray).text(String(rec.reason));
         doc.fontSize(9).fillColor("#22c55e").text(`Expected impact: ${String(rec.estimatedImpact)}`);
+        if (rec.revenueImpact) {
+          doc.fontSize(9).fillColor("#059669").text(`Revenue impact: ${String(rec.revenueImpact)}`);
+        }
         doc.moveDown(0.5);
+      }
+    }
+
+    // ── REVENUE IMPACT ──
+    const revenueImpact = report.revenueImpact as Record<string, unknown> | undefined;
+    if (revenueImpact && (revenueImpact.totalEstimatedImpact as number) < 0) {
+      sectionTitle("Revenue Impact Analysis");
+      doc.fontSize(18).fillColor("#ef4444").text(`${revenueImpact.totalEstimatedImpact}%`, { continued: true });
+      doc.fontSize(11).fillColor(medGray).text("  estimated revenue at risk");
+      doc.moveDown(0.3);
+      bodyText(String(revenueImpact.analysis || ""));
+      doc.moveDown(0.5);
+
+      const breakdown = revenueImpact.categoryBreakdown as Record<string, number> | undefined;
+      if (breakdown) {
+        doc.fontSize(10).fillColor(darkGray).text("Impact by Category:", { underline: true });
+        doc.moveDown(0.2);
+        for (const [cat, val] of Object.entries(breakdown)) {
+          if (val < 0) {
+            labelValue(cat.charAt(0).toUpperCase() + cat.slice(1).replace(/([A-Z])/g, " $1"), `${val}%`);
+          }
+        }
+      }
+
+      const topRisks = (revenueImpact.topRisks || []) as { title: string; impact: number; category: string }[];
+      if (topRisks.length > 0) {
+        doc.moveDown(0.4);
+        doc.fontSize(10).fillColor("#ef4444").text("Top Revenue Risks:");
+        for (const risk of topRisks) {
+          if (doc.y > doc.page.height - 80) addPage();
+          doc.fontSize(9).fillColor(darkGray).text(`• ${String(risk.title)} — ${risk.impact}% (${risk.category})`);
+        }
       }
     }
 
