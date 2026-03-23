@@ -454,7 +454,7 @@ function LoadingProgress() {
             Compiling Your<br/><span className="italic text-[#47607e]">Reputation Intelligence</span>
           </h2>
           <p className="text-base text-[#44474c] leading-relaxed" style={{fontFamily:"'Manrope',sans-serif"}}>
-            Our AI is currently auditing 10,000,000+ data points across Google, global media, and LLMs. This process typically takes 2 minutes.<br/>Sessions are anonymous and encrypted. We cannot access or download your reports. Please keep this page open until the report loads.
+            Our AI is currently auditing 10,000,000+ data points across Google, global media, and LLMs. This process typically takes 3 minutes.<br/>Sessions are anonymous and encrypted. We cannot access or download your reports. Please keep this page open until the report loads.
           </p>
         </div>
 
@@ -719,6 +719,7 @@ export default function Home() {
 
       setReport(data);
       setActiveTab("overview");
+      window.scrollTo({ top: 0 });
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
     } finally {
@@ -771,7 +772,7 @@ export default function Home() {
             <div className="max-w-3xl mx-auto mb-16 pt-[10px]">
               <h1 className="text-[#1B263B] text-xs uppercase tracking-[0.2em] mb-4 font-normal" style={{fontFamily:"'Manrope',sans-serif"}}>Online Reputation Checker</h1>
               <h1 className="text-5xl md:text-7xl tracking-tight text-[#1B263B] leading-tight mb-6" style={{fontFamily:"'Newsreader',serif"}}>Comprehensive Online <br/><span className="italic font-light">Reputation Analysis</span></h1>
-              <p className="text-xl md:text-2xl text-[#44474c] font-light tracking-wide" style={{fontFamily:"'Manrope',sans-serif"}}>Understand how a person or company is perceived across Google, AI platforms, media, and social channels, and get clear, actionable recommendations to improve it, in just 2 minutes.</p>
+              <p className="text-xl md:text-2xl text-[#44474c] font-light tracking-wide" style={{fontFamily:"'Manrope',sans-serif"}}>Understand how a person or company is perceived across Google, AI platforms, media, and social channels, and get clear, actionable recommendations to improve it, in just 3 minutes.</p>
             </div>
 
             {/* Analyzing badge */}
@@ -836,7 +837,7 @@ export default function Home() {
           {/* Report Features Section */}
           <section className="max-w-4xl mx-auto px-12 mb-32" style={{paddingTop:'45px'}}>
             <div className="text-center mb-16">
-              <h2 className="text-4xl md:text-5xl tracking-tight text-[#1B263B] leading-tight mb-4" style={{fontFamily:"'Newsreader',serif"}}>A complete reputation report in <span className="italic font-light">2 minutes</span></h2>
+              <h2 className="text-4xl md:text-5xl tracking-tight text-[#1B263B] leading-tight mb-4" style={{fontFamily:"'Newsreader',serif"}}>A complete reputation report in <span className="italic font-light">3 minutes</span></h2>
               <p className="text-[#44474c] text-xs font-bold tracking-widest uppercase" style={{fontFamily:"'Manrope',sans-serif"}}>Each report includes:</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-y-16 gap-x-16">
@@ -2852,7 +2853,7 @@ export default function Home() {
                         )}
                       </p>
 
-                      <p className="text-sm text-[#44474c] mb-4 leading-relaxed" style={{fontFamily:"'Manrope',sans-serif"}}>{pkg.reason}</p>
+                      <p className="text-sm text-[#44474c] mb-4 leading-relaxed" style={{fontFamily:"'Manrope',sans-serif"}}>{pkg.reason.replace(/^[\s\-–—]+/, "").replace(/ — /g, " ").replace(/ – /g, " ").replace(/ - /g, " ")}</p>
 
                       <ul className="space-y-2 mb-5 flex-1">
                         {pkg.features.map((f, i) => (

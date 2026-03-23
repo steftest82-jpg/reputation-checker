@@ -262,103 +262,10 @@ function generatePDF(report: Record<string, unknown>): Promise<Buffer> {
       }
     }
 
-    // ── PERSONAL INFLUENCE ──
-    const personalInfluence = report.personalInfluence as Record<string, unknown> | undefined;
-    if (personalInfluence) {
-      sectionTitle("Personal Influence");
-      labelValue("Score", `${personalInfluence.score || 0}/10 — ${personalInfluence.verdict || "N/A"}`);
-      bodyText(String(personalInfluence.analysis || ""));
-    }
+    // ── END OF OVERVIEW PDF ──
+    // PDF exports only the overview page content
 
-    // ── CRISIS DETECTION ──
-    const crisisDetection = report.crisisDetection as Record<string, unknown> | undefined;
-    if (crisisDetection) {
-      sectionTitle("Risk & Crisis Detection");
-      labelValue("Alert Level", String(crisisDetection.alertLevel || "none").toUpperCase());
-      bodyText(String(crisisDetection.summary || ""));
-    }
-
-    // ── BACKLINK PROFILE ──
-    const backlinkProfile = report.backlinkProfile as Record<string, unknown> | undefined;
-    if (backlinkProfile) {
-      sectionTitle("Backlink Profile");
-      labelValue("Health Score", `${backlinkProfile.healthScore || 0}/10`);
-      labelValue("Est. Backlinks", String(backlinkProfile.totalBacklinks || "Unknown"));
-      if (backlinkProfile.toxicLinksDetected) {
-        labelValue("Toxic Links", `${backlinkProfile.toxicLinksCount || 0} detected — ${backlinkProfile.toxicLinksStatus || "unknown"}`);
-      }
-      bodyText(String(backlinkProfile.analysis || ""));
-    }
-
-    // ── CONVERSATION SENTIMENT ──
-    const convSentiment = report.conversationSentiment as Record<string, unknown> | undefined;
-    if (convSentiment) {
-      sectionTitle("Conversation Sentiment");
-      labelValue("Score", `${convSentiment.score || 0}/10 — ${convSentiment.verdict || "N/A"}`);
-      bodyText(String(convSentiment.analysis || ""));
-    }
-
-    // ── REVIEW DASHBOARD ──
-    const reviewDash = report.reviewDashboard as Record<string, unknown> | undefined;
-    if (reviewDash && report.entityType === "company") {
-      sectionTitle("Reviews Dashboard");
-      labelValue("Aggregated Rating", `${(reviewDash.aggregatedRating as number)?.toFixed?.(1) || "N/A"}/5.0`);
-      labelValue("Total Reviews", String(reviewDash.totalReviews || 0));
-      bodyText(String(reviewDash.trendAnalysis || ""));
-    }
-
-    // ── SEARCH RESULTS ──
-    if (results.length > 0) {
-      sectionTitle(`Search Results Analyzed (${results.length})`);
-      for (const r of results) {
-        if (doc.y > doc.page.height - 90) addPage();
-        const sentColor = r.sentiment === "positive" ? "#22c55e" : r.sentiment === "negative" ? "#ef4444" : "#94a3b8";
-        doc.fontSize(9).fillColor(sentColor).text(`#${r.position} [${String(r.sentiment).toUpperCase()}] `, { continued: true });
-        doc.fillColor(darkGray).text(String(r.title), { lineGap: 1 });
-        doc.fontSize(8).fillColor(blue).text(String(r.link), { link: String(r.link), underline: true });
-        doc.fontSize(8).fillColor(medGray).text(String(r.snippet));
-        doc.moveDown(0.4);
-      }
-    }
-
-    // ── SERP CONTROL ──
-    if (serpBreakdown) {
-      sectionTitle("SERP Control Analysis");
-      labelValue("First Page Dominance", String(serpBreakdown.firstPageDominance || "N/A"));
-      const owned = (serpBreakdown.ownedProperties || []) as string[];
-      const risky = (serpBreakdown.riskyResults || []) as string[];
-      if (owned.length > 0) {
-        doc.moveDown(0.3);
-        doc.fontSize(9).fillColor("#22c55e").text("Owned/Controlled Properties:");
-        for (const u of owned) { doc.fontSize(8).fillColor(medGray).text(`  • ${u}`); }
-      }
-      if (risky.length > 0) {
-        doc.moveDown(0.3);
-        doc.fontSize(9).fillColor("#ef4444").text("Risky Results:");
-        for (const u of risky) { doc.fontSize(8).fillColor(medGray).text(`  • ${u}`); }
-      }
-    }
-
-    // ── PACKAGE RECOMMENDATIONS ──
-    if (packageRecommendations && (packageRecommendations as Record<string, unknown>).show) {
-      sectionTitle("Recommended Reputation500 Packages");
-      bodyText(String(packageRecommendations.urgencyMessage || ""));
-      doc.moveDown(0.5);
-      const pkgs = (packageRecommendations.packages || []) as Record<string, unknown>[];
-      for (const pkg of pkgs) {
-        if (doc.y > doc.page.height - 120) addPage();
-        doc.fontSize(12).fillColor(blue).text(String(pkg.name));
-        doc.fontSize(10).fillColor(darkGray).text(`${pkg.headline} — ${pkg.price}`);
-        doc.fontSize(9).fillColor(medGray).text(String(pkg.reason));
-        const features = (pkg.features || []) as string[];
-        for (const f of features) {
-          doc.fontSize(8).fillColor(medGray).text(`  ✓ ${f}`);
-        }
-        doc.moveDown(0.6);
-      }
-    }
-
-    // ── FOOTER ON PAGE 1 ──
+    // ── FOOTER ON EVERY PAGE ──
     const pages = doc.bufferedPageRange();
     for (let i = 0; i < pages.count; i++) {
       doc.switchToPage(i);
