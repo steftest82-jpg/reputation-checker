@@ -818,7 +818,7 @@ export default function Home() {
                   <div className="mt-4 max-w-xl mx-auto">
                     <input type="text" value={domain} onChange={(e) => setDomain(e.target.value)}
                       placeholder="Company domain (optional, e.g. acmecorp.com)"
-                      className="w-full h-12 pl-5 pr-5 rounded-full border border-[#c4c6cc]/30 focus:outline-none focus:ring-2 focus:ring-[#1B263B]/20 bg-white text-[#44474c]" style={{fontFamily:"'Manrope',sans-serif",fontSize:'0.9rem'}} />
+                      className="w-full h-12 pl-5 pr-5 rounded-full border border-[#101b30] focus:outline-none focus:ring-2 focus:ring-[#1B263B]/20 bg-white text-[#44474c]" style={{fontFamily:"'Manrope',sans-serif",fontSize:'0.9rem'}} />
                   </div>
                 )}
 
