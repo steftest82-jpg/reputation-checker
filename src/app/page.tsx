@@ -440,7 +440,7 @@ function LoadingProgress() {
 
   return (
     <div className="flex-grow flex flex-col items-center w-full">
-      <div className="max-w-4xl w-full mx-auto px-8 py-8 flex flex-col items-center">
+      <div className="max-w-4xl w-full mx-auto px-4 md:px-8 py-8 flex flex-col items-center">
         {/* Encrypted Session badge */}
         <div className="flex items-center gap-3 mb-6 bg-[#f3f4f0] px-4 py-2 rounded-full border border-[#c4c6cc]/30">
           <div className="w-2 h-2 rounded-full bg-[#002c24] animate-pulse"></div>
@@ -459,7 +459,7 @@ function LoadingProgress() {
         </div>
 
         {/* Two-column layout: 7/5 split */}
-        <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-8 items-start">
           {/* Left Side: Progress Tracks */}
           <div className="lg:col-span-7 space-y-6">
             {/* Time remaining */}
@@ -756,7 +756,7 @@ export default function Home() {
     <div className="min-h-screen flex flex-col bg-[#f9faf5]">
       {/* Header */}
       <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md border-b border-[#c4c6cc]/10 bg-white">
-        <div className="max-w-7xl mx-auto px-8 h-16 flex items-center">
+        <div className="max-w-7xl mx-auto px-4 md:px-8 h-16 flex items-center">
           <div className="flex items-center gap-2">
             <span className="material-symbols-outlined text-[#1B263B] text-2xl" style={{fontVariationSettings:'"FILL" 1'}}>shield_person</span>
             <span className="font-sans text-lg font-black tracking-tighter text-[#1B263B]">REP500</span>
@@ -768,7 +768,7 @@ export default function Home() {
       {!report && !loading && !disambiguation && (
         <main className="pb-24 overflow-x-hidden pt-32" style={{paddingTop:'calc(8rem - 15px)'}}>
           {/* Hero Section */}
-          <section className="max-w-7xl mx-auto px-8 mb-24 text-center">
+          <section className="max-w-7xl mx-auto px-4 md:px-8 mb-24 text-center">
             <div className="max-w-3xl mx-auto mb-16 pt-[10px]">
               <h1 className="text-[#1B263B] text-xs uppercase tracking-[0.2em] mb-4 font-normal" style={{fontFamily:"'Manrope',sans-serif"}}>Online Reputation Checker</h1>
               <h1 className="text-5xl md:text-7xl tracking-tight text-[#1B263B] leading-tight mb-6" style={{fontFamily:"'Newsreader',serif"}}>Comprehensive Online <br/><span className="italic font-light">Reputation Analysis</span></h1>
@@ -786,16 +786,16 @@ export default function Home() {
 
             {/* Search bar - pill-shaped */}
             <form onSubmit={handleSubmit}>
-              <div className="max-w-4xl mx-auto relative">
+              <div id="search-bar" className="max-w-4xl mx-auto relative">
                 <div className="bg-white p-2 rounded-full shadow-[0_20px_40px_rgba(26,28,26,0.05)] border border-[#101b30] flex flex-col md:flex-row items-center gap-2">
                   {/* Toggle */}
                   <div className="bg-[#e8e8e4] p-1 rounded-full flex gap-1 ml-2">
                     <button type="button" onClick={() => setType("person")}
-                      className={`px-6 py-2.5 rounded-full text-sm font-bold shadow-sm transition-colors ${type === "person" ? "bg-[#1B263B] text-white" : "text-[#44474c] hover:bg-[#e2e3df]/50"}`} style={{fontFamily:"'Manrope',sans-serif"}}>
+                      className={`px-4 md:px-6 py-2.5 rounded-full text-sm font-bold shadow-sm transition-colors ${type === "person" ? "bg-[#1B263B] text-white" : "text-[#44474c] hover:bg-[#e2e3df]/50"}`} style={{fontFamily:"'Manrope',sans-serif"}}>
                       Person
                     </button>
                     <button type="button" onClick={() => setType("company")}
-                      className={`px-6 py-2.5 rounded-full text-sm font-bold shadow-sm transition-colors ${type === "company" ? "bg-[#1B263B] text-white" : "text-[#44474c] hover:bg-[#e2e3df]/50"}`} style={{fontFamily:"'Manrope',sans-serif"}}>
+                      className={`px-4 md:px-6 py-2.5 rounded-full text-sm font-bold shadow-sm transition-colors ${type === "company" ? "bg-[#1B263B] text-white" : "text-[#44474c] hover:bg-[#e2e3df]/50"}`} style={{fontFamily:"'Manrope',sans-serif"}}>
                       Company
                     </button>
                   </div>
@@ -825,7 +825,7 @@ export default function Home() {
 
                 {error && <p className="text-[#ba1a1a] mt-3 text-sm" style={{fontFamily:"'Manrope',sans-serif"}}>{error}</p>}
 
-                <div className="mt-6 flex justify-center gap-8 text-[#74777d] text-xs uppercase tracking-widest font-bold" style={{fontFamily:"'Manrope',sans-serif"}}>
+                <div className="mt-6 flex flex-wrap justify-center gap-4 md:gap-8 text-[#74777d] text-[9px] md:text-xs uppercase tracking-widest font-bold" style={{fontFamily:"'Manrope',sans-serif"}}>
                   <span className="flex items-center gap-2"><span className="material-symbols-outlined text-[16px]" style={{fontVariationSettings:'"FILL" 1'}}>verified_user</span> Pay per analysis</span>
                   <span className="flex items-center gap-2"><span className="material-symbols-outlined text-[16px]" style={{fontVariationSettings:'"FILL" 1'}}>lock</span>Encrypted</span>
                   <span className="flex items-center gap-2"><span className="material-symbols-outlined text-[16px]" style={{fontVariationSettings:'"FILL" 1'}}>visibility_off</span> Anonymous</span>
@@ -835,7 +835,7 @@ export default function Home() {
           </section>
 
           {/* Report Features Section */}
-          <section className="max-w-4xl mx-auto px-12 mb-32" style={{paddingTop:'45px'}}>
+          <section className="max-w-4xl mx-auto px-6 md:px-12 mb-32" style={{paddingTop:'45px'}}>
             <div className="text-center mb-16">
               <h2 className="text-4xl md:text-5xl tracking-tight text-[#1B263B] leading-tight mb-4" style={{fontFamily:"'Newsreader',serif"}}>A complete reputation report in <span className="italic font-light">3 minutes</span></h2>
               <p className="text-[#44474c] text-xs font-bold tracking-widest uppercase" style={{fontFamily:"'Manrope',sans-serif"}}>Each report includes:</p>
@@ -861,15 +861,15 @@ export default function Home() {
           </section>
 
           {/* ── SAMPLE REPORT SECTION ── */}
-          <div className="max-w-7xl mx-auto px-8 mb-20">
+          <div className="max-w-7xl mx-auto px-4 md:px-8 mb-20">
             <div className="relative flex items-center py-5">
               <div className="flex-grow border-t-2 border-[#1B263B]"></div>
               <span className="flex-shrink mx-4 font-bold text-[#1B263B] uppercase tracking-[0.3em] text-xl md:text-2xl" style={{fontFamily:"'Newsreader',serif"}}>Sample Report</span>
               <div className="flex-grow border-t-2 border-[#1B263B]"></div>
             </div>
           </div>
-          <div className="max-w-4xl mx-auto px-8 -mt-12 mb-20 text-center">
-            <div className="bg-white border border-[#c4c6cc]/10 shadow-sm rounded-xl py-10 px-8 md:px-16">
+          <div className="max-w-4xl mx-auto px-4 md:px-8 -mt-12 mb-20 text-center">
+            <div className="bg-white border border-[#c4c6cc]/10 shadow-sm rounded-xl py-6 md:py-10 px-4 md:px-16">
               <p className="text-[#1B263B]/80 leading-relaxed font-medium tracking-normal" style={{fontFamily:"'Public Sans',sans-serif",fontSize:'1.5rem',lineHeight:'2rem'}}>This report represents just 12% of the full output, offering only a glimpse of the depth and detail included in the complete report.</p>
             </div>
           </div>
@@ -877,7 +877,7 @@ export default function Home() {
           {/* Sample Tab Navigation */}
           <section className="max-w-7xl mx-auto mb-16">
             <div className="border-b border-[#c4c6cc]/20">
-              <div className="flex flex-col items-center gap-8 pb-6">
+              <div className="flex flex-col items-center gap-4 md:gap-8 pb-6">
                 <div className="flex flex-wrap justify-center gap-2">
                   {[
                     { icon: "home", label: "Overview", active: true },
@@ -889,13 +889,13 @@ export default function Home() {
                     { icon: "visibility", label: "Suspicious", active: false },
                     { icon: "search", label: "SERP Results", active: false },
                   ].map((tab, i) => (
-                    <button key={i} className={`flex items-center gap-2 px-6 py-3 rounded-t-lg text-xs font-bold uppercase tracking-widest transition-all border-b-2 ${tab.active ? "bg-[#1B263B] text-white border-[#D4AF37]" : "text-[#1B263B] border-transparent hover:bg-[#e8e8e4]"}`} style={{fontFamily:"'Public Sans',sans-serif"}}>
+                    <button key={i} className={`flex items-center gap-2 px-3 md:px-6 py-2 md:py-3 rounded-t-lg text-xs font-bold uppercase tracking-widest transition-all border-b-2 ${tab.active ? "bg-[#1B263B] text-white border-[#D4AF37]" : "text-[#1B263B] border-transparent hover:bg-[#e8e8e4]"}`} style={{fontFamily:"'Public Sans',sans-serif"}}>
                       <span className="material-symbols-outlined text-[18px]" style={tab.active ? {fontVariationSettings:'"FILL" 1'} : {}}>{tab.icon}</span>
                       {tab.label}
                     </button>
                   ))}
                 </div>
-                <div className="flex items-center justify-center gap-6">
+                <div className="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-6">
                   <button className="flex items-center gap-3 px-4 py-2 rounded border border-[#ba1a1a]/30 text-[#ba1a1a] text-[11px] font-bold uppercase tracking-widest hover:bg-[#ba1a1a]/5 transition-colors" style={{fontFamily:"'Public Sans',sans-serif"}}>
                     <span className="material-symbols-outlined text-[16px]">error</span>
                     Critical Vulnerabilities
@@ -912,10 +912,10 @@ export default function Home() {
           </section>
 
           {/* Sample Report Cards Grid */}
-          <section className="max-w-7xl mx-auto px-8">
+          <section className="max-w-7xl mx-auto px-4 md:px-8">
             <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
               {/* Executive Brief */}
-              <div className="md:col-span-12 bg-[#101b30] text-white rounded-xl p-10 border border-[#c4c6cc]/10 shadow-xl mb-6">
+              <div className="md:col-span-12 bg-[#101b30] text-white rounded-xl p-6 md:p-10 border border-[#c4c6cc]/10 shadow-xl mb-6">
                 <h2 className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#79849d]/60 mb-8" style={{fontFamily:"'Public Sans',sans-serif"}}>Executive Brief</h2>
                 <div className="space-y-8" style={{fontFamily:"'Public Sans',sans-serif"}}>
                   <div className="flex gap-6">
@@ -934,7 +934,7 @@ export default function Home() {
               </div>
 
               {/* Digital Footprint + Risk Score */}
-              <div className="md:col-span-8 bg-[#f3f4f0] rounded-xl p-10 flex flex-col justify-between min-h-[400px] border border-[#c4c6cc]/5">
+              <div className="md:col-span-8 bg-[#f3f4f0] rounded-xl p-6 md:p-10 flex flex-col justify-between min-h-[400px] border border-[#c4c6cc]/5">
                 <div>
                   <div className="w-12 h-12 rounded-lg bg-white flex items-center justify-center mb-10 shadow-sm">
                     <span className="material-symbols-outlined text-[#1B263B] text-3xl">hub</span>
@@ -962,7 +962,7 @@ export default function Home() {
                   </div>
                 </div>
               </div>
-              <div className="md:col-span-4 bg-[#101b30] text-white rounded-xl p-10 flex flex-col justify-between min-h-[400px] shadow-xl">
+              <div className="md:col-span-4 bg-[#101b30] text-white rounded-xl p-6 md:p-10 flex flex-col justify-between min-h-[400px] shadow-xl">
                 <div className="flex justify-between items-start">
                   <span className="material-symbols-outlined text-[#c2dcff] text-4xl" style={{fontVariationSettings:'"FILL" 1'}}>shield_with_heart</span>
                   <span className="bg-[#c2dcff]/20 text-[#c2dcff] px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase">Proprietary Score</span>
@@ -983,7 +983,7 @@ export default function Home() {
 
               {/* Score Breakdown + Video Sentiment */}
               <div className="md:col-span-12 grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-                <div className="bg-white rounded-xl p-10 border border-[#c4c6cc]/15 flex flex-col">
+                <div className="bg-white rounded-xl p-6 md:p-10 border border-[#c4c6cc]/15 flex flex-col">
                   <div className="flex items-center gap-3 mb-8">
                     <span className="material-symbols-outlined text-[#1B263B]">bar_chart_4_bars</span>
                     <h3 className="text-2xl font-bold" style={{fontFamily:"'Newsreader',serif"}}>Score Breakdown</h3>
@@ -1012,7 +1012,7 @@ export default function Home() {
                     ))}
                   </div>
                 </div>
-                <div className="bg-white rounded-xl p-10 border border-[#c4c6cc]/15 flex flex-col">
+                <div className="bg-white rounded-xl p-6 md:p-10 border border-[#c4c6cc]/15 flex flex-col">
                   <div className="flex items-center justify-between mb-8">
                     <div className="flex items-center gap-3">
                       <span className="material-symbols-outlined text-[#1B263B]">video_library</span>
@@ -1050,7 +1050,7 @@ export default function Home() {
               </div>
 
               {/* AI & LLM Appearance */}
-              <div className="md:col-span-12 bg-[#f3f4f0] rounded-xl p-10 flex flex-col md:flex-row items-center gap-10 border border-[#c4c6cc]/15 mt-6">
+              <div className="md:col-span-12 bg-[#f3f4f0] rounded-xl p-6 md:p-10 flex flex-col md:flex-row items-center gap-6 md:gap-10 border border-[#c4c6cc]/15 mt-6">
                 <div className="md:w-1/2">
                   <div className="flex items-center gap-3 mb-6">
                     <div className="w-10 h-10 rounded-full bg-[#1B263B] flex items-center justify-center">
@@ -1076,7 +1076,7 @@ export default function Home() {
               </div>
 
               {/* Crisis + Recommendations side by side */}
-              <div className="md:col-span-6 bg-white rounded-xl p-10 flex flex-col border border-[#ba1a1a]/20 shadow-lg relative overflow-hidden">
+              <div className="md:col-span-6 bg-white rounded-xl p-6 md:p-10 flex flex-col border border-[#ba1a1a]/20 shadow-lg relative overflow-hidden">
                 <div className="absolute top-0 right-0 px-4 py-1 bg-[#ba1a1a] text-white text-[10px] font-bold tracking-[0.2em] uppercase">Critical Alert</div>
                 <div className="flex items-center gap-3 mb-10">
                   <div className="w-10 h-10 rounded-full bg-[#ba1a1a]/10 flex items-center justify-center">
@@ -1103,7 +1103,7 @@ export default function Home() {
                   </div>
                 </div>
               </div>
-              <div className="md:col-span-6 bg-white rounded-xl p-10 flex flex-col border border-[#c4c6cc]/15 shadow-sm">
+              <div className="md:col-span-6 bg-white rounded-xl p-6 md:p-10 flex flex-col border border-[#c4c6cc]/15 shadow-sm">
                 <div className="flex items-center gap-3 mb-10">
                   <div className="w-10 h-10 rounded-full bg-[#f3f4f0] flex items-center justify-center">
                     <span className="material-symbols-outlined text-[#1B263B] text-xl">assignment_turned_in</span>
@@ -1131,12 +1131,12 @@ export default function Home() {
           </section>
 
           {/* Who is it for Section */}
-          <section className="mt-32 max-w-7xl mx-auto px-8">
+          <section className="mt-32 max-w-7xl mx-auto px-4 md:px-8">
             <div className="text-center mb-20">
               <h2 className="text-4xl md:text-5xl tracking-tight text-[#1B263B] leading-tight mb-4" style={{fontFamily:"'Newsreader',serif"}}>Who is it <span className="italic font-light">for:</span></h2>
               <div className="w-12 h-1 bg-[#1B263B]/10 mx-auto"></div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8">
               {[
                 { icon: "rocket_launch", title: "Founders & startups", desc: "Validate and safeguard how your company looks before customers or investors do." },
                 { icon: "handshake", title: "Agencies & consultants", desc: "Run fast reputation audits for clients or prospects and close more sales." },
@@ -1145,7 +1145,7 @@ export default function Home() {
                 { icon: "badge", title: "C-suite executives", desc: "Get a clear overview of your reputation and identify where your team should focus." },
                 { icon: "diamond", title: "High ticket industries", desc: "Identify and resolve potential reputation issues quickly, before they cost you a sale." },
               ].map((item, i) => (
-                <div key={i} className="bg-[#f3f4f0] p-8 rounded-xl border border-[#c4c6cc]/10 flex flex-col hover:border-[#1B263B]/20 transition-all group">
+                <div key={i} className="bg-[#f3f4f0] p-4 md:p-8 rounded-xl border border-[#c4c6cc]/10 flex flex-col hover:border-[#1B263B]/20 transition-all group">
                   <div className="w-10 h-10 rounded bg-[#1B263B]/5 flex items-center justify-center mb-6 group-hover:bg-[#1B263B] group-hover:text-white transition-colors">
                     <span className="material-symbols-outlined text-xl">{item.icon}</span>
                   </div>
@@ -1157,19 +1157,19 @@ export default function Home() {
           </section>
 
           {/* Final CTA */}
-          <section className="mt-32 max-w-4xl mx-auto px-8 py-20 bg-[#edeeea] text-center rounded-2xl border border-[#c4c6cc]/10">
-            <h2 className="text-4xl italic mb-6" style={{fontFamily:"'Newsreader',serif"}}>Secure your digital reputation<br/>or spy on your competitors&apos; strategies</h2>
+          <section className="mt-32 max-w-4xl mx-auto px-4 md:px-8 py-12 md:py-20 bg-[#edeeea] text-center rounded-2xl border border-[#c4c6cc]/10">
+            <h2 className="text-2xl md:text-4xl italic mb-6" style={{fontFamily:"'Newsreader',serif"}}>Secure your digital reputation<br/>or spy on your competitors&apos; strategies</h2>
             <p className="text-[#44474c] mb-10 max-w-xl mx-auto" style={{fontFamily:"'Manrope',sans-serif"}}>
               Join the executive suites of the Fortune 500 who rely on Rep500&apos;s Online Reputation Checker for their daily reputation briefings.
             </p>
-            <button onClick={() => window.scrollTo({top:0,behavior:'smooth'})} className="px-8 py-4 rounded-full bg-[#1B263B] text-white font-bold hover:bg-slate-800 transition-all shadow-lg" style={{fontFamily:"'Manrope',sans-serif"}}>Start Intelligence Scan</button>
+            <button onClick={() => document.getElementById('search-bar')?.scrollIntoView({behavior:'smooth',block:'center'})} className="px-8 py-4 rounded-full bg-[#1B263B] text-white font-bold hover:bg-slate-800 transition-all shadow-lg" style={{fontFamily:"'Manrope',sans-serif"}}>Start Intelligence Scan</button>
           </section>
         </main>
       )}
 
       {/* Disambiguation */}
       {disambiguation && !loading && !report && (
-        <main className="max-w-7xl mx-auto px-8 flex-1 w-full pt-24">
+        <main className="max-w-7xl mx-auto px-4 md:px-8 flex-1 w-full pt-24">
           <div className="max-w-lg mx-auto" style={{ paddingTop: "20px" }}>
             <button onClick={() => { setDisambiguation(null); }}
               className="mb-4 text-sm text-[#1B263B] hover:underline flex items-center gap-1" style={{fontFamily:"'Manrope',sans-serif"}}>&larr; Back to search</button>
@@ -1210,13 +1210,13 @@ export default function Home() {
 
       {/* Report */}
       {report && !loading && (
-        <main className="max-w-7xl mx-auto px-8 flex-1 w-full pt-24">
+        <main className="max-w-7xl mx-auto px-4 md:px-8 flex-1 w-full pt-24">
           <div>
             <button onClick={() => { setReport(null); setName(""); }}
               className="mb-6 text-sm text-[#1B263B] hover:underline flex items-center gap-1" style={{fontFamily:"'Manrope',sans-serif"}}>&larr; New check</button>
 
             {/* Reputation500 report branding */}
-            <div className="flex items-center justify-between mb-4 pb-4 border-b border-[#c4c6cc]/15">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-4 pb-4 border-b border-[#c4c6cc]/15">
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-[#1B263B] text-2xl" style={{fontVariationSettings:'"FILL" 1'}}>shield_person</span>
                 <div>
@@ -1260,8 +1260,8 @@ export default function Home() {
             </div>
 
             {/* Score header */}
-            <div className="report-section bg-white rounded-2xl shadow-sm border border-[#c4c6cc]/15 p-8 mb-6">
-              <div className="flex flex-col md:flex-row items-center gap-8">
+            <div className="report-section bg-white rounded-2xl shadow-sm border border-[#c4c6cc]/15 p-4 md:p-8 mb-6">
+              <div className="flex flex-col md:flex-row items-center gap-4 md:gap-8">
                 <ScoreGauge score={report.score} />
                 <div className="flex-1 text-center md:text-left">
                   <div className="flex flex-wrap items-center gap-3 justify-center md:justify-start mb-2">
@@ -1377,7 +1377,7 @@ export default function Home() {
             )}
 
             {/* Tabs — sticky wrapped grid */}
-            <div className="sticky top-[64px] z-20 bg-[#f9faf5] -mx-8 px-8 pt-3 pb-2" style={{ marginTop: "-1px" }}>
+            <div className="sticky top-[64px] z-20 bg-[#f9faf5] -mx-4 md:-mx-8 px-4 md:px-8 pt-3 pb-2" style={{ marginTop: "-1px" }}>
               <div className="flex flex-wrap gap-1.5">
                 {tabs.map((tab) => (
                   <button key={tab.key} onClick={() => setActiveTab(tab.key)}
@@ -2097,7 +2097,7 @@ export default function Home() {
             {activeTab === "revenue" && report.revenueImpact && (
               <div className="report-section space-y-6">
                 {/* Hero card */}
-                <div className="bg-[#101b30] text-white rounded-xl p-10">
+                <div className="bg-[#101b30] text-white rounded-xl p-6 md:p-10">
                   <h2 className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#79849d] mb-6" style={{fontFamily:"'Public Sans',sans-serif"}}>Revenue Impact Analysis</h2>
                   <div className="flex items-center gap-6 mb-6">
                     <span className="text-6xl font-bold" style={{fontFamily:"'Public Sans',sans-serif"}}>{report.revenueImpact.totalEstimatedImpact}%</span>
@@ -2467,8 +2467,8 @@ export default function Home() {
             {/* ── REVIEWS DASHBOARD TAB (companies only) ───── */}
             {activeTab === "reviews" && report.reviewDashboard && (
               <div className="report-section space-y-6">
-                <div className="bg-white rounded-2xl border border-[#c4c6cc]/15 p-8">
-                  <div className="flex items-center gap-8">
+                <div className="bg-white rounded-2xl border border-[#c4c6cc]/15 p-4 md:p-8">
+                  <div className="flex items-center gap-4 md:gap-8">
                     <div className="text-center">
                       <p className="text-5xl font-bold" style={{ color: report.reviewDashboard.aggregatedRating >= 4 ? "#22c55e" : report.reviewDashboard.aggregatedRating >= 3 ? "#eab308" : "#ef4444", fontFamily:"'Newsreader',serif" }}>
                         {(report.reviewDashboard.aggregatedRating || 0).toFixed(1)}
@@ -2605,7 +2605,7 @@ export default function Home() {
             {/* ── RISK & CRISIS DETECTION TAB ──────────────── */}
             {activeTab === "crisis" && report.crisisDetection && (
               <div className="report-section space-y-6">
-                <div className={`rounded-2xl border p-8 ${
+                <div className={`rounded-2xl border p-4 md:p-8 ${
                   report.crisisDetection.alertLevel === "critical" ? "border-red-400 bg-red-50"
                   : report.crisisDetection.alertLevel === "high" ? "border-orange-300 bg-orange-50"
                   : report.crisisDetection.alertLevel === "moderate" ? "border-yellow-300 bg-yellow-50"
@@ -2901,11 +2901,11 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="bg-[#f9faf5] border-t border-slate-200">
-        <div className="flex flex-col md:flex-row justify-between items-center w-full px-8 py-12 max-w-7xl mx-auto gap-4">
+        <div className="flex flex-col md:flex-row justify-between items-center w-full px-4 md:px-8 py-12 max-w-7xl mx-auto gap-4">
           <div className="text-xs tracking-widest uppercase text-slate-400" style={{fontFamily:"'Public Sans',sans-serif"}}>
             &copy; 2025 Rep500. All rights reserved. Confidentiality Guaranteed.
           </div>
-          <div className="flex gap-8">
+          <div className="flex flex-wrap gap-4 md:gap-8">
             <a className="text-xs tracking-widest uppercase text-slate-400 hover:text-[#0d1b2a] transition-colors" href="#" style={{fontFamily:"'Public Sans',sans-serif"}}>Privacy Policy</a>
             <a className="text-xs tracking-widest uppercase text-slate-400 hover:text-[#0d1b2a] transition-colors" href="#" style={{fontFamily:"'Public Sans',sans-serif"}}>Terms of Service</a>
             <a className="text-xs tracking-widest uppercase text-slate-400 hover:text-[#0d1b2a] transition-colors" href="#" style={{fontFamily:"'Public Sans',sans-serif"}}>Security</a>
