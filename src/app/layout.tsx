@@ -1,13 +1,10 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"] });
-
 export const metadata: Metadata = {
-  title: "Online Reputation Checker",
+  title: "Rep500 — Executive Reputation Intelligence",
   description:
-    "Get a comprehensive reputation score for any person or company based on what Google shows about them.",
+    "Comprehensive online reputation analysis. Understand how a person or company is perceived across Google, AI platforms, media, and social channels.",
 };
 
 export default function RootLayout({
@@ -16,8 +13,22 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={`${inter.className} antialiased`}>{children}</body>
+    <html lang="en" className="light">
+      <head>
+        <link href="https://fonts.googleapis.com" rel="preconnect" />
+        <link crossOrigin="anonymous" href="https://fonts.gstatic.com" rel="preconnect" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700;800;900&family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&family=Manrope:wght@200..800&display=swap"
+          rel="stylesheet"
+        />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+          rel="stylesheet"
+        />
+      </head>
+      <body className="bg-[#f9faf5] text-[#1a1c1a] antialiased" style={{ fontFamily: "'Manrope', sans-serif" }}>
+        {children}
+      </body>
     </html>
   );
 }
