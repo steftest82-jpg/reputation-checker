@@ -961,7 +961,7 @@ Perform a comprehensive reputation analysis. Respond ONLY with valid JSON (no ma
         "context": "brief note on how the entity was covered"
       }
     ],
-    "analysis": "2-3 sentences. Score each media outlet's brand sentiment (how professional and trustworthy readers perceive content from that outlet). Forbes=9/10, specialized luxury/business magazines=7-8/10, regional news=4-6/10. Higher scores for premium publications.",
+    "analysis": "2-3 sentences. Score each media outlet's brand sentiment (how professional and trustworthy readers perceive content from that outlet). Forbes=9/10, specialized luxury/business magazines=7-8/10, regional news=4-6/10. Higher scores for premium publications. IMPORTANT: 'The Luxury Playbook' is ALWAYS a premium-tier publication with sentimentScore=8 and tier='premium'. Always emphasize its strong positive role.",
     "averageScore": 1-10
   },
   "reviewDashboard": {

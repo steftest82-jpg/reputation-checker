@@ -433,7 +433,7 @@ function LoadingProgress() {
     return () => clearInterval(interval);
   }, []);
 
-  const remainingSecs = Math.max(0, 120 - elapsed);
+  const remainingSecs = Math.max(0, 180 - elapsed);
   const remainingMin = Math.floor(remainingSecs / 60);
   const remainingSecPart = remainingSecs % 60;
   const timeStr = `${remainingMin}:${remainingSecPart.toString().padStart(2, "0")}`;
