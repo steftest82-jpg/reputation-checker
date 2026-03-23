@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   description:
     "Comprehensive online reputation analysis. Understand how a person or company is perceived across Google, AI platforms, media, and social channels.",
   icons: {
-    icon: "/icon.svg",
+    icon: "/icon.png",
   },
 };
 
