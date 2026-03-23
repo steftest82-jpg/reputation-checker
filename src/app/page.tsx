@@ -765,7 +765,7 @@ export default function Home() {
 
       {/* Homepage */}
       {!report && !loading && !disambiguation && (
-        <main className="pb-24 overflow-x-hidden pt-32" style={{paddingTop:'calc(8rem - 5px)'}}>
+        <main className="pb-24 overflow-x-hidden pt-32" style={{paddingTop:'calc(8rem - 10px)'}}>
           {/* Hero Section */}
           <section className="max-w-7xl mx-auto px-8 mb-24 text-center">
             <div className="max-w-3xl mx-auto mb-16 pt-[10px]">
@@ -786,7 +786,7 @@ export default function Home() {
             {/* Search bar - pill-shaped */}
             <form onSubmit={handleSubmit}>
               <div className="max-w-4xl mx-auto relative">
-                <div className="bg-white p-2 rounded-full shadow-[0_20px_40px_rgba(26,28,26,0.05)] border border-[#c4c6cc]/15 flex flex-col md:flex-row items-center gap-2">
+                <div className="bg-white p-2 rounded-full shadow-[0_20px_40px_rgba(26,28,26,0.05)] border border-[#101b30] flex flex-col md:flex-row items-center gap-2">
                   {/* Toggle */}
                   <div className="bg-[#e8e8e4] p-1 rounded-full flex gap-1 ml-2">
                     <button type="button" onClick={() => setType("person")}
