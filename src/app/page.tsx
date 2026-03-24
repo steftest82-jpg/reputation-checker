@@ -1376,11 +1376,13 @@ export default function Home() {
               </a>
             )}
 
+            {/* Scroll anchor (non-sticky, sits in normal flow right above tabs) */}
+            <div id="tabs-anchor" style={{ marginBottom: "-1px" }} />
             {/* Tabs — sticky wrapped grid */}
             <div id="report-tabs" className="sticky top-[64px] z-20 bg-[#f9faf5] -mx-4 md:-mx-8 px-4 md:px-8 pt-3 pb-2" style={{ marginTop: "-1px" }}>
               <div className="flex flex-wrap gap-1.5">
                 {tabs.map((tab) => (
-                  <button key={tab.key} onClick={() => { setActiveTab(tab.key); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                  <button key={tab.key} onClick={() => { setActiveTab(tab.key); document.getElementById('tabs-anchor')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}
                     className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all ${
                       activeTab === tab.key
                         ? "bg-[#1B263B] text-white border-b-2 border-[#D4AF37] shadow-sm"
