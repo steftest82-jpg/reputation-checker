@@ -2906,10 +2906,9 @@ export default function Home() {
             &copy; 2025 Rep500. All rights reserved. Confidentiality Guaranteed.
           </div>
           <div className="flex flex-wrap gap-4 md:gap-8">
-            <a className="text-xs tracking-widest uppercase text-slate-400 hover:text-[#0d1b2a] transition-colors" href="#" style={{fontFamily:"'Public Sans',sans-serif"}}>Privacy Policy</a>
-            <a className="text-xs tracking-widest uppercase text-slate-400 hover:text-[#0d1b2a] transition-colors" href="#" style={{fontFamily:"'Public Sans',sans-serif"}}>Terms of Service</a>
-            <a className="text-xs tracking-widest uppercase text-slate-400 hover:text-[#0d1b2a] transition-colors" href="#" style={{fontFamily:"'Public Sans',sans-serif"}}>Security</a>
-            <a className="text-xs tracking-widest uppercase text-slate-400 hover:text-[#0d1b2a] transition-colors" href="#" style={{fontFamily:"'Public Sans',sans-serif"}}>Contact</a>
+            <a className="text-xs tracking-widest uppercase text-slate-400 hover:text-[#0d1b2a] transition-colors" href="/privacy" style={{fontFamily:"'Public Sans',sans-serif"}}>Privacy Policy</a>
+            <a className="text-xs tracking-widest uppercase text-slate-400 hover:text-[#0d1b2a] transition-colors" href="/terms" style={{fontFamily:"'Public Sans',sans-serif"}}>Terms of Service</a>
+            <button className="text-xs tracking-widest uppercase text-slate-400 hover:text-[#0d1b2a] transition-colors" onClick={() => { setContactModal({ open: true, packageName: "" }); setContactSent(false); setContactForm({ name: "", email: "" }); }} style={{fontFamily:"'Public Sans',sans-serif"}}>Contact</button>
           </div>
         </div>
       </footer>
@@ -2925,12 +2924,14 @@ export default function Home() {
                   onClick={() => setContactModal({ open: false, packageName: "" })}
                   className="absolute top-4 right-4 text-[#74777d] hover:text-[#1a1c1a] text-xl leading-none"
                 >&times;</button>
-                <h3 className="text-lg font-bold text-[#1a1c1a] mb-1" style={{fontFamily:"'Newsreader',serif"}}>Get Started with Reputation500</h3>
-                <p className="text-sm text-[#74777d] mb-1" style={{fontFamily:"'Manrope',sans-serif"}}>
-                  Package: <span className="font-medium text-[#1B263B]">{contactModal.packageName}</span>
-                </p>
+                <h3 className="text-lg font-bold text-[#1a1c1a] mb-1" style={{fontFamily:"'Newsreader',serif"}}>{contactModal.packageName ? "Get Started with Reputation500" : "Contact Rep500"}</h3>
+                {contactModal.packageName && (
+                  <p className="text-sm text-[#74777d] mb-1" style={{fontFamily:"'Manrope',sans-serif"}}>
+                    Package: <span className="font-medium text-[#1B263B]">{contactModal.packageName}</span>
+                  </p>
+                )}
                 <p className="text-xs text-[#74777d] mb-5" style={{fontFamily:"'Manrope',sans-serif"}}>
-                  Fill in your details and our reputation expert will contact you within 24 hours.
+                  {contactModal.packageName ? "Fill in your details and our reputation expert will contact you within 24 hours." : "Have a question or need help? Fill in your details and we\u2019ll get back to you within 24 hours."}
                 </p>
                 <form
                   onSubmit={async (e) => {

@@ -30,8 +30,9 @@ function generatePDF(report: Record<string, unknown>): Promise<Buffer> {
     const entityType = String(report.entityType || "unknown");
 
     // ── Helpers ──
-    function space() { if (doc.y > doc.page.height - 60) doc.addPage(); }
-    function need(n: number) { if (doc.y > doc.page.height - n) doc.addPage(); }
+    const bottomMargin = 55; // reserve space for page footer
+    function space() { if (doc.y > doc.page.height - bottomMargin) doc.addPage(); }
+    function need(n: number) { if (doc.y > doc.page.height - bottomMargin - n) doc.addPage(); }
 
     function sec(title: string) {
       need(70);
@@ -523,13 +524,27 @@ function generatePDF(report: Record<string, unknown>): Promise<Buffer> {
       for (const q of paa) { need(12); doc.fontSize(7).fillColor(C.on).text(`Q: ${q}`, 50, doc.y, { width: cW }); }
     }
 
+    // ── REMOVE TRAILING BLANK PAGES ──
+    // Check if last page is essentially empty (cursor near top margin)
+    const totalPages = doc.bufferedPageRange();
+    if (totalPages.count > 1) {
+      doc.switchToPage(totalPages.count - 1);
+      // If the cursor is still near the top (< 100px = essentially blank), remove by switching back
+      if (doc.y < 100) {
+        // PDFKit doesn't support page removal directly, so we add a tiny invisible dot
+        // to avoid a fully blank page. Instead, we prevent blank pages by not adding them.
+        // Since we can't remove, we'll add a subtle closing element.
+        doc.fontSize(6).fillColor(C.out).text("— End of Report —", 50, doc.page.height / 2, { align: "center", width: cW });
+      }
+    }
+
     // ── PAGE FOOTERS ──
-    const pages = doc.bufferedPageRange();
-    for (let i = 0; i < pages.count; i++) {
+    const finalPages = doc.bufferedPageRange();
+    for (let i = 0; i < finalPages.count; i++) {
       doc.switchToPage(i);
       doc.moveTo(50, doc.page.height - 42).lineTo(W - 50, doc.page.height - 42).strokeColor(C.outV).lineWidth(0.5).stroke();
       doc.fontSize(6).fillColor(C.out).text("REP500  •  Online Reputation Intelligence  •  reputation500.com", 50, doc.page.height - 36, { align: "center", width: cW });
-      doc.fontSize(5).fillColor(C.outV).text(`Page ${i + 1} of ${pages.count}  •  CONFIDENTIAL`, 50, doc.page.height - 26, { align: "center", width: cW });
+      doc.fontSize(5).fillColor(C.outV).text(`Page ${i + 1} of ${finalPages.count}  •  CONFIDENTIAL`, 50, doc.page.height - 26, { align: "center", width: cW });
     }
 
     doc.end();
