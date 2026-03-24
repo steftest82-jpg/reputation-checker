@@ -151,18 +151,22 @@ export async function POST(req: NextRequest) {
   try {
     const { name, email, packageName, reportName, reportScore, reportData } = await req.json();
 
-    if (!name || !email || !packageName) {
+    if (!name || !email) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
+    const isGeneralContact = !packageName;
+    const emailType = isGeneralContact ? "General Contact Inquiry" : packageName === "Report Unlock" ? "Report Unlock Lead" : "Package Inquiry";
+
     let emailHtml = `
-      <h2>New ${packageName === "Report Unlock" ? "Report Unlock Lead" : "Package Inquiry"} from Reputation Check Tool</h2>
+      <h2>${isGeneralContact ? "📩 New Contact Form Submission" : `New ${emailType}`} from Rep500</h2>
+      ${isGeneralContact ? `<p style="color:#2563eb;font-weight:bold;font-size:14px;">This is a general contact inquiry from the website footer.</p>` : ""}
       <table style="border-collapse:collapse;width:100%;max-width:500px;">
         <tr><td style="${th}">Name</td><td style="${td}">${name}</td></tr>
         <tr><td style="${th}">Email</td><td style="${td}"><a href="mailto:${email}">${email}</a></td></tr>
-        <tr><td style="${th}">Package</td><td style="${td}">${packageName}</td></tr>
+        ${packageName ? `<tr><td style="${th}">Package</td><td style="${td}">${packageName}</td></tr>` : `<tr><td style="${th}">Type</td><td style="${td}">General Contact</td></tr>`}
         ${reportName ? `<tr><td style="${th}">Report For</td><td style="${td}">${reportName}</td></tr>` : ""}
-        ${reportScore !== undefined ? `<tr><td style="${th}">Reputation Score</td><td style="${td}">${reportScore}/100</td></tr>` : ""}
+        ${reportScore !== undefined && reportScore > 0 ? `<tr><td style="${th}">Reputation Score</td><td style="${td}">${reportScore}/100</td></tr>` : ""}
       </table>
     `;
 
@@ -180,7 +184,7 @@ export async function POST(req: NextRequest) {
       const { data, error } = await resend.emails.send({
         from: "Reputation500 <onboarding@resend.dev>",
         to: TO_EMAIL,
-        subject: `New Lead: ${name} — ${packageName}`,
+        subject: isGeneralContact ? `Contact Form: ${name}` : `New Lead: ${name} — ${packageName}`,
         html: emailHtml,
       });
 
