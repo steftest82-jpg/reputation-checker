@@ -16,9 +16,9 @@ export const metadata: Metadata = {
     siteName: "Rep500",
     images: [
       {
-        url: "https://reputation500.com/og-image.png",
-        width: 1080,
-        height: 1080,
+        url: "https://reputation500.com/og-image.jpg",
+        width: 1200,
+        height: 630,
         alt: "Rep500 — Comprehensive Online Reputation Analysis",
       },
     ],
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
     title: "Rep500 — Comprehensive Online Reputation Analysis",
     description:
       "Understand how a person or company is perceived across Google, AI platforms, media, and social channels.",
-    images: ["https://reputation500.com/og-image.png"],
+    images: ["https://reputation500.com/og-image.jpg"],
   },
 };
 
