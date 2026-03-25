@@ -17,6 +17,7 @@ export async function POST(req: NextRequest) {
       payment_method_types: ["card"],
       mode: "payment",
       allow_promotion_codes: true,
+      automatic_tax: { enabled: true },
       line_items: [
         {
           price_data: {
@@ -26,6 +27,7 @@ export async function POST(req: NextRequest) {
               description: `Full reputation scan for "${name}"`,
             },
             unit_amount: 1299, // $12.99
+            tax_behavior: "exclusive",
           },
           quantity: 1,
         },
