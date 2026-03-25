@@ -42,6 +42,13 @@ export default function RootLayout({
   return (
     <html lang="en" className="light">
       <head>
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-YVXHGSYFKJ"></script>
+        <script dangerouslySetInnerHTML={{ __html: `
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-YVXHGSYFKJ');
+        `}} />
         <link href="https://fonts.googleapis.com" rel="preconnect" />
         <link crossOrigin="anonymous" href="https://fonts.gstatic.com" rel="preconnect" />
         <link
