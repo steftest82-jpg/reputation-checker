@@ -1,15 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
+import Stripe from "stripe";
 
-// ── API Keys ─
-// Keys loaded from env vars. Fallback parts are split to pass push protection.
-const _p = ["sk-ant-api", "03-UMtZTJ6CVq2VXKv2IfH", "OsRlF1EROc42e8IaLDwxHr8Bw9hVP2"];
-const _q = ["-0ZosSdXsaUQlCrQ-8pK85nwL9g04NXT", "-cpMw-SEmR4QAA"];
-const _sp = ["d8650cb01b3dc806a3c690e9", "659b3723a9c64abd3034b58d", "de62d6df6e50175a"];
-const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY || [..._p, ..._q].join("");
-const SERP_KEY = process.env.SERPAPI_KEY || _sp.join("");
-const NEWSAPI_KEY = process.env.NEWSAPI_KEY || "31be5517c1234a20854dafa842d2db8b";
-const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY || "AIzaSyCiAPzAJmuCtZik8uhkWYfsFSUaXFo4ykw";
+// ── API Keys (loaded exclusively from environment variables) ─
+const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY || "";
+const SERP_KEY = process.env.SERPAPI_KEY || "";
+const NEWSAPI_KEY = process.env.NEWSAPI_KEY || "";
+const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY || "";
+const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || "";
 
 // ── Rate-limit store (in-memory; resets on cold start) ──────────────
 const ipHits: Record<string, { count: number; firstHit: number }> = {};
@@ -1425,7 +1423,25 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { name, type, industry, domain: userDomain } = await req.json();
+    const body = await req.json();
+    const { name, type, industry, domain: userDomain, stripe_session_id } = body;
+
+    // ── Payment verification: require valid Stripe session ──
+    if (stripe_session_id) {
+      try {
+        const stripe = new Stripe(STRIPE_SECRET_KEY);
+        const session = await stripe.checkout.sessions.retrieve(stripe_session_id);
+        if (session.payment_status !== "paid") {
+          return NextResponse.json({ error: "Payment not completed." }, { status: 402 });
+        }
+      } catch {
+        return NextResponse.json({ error: "Invalid payment session." }, { status: 402 });
+      }
+    } else {
+      // No session ID = no payment = block access
+      return NextResponse.json({ error: "Payment required." }, { status: 402 });
+    }
+
     if (!name || typeof name !== "string" || name.trim().length < 2) {
       return NextResponse.json(
         { error: "Please provide a valid name (at least 2 characters)." },

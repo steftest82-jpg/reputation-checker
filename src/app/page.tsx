@@ -694,6 +694,7 @@ export default function Home() {
   const [disambiguation, setDisambiguation] = useState<{ name: string; options: { industry: string; label: string }[]; message: string } | null>(null);
   const [paymentVerified, setPaymentVerified] = useState(false);
   const [redirectingToCheckout, setRedirectingToCheckout] = useState(false);
+  const [stripeSessionId, setStripeSessionId] = useState("");
 
   // On mount: check if returning from Stripe payment
   useEffect(() => {
@@ -714,11 +715,12 @@ export default function Home() {
           const data = await res.json();
           if (data.paid) {
             setPaymentVerified(true);
+            setStripeSessionId(sessionId);
             setName(data.name);
             setType(data.type || "person");
             if (data.domain) setDomain(data.domain);
-            // Run the scan
-            runCheck(data.name, data.type || "person", undefined, data.domain || "");
+            // Run the scan with the verified session ID
+            runCheck(data.name, data.type || "person", undefined, data.domain || "", sessionId);
           } else {
             setError("Payment could not be verified. Please try again.");
           }
@@ -730,7 +732,7 @@ export default function Home() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  async function runCheck(checkName: string, checkType: string, industry?: string, overrideDomain?: string) {
+  async function runCheck(checkName: string, checkType: string, industry?: string, overrideDomain?: string, sessionOverride?: string) {
     setLoading(true);
     setError("");
     setReport(null);
@@ -740,6 +742,9 @@ export default function Home() {
       if (industry) payload.industry = industry;
       const domainVal = overrideDomain !== undefined ? overrideDomain : domain.trim();
       if (domainVal) payload.domain = domainVal;
+      // Pass Stripe session ID for server-side payment verification
+      const sid = sessionOverride || stripeSessionId;
+      if (sid) payload.stripe_session_id = sid;
       const res = await fetch("/api/check", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
