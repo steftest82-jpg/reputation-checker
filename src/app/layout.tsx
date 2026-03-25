@@ -8,6 +8,29 @@ export const metadata: Metadata = {
   icons: {
     icon: "/icon.png",
   },
+  openGraph: {
+    title: "Rep500 — Comprehensive Online Reputation Analysis",
+    description:
+      "Understand how a person or company is perceived across Google, AI platforms, media, and social channels.",
+    url: "https://reputation500.com",
+    siteName: "Rep500",
+    images: [
+      {
+        url: "https://reputation500.com/og-image.png",
+        width: 1080,
+        height: 1080,
+        alt: "Rep500 — Comprehensive Online Reputation Analysis",
+      },
+    ],
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Rep500 — Comprehensive Online Reputation Analysis",
+    description:
+      "Understand how a person or company is perceived across Google, AI platforms, media, and social channels.",
+    images: ["https://reputation500.com/og-image.png"],
+  },
 };
 
 export default function RootLayout({
