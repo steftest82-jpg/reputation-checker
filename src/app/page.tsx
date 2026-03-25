@@ -693,6 +693,7 @@ export default function Home() {
   const [downloading, setDownloading] = useState(false);
   const [disambiguation, setDisambiguation] = useState<{ name: string; options: { industry: string; label: string }[]; message: string } | null>(null);
   const [paymentVerified, setPaymentVerified] = useState(false);
+  const [redirectingToCheckout, setRedirectingToCheckout] = useState(false);
 
   // On mount: check if returning from Stripe payment
   useEffect(() => {
@@ -767,7 +768,7 @@ export default function Home() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim()) return;
-    setLoading(true);
+    setRedirectingToCheckout(true);
     setError("");
     try {
       const res = await fetch("/api/create-checkout", {
@@ -783,7 +784,7 @@ export default function Home() {
       }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Payment initiation failed.");
-      setLoading(false);
+      setRedirectingToCheckout(false);
     }
   }
 
@@ -862,9 +863,9 @@ export default function Home() {
                       placeholder={type === "person" ? "Enter a person's name" : "Enter a company name"} type="text" />
                   </div>
                   {/* Action Button */}
-                  <button type="submit"
-                    className="w-full md:w-auto px-10 py-4 rounded-full text-white font-bold text-lg tracking-tight hover:shadow-lg transition-all active:scale-95 duration-150 bg-gradient-to-r from-[#101b30] to-[#3c475d]" style={{fontFamily:"'Manrope',sans-serif"}}>
-                    Analyze ($12,99)
+                  <button type="submit" disabled={redirectingToCheckout}
+                    className={`w-full md:w-auto px-10 py-4 rounded-full text-white font-bold text-lg tracking-tight hover:shadow-lg transition-all active:scale-95 duration-150 bg-gradient-to-r from-[#101b30] to-[#3c475d] ${redirectingToCheckout ? "opacity-70 cursor-not-allowed" : ""}`} style={{fontFamily:"'Manrope',sans-serif"}}>
+                    {redirectingToCheckout ? "Redirecting to payment..." : "Analyze ($12.99)"}
                   </button>
                 </div>
 
