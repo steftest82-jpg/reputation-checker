@@ -692,8 +692,44 @@ export default function Home() {
   const [contactSent, setContactSent] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [disambiguation, setDisambiguation] = useState<{ name: string; options: { industry: string; label: string }[]; message: string } | null>(null);
+  const [paymentVerified, setPaymentVerified] = useState(false);
 
-  async function runCheck(checkName: string, checkType: string, industry?: string) {
+  // On mount: check if returning from Stripe payment
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const paid = params.get("paid");
+    const sessionId = params.get("session_id");
+    if (paid === "true" && sessionId) {
+      // Clean URL
+      window.history.replaceState({}, "", "/");
+      // Verify payment and auto-run scan
+      (async () => {
+        try {
+          const res = await fetch("/api/verify-payment", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ session_id: sessionId }),
+          });
+          const data = await res.json();
+          if (data.paid) {
+            setPaymentVerified(true);
+            setName(data.name);
+            setType(data.type || "person");
+            if (data.domain) setDomain(data.domain);
+            // Run the scan
+            runCheck(data.name, data.type || "person", undefined, data.domain || "");
+          } else {
+            setError("Payment could not be verified. Please try again.");
+          }
+        } catch {
+          setError("Payment verification failed. Please contact support.");
+        }
+      })();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function runCheck(checkName: string, checkType: string, industry?: string, overrideDomain?: string) {
     setLoading(true);
     setError("");
     setReport(null);
@@ -701,7 +737,8 @@ export default function Home() {
     try {
       const payload: Record<string, string> = { name: checkName, type: checkType };
       if (industry) payload.industry = industry;
-      if (domain.trim()) payload.domain = domain.trim();
+      const domainVal = overrideDomain !== undefined ? overrideDomain : domain.trim();
+      if (domainVal) payload.domain = domainVal;
       const res = await fetch("/api/check", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -730,7 +767,24 @@ export default function Home() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim()) return;
-    await runCheck(name.trim(), type);
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch("/api/create-checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: name.trim(), type, domain: domain.trim() }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error(data.error || "Could not create checkout session");
+      }
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Payment initiation failed.");
+      setLoading(false);
+    }
   }
 
   function handleDisambiguationSelect(industry: string) {
