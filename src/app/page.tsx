@@ -709,6 +709,7 @@ export default function Home() {
   const [redirectingToCheckout, setRedirectingToCheckout] = useState(false);
   const [stripeSessionId, setStripeSessionId] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
+  const [domainStep, setDomainStep] = useState(false);
 
   // On mount: check if returning from Stripe payment
   useEffect(() => {
@@ -734,8 +735,8 @@ export default function Home() {
             setType(data.type || "person");
             if (data.domain) setDomain(data.domain);
             if (data.customerEmail) setCustomerEmail(data.customerEmail);
-            // Run the scan with the verified session ID
-            runCheck(data.name, data.type || "person", undefined, data.domain || "", sessionId);
+            // Show domain collection step before running scan
+            setDomainStep(true);
           } else {
             setError("Payment could not be verified. Please try again.");
           }
@@ -819,7 +820,7 @@ export default function Home() {
 
   function handleDisambiguationSelect(industry: string) {
     if (!disambiguation) return;
-    runCheck(disambiguation.name, type, industry);
+    runCheck(disambiguation.name, type, industry, domain.trim() || undefined);
   }
 
   const tabs = [
@@ -897,15 +898,6 @@ export default function Home() {
                     {redirectingToCheckout ? "Redirecting to payment..." : "Analyze ($34.99)"}
                   </button>
                 </div>
-
-                {/* Optional domain input for companies */}
-                {type === "company" && (
-                  <div className="mt-4 max-w-xl mx-auto">
-                    <input type="text" value={domain} onChange={(e) => setDomain(e.target.value)}
-                      placeholder="Company domain (optional, e.g. acmecorp.com)"
-                      className="w-full h-12 pl-5 pr-5 rounded-full border border-[#101b30] focus:outline-none focus:ring-2 focus:ring-[#1B263B]/20 bg-white text-[#44474c]" style={{fontFamily:"'Manrope',sans-serif",fontSize:'0.9rem'}} />
-                  </div>
-                )}
 
                 {error && <p className="text-[#ba1a1a] mt-3 text-sm" style={{fontFamily:"'Manrope',sans-serif"}}>{error}</p>}
 
@@ -1349,6 +1341,57 @@ export default function Home() {
                     <span className="material-symbols-outlined text-[#c4c6cc] group-hover:text-[#1B263B] transition">chevron_right</span>
                   </button>
                 ))}
+              </div>
+            </div>
+          </div>
+        </main>
+      )}
+
+      {/* Domain Collection Step — after payment, before scan */}
+      {domainStep && !loading && !report && !disambiguation && (
+        <main className="max-w-7xl mx-auto px-4 md:px-8 flex-1 w-full pt-24">
+          <div className="max-w-lg mx-auto" style={{ paddingTop: "20px" }}>
+            <div className="bg-white rounded-2xl border border-[#1B263B]/20 shadow-sm p-8">
+              <div className="text-center mb-6">
+                <div className="w-14 h-14 bg-[#f3f4f0] rounded-full flex items-center justify-center mx-auto mb-3">
+                  <span className="material-symbols-outlined text-[#1B263B] text-2xl">language</span>
+                </div>
+                <h3 className="text-xl font-bold text-[#1a1c1a] mb-1" style={{fontFamily:"'Newsreader',serif"}}>Almost there</h3>
+                <p className="text-sm text-[#74777d]" style={{fontFamily:"'Manrope',sans-serif"}}>
+                  Enter the website for <span className="font-semibold text-[#1B263B]">{name}</span> to include a full domain check in your report.
+                </p>
+              </div>
+              <div className="space-y-4">
+                <input
+                  type="text"
+                  value={domain}
+                  onChange={(e) => setDomain(e.target.value)}
+                  placeholder="e.g. acmecorp.com"
+                  className="w-full h-12 pl-5 pr-5 rounded-xl border border-[#1B263B]/20 focus:outline-none focus:ring-2 focus:ring-[#1B263B]/20 bg-white text-[#1a1c1a] text-sm"
+                  style={{fontFamily:"'Manrope',sans-serif"}}
+                  autoFocus
+                />
+                <button
+                  onClick={() => {
+                    setDomainStep(false);
+                    runCheck(name, type, undefined, domain.trim(), stripeSessionId);
+                  }}
+                  disabled={!domain.trim()}
+                  className="w-full py-3.5 rounded-xl text-white font-bold text-sm tracking-tight transition-all bg-gradient-to-r from-[#101b30] to-[#3c475d] hover:shadow-lg disabled:opacity-40 disabled:cursor-not-allowed"
+                  style={{fontFamily:"'Manrope',sans-serif"}}
+                >
+                  Start Analysis
+                </button>
+                <button
+                  onClick={() => {
+                    setDomainStep(false);
+                    runCheck(name, type, undefined, "", stripeSessionId);
+                  }}
+                  className="w-full py-2.5 text-[#74777d] text-xs hover:text-[#1B263B] transition-colors"
+                  style={{fontFamily:"'Manrope',sans-serif"}}
+                >
+                  Skip — I don&apos;t have a website
+                </button>
               </div>
             </div>
           </div>
