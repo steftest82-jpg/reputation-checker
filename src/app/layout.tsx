@@ -59,6 +59,40 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
           rel="stylesheet"
         />
+        <style dangerouslySetInnerHTML={{ __html: `
+          @media print {
+            /* Hide non-report elements */
+            nav, footer, .no-print, button, [class*="sticky"] { display: none !important; }
+
+            /* Reset background */
+            body, html { background: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+            /* Page setup */
+            @page { margin: 0.6in 0.5in; size: A4; }
+
+            /* Show all tabs content for print */
+            .report-section { display: block !important; }
+
+            /* Remove shadows and borders for clean print */
+            * { box-shadow: none !important; }
+
+            /* Prevent page breaks inside cards */
+            .report-section > div { break-inside: avoid; page-break-inside: avoid; }
+
+            /* Ensure colors print */
+            [class*="bg-"], [class*="text-"] { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+            /* Hide loading, homepage, packages */
+            main > section:last-of-type, [class*="packages"] { display: none !important; }
+
+            /* Ensure links show URLs */
+            a[href]:after { content: ""; }
+
+            /* Typography for print */
+            body { font-size: 11pt; line-height: 1.4; }
+            h1, h2, h3, h4 { break-after: avoid; page-break-after: avoid; }
+          }
+        `}} />
       </head>
       <body className="bg-[#f9faf5] text-[#1a1c1a] antialiased" style={{ fontFamily: "'Manrope', sans-serif" }}>
         {children}

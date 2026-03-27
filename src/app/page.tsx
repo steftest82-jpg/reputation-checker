@@ -705,6 +705,7 @@ export default function Home() {
   const [contactForm, setContactForm] = useState({ name: "", email: "" });
   const [contactSent, setContactSent] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [printMode, setPrintMode] = useState(false);
   const [disambiguation, setDisambiguation] = useState<{ name: string; options: { industry: string; label: string }[]; message: string } | null>(null);
   const [paymentVerified, setPaymentVerified] = useState(false);
   const [redirectingToCheckout, setRedirectingToCheckout] = useState(false);
@@ -1451,37 +1452,18 @@ export default function Home() {
                 </div>
               </div>
               <button
-                onClick={async () => {
-                  setDownloading(true);
-                  try {
-                    const res = await fetch("/api/send-report", {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ email: "__download__", report }),
-                    });
-                    if (res.ok) {
-                      const blob = await res.blob();
-                      const url = URL.createObjectURL(blob);
-                      const a = document.createElement("a");
-                      a.href = url;
-                      a.download = `Rep500-Report-${(report.name || "Report").replace(/[^a-zA-Z0-9]/g, "-")}.pdf`;
-                      document.body.appendChild(a);
-                      a.click();
-                      document.body.removeChild(a);
-                      URL.revokeObjectURL(url);
-                    }
-                  } catch (err) {
-                    console.error("Download failed:", err);
-                  } finally {
-                    setDownloading(false);
-                  }
+                onClick={() => {
+                  setPrintMode(true);
+                  setTimeout(() => {
+                    window.print();
+                    setPrintMode(false);
+                  }, 200);
                 }}
-                disabled={downloading}
-                className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#101b30] to-[#3c475d] hover:shadow-lg disabled:opacity-50 text-white rounded-xl text-sm font-semibold transition"
+                className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#101b30] to-[#3c475d] hover:shadow-lg text-white rounded-xl text-sm font-semibold transition no-print"
                 style={{fontFamily:"'Manrope',sans-serif"}}
               >
                 <span className="material-symbols-outlined text-lg">download</span>
-                {downloading ? "Generating..." : "Download PDF"}
+                Save as PDF
               </button>
             </div>
 
@@ -1580,10 +1562,10 @@ export default function Home() {
             )}
 
             {/* CTA banner to packages (only if score < 80) */}
-            {report.packageRecommendations?.show && (
+            {report.packageRecommendations?.show && !printMode && (
               <a
                 href="#reputation500-packages"
-                className="block mb-6 bg-gradient-to-r from-[#101b30] to-[#3c475d] rounded-xl p-4 text-white hover:shadow-lg transition-all group"
+                className="block mb-6 bg-gradient-to-r from-[#101b30] to-[#3c475d] rounded-xl p-4 text-white hover:shadow-lg transition-all group no-print"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -1630,7 +1612,7 @@ export default function Home() {
             </div>
 
             {/* ── OVERVIEW TAB ──────────────────────────────── */}
-            {activeTab === "overview" && (
+            {(activeTab === "overview" || printMode) && (
               <div className="report-section grid md:grid-cols-2 gap-6">
                 <div className="space-y-6">
                   <Card title="Score Breakdown">
@@ -2388,7 +2370,7 @@ export default function Home() {
 
             {/* ── AI / LLM APPEARANCE TAB ─────────────────── */}
             {/* ── REVENUE IMPACT TAB ──────────────────────── */}
-            {activeTab === "revenue" && report.revenueImpact && (
+            {(activeTab === "revenue" || printMode) && report.revenueImpact && (
               <div className="report-section space-y-6">
                 {/* Hero card */}
                 <div className="bg-[#101b30] text-white rounded-xl p-6 md:p-10">
@@ -2523,7 +2505,7 @@ export default function Home() {
               </div>
             )}
 
-            {activeTab === "ai-llm" && report.aiLlmAppearance && (
+            {(activeTab === "ai-llm" || printMode) && report.aiLlmAppearance && (
               <div className="report-section space-y-6">
                 <div className="bg-white rounded-2xl border border-[#c4c6cc]/15 p-8">
                   <div className="flex flex-col md:flex-row items-center gap-8">
@@ -2649,7 +2631,7 @@ export default function Home() {
             )}
 
             {/* ── SUSPICIOUS ACTIVITY TAB ──────────────────── */}
-            {activeTab === "suspicious" && report.suspiciousActivityAnalysis && (
+            {(activeTab === "suspicious" || printMode) && report.suspiciousActivityAnalysis && (
               <div className="report-section space-y-6">
                 <div className="bg-white rounded-2xl border border-[#c4c6cc]/15 p-8">
                   <div className="flex flex-col md:flex-row items-center gap-8">
@@ -2752,7 +2734,7 @@ export default function Home() {
             )}
 
             {/* ── INFLUENCERS TAB ────────────────────────────── */}
-            {activeTab === "influencers" && (
+            {(activeTab === "influencers" || printMode) && (
               <div className="report-section space-y-6">
                 <Card title="Influencer & Third-Party Mentions">
                   <p className="text-xs text-[#74777d] mb-4 border-b border-[#c4c6cc]/10 pb-3" style={{fontFamily:"'Manrope',sans-serif"}}>
@@ -2794,7 +2776,7 @@ export default function Home() {
             )}
 
             {/* ── REVIEWS DASHBOARD TAB (companies only) ───── */}
-            {activeTab === "reviews" && report.reviewDashboard && (
+            {(activeTab === "reviews" || printMode) && report.reviewDashboard && (
               <div className="report-section space-y-6">
                 <div className="bg-white rounded-2xl border border-[#c4c6cc]/15 p-4 md:p-8">
                   <div className="flex items-center gap-4 md:gap-8">
@@ -2855,7 +2837,7 @@ export default function Home() {
             )}
 
             {/* ── BACKLINK PROFILE TAB ─────────────────────── */}
-            {activeTab === "backlinks" && report.backlinkProfile && (
+            {(activeTab === "backlinks" || printMode) && report.backlinkProfile && (
               <div className="report-section space-y-6">
                 <div className="bg-white rounded-2xl border border-[#c4c6cc]/15 p-8">
                   <div className="flex flex-col md:flex-row items-center gap-8">
@@ -2932,7 +2914,7 @@ export default function Home() {
             )}
 
             {/* ── RISK & CRISIS DETECTION TAB ──────────────── */}
-            {activeTab === "crisis" && report.crisisDetection && (
+            {(activeTab === "crisis" || printMode) && report.crisisDetection && (
               <div className="report-section space-y-6">
                 <div className={`rounded-2xl border p-4 md:p-8 ${
                   report.crisisDetection.alertLevel === "critical" ? "border-red-400 bg-red-50"
@@ -2997,7 +2979,7 @@ export default function Home() {
             )}
 
             {/* ── RESULTS TAB ──────────────────────────────── */}
-            {activeTab === "results" && (
+            {(activeTab === "results" || printMode) && (
               <div className="space-y-3">
                 {report.results.map((r, i) => (
                   <div key={i} className="bg-white rounded-xl border border-[#c4c6cc]/15 p-5 flex gap-4">
@@ -3023,7 +3005,7 @@ export default function Home() {
             )}
 
             {/* ── PROBLEMS TAB ─────────────────────────────── */}
-            {activeTab === "problems" && (
+            {(activeTab === "problems" || printMode) && (
               <div className="space-y-4">
                 {report.problems.length === 0 && (
                   <div className="text-center py-12 text-[#74777d]" style={{fontFamily:"'Manrope',sans-serif"}}>No significant problems detected.</div>
@@ -3068,7 +3050,7 @@ export default function Home() {
             )}
 
             {/* ── STRENGTHS TAB ────────────────────────────── */}
-            {activeTab === "strengths" && (
+            {(activeTab === "strengths" || printMode) && (
               <div className="space-y-4">
                 {(!report.strengths || report.strengths.length === 0) && (
                   <div className="text-center py-12 text-[#74777d]" style={{fontFamily:"'Manrope',sans-serif"}}>No notable strengths identified.</div>
@@ -3120,8 +3102,8 @@ export default function Home() {
             )}
 
             {/* ── PACKAGES SECTION (below tabs, for scores < 80) ── */}
-            {report.packageRecommendations?.show && (
-              <div id="reputation500-packages" className="mt-10 scroll-mt-24">
+            {report.packageRecommendations?.show && !printMode && (
+              <div id="reputation500-packages" className="mt-10 scroll-mt-24 no-print">
                 <div className="bg-gradient-to-r from-[#101b30] to-[#3c475d] rounded-2xl p-6 mb-6 text-white">
                   <div className="flex items-start gap-4">
                     <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center shrink-0 mt-0.5">
