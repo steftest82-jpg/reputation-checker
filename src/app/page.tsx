@@ -924,31 +924,66 @@ export default function Home() {
               <h2 className="text-4xl md:text-5xl tracking-tight text-[#1B263B] leading-tight mb-4" style={{fontFamily:"'Newsreader',serif"}}>Get a full reputation risk & revenue impact analysis in <span className="italic font-light">3 minutes</span></h2>
             </div>
 
-            {/* How It Works — 4-step tabbed section */}
+            {/* How It Works — interactive vertical timeline */}
             {(() => {
               const howSteps = [
-                { num: "01", title: "Deep Data Collection", icon: "database", desc: "Our proprietary algorithm scans over 120 live data sources simultaneously — Google SERPs, AI engines, news archives, social platforms, review sites, forums, complaint databases, and dark web signals — collecting over 10,000 unique data points per analysis." },
-                { num: "02", title: "Sentiment & Risk Processing", icon: "psychology", desc: "Advanced natural language processing classifies every mention across a multi-dimensional sentiment matrix. Our model, trained on over 10,000,000 reputation data points, identifies risk patterns, crisis signals, and hidden vulnerabilities invisible to standard monitoring." },
-                { num: "03", title: "Revenue Impact Modelling", icon: "trending_up", desc: "Proprietary econometric models correlate reputation signals with conversion impact. Each finding is mapped to estimated revenue exposure — giving executives a clear financial picture of what their online perception is costing them." },
-                { num: "04", title: "Intelligence Report Generation", icon: "description", desc: "All findings are synthesised into a consultancy-grade intelligence report with scored recommendations, priority actions, and strategic insights — delivered in under 3 minutes." },
+                { num: "01", title: "Deep Data Collection", icon: "database", highlight: "120+ live sources", desc: "Our proprietary algorithm scans over 120 live data sources simultaneously, including Google SERPs, AI engines, news archives, social platforms, review sites, forums, complaint databases, and dark web signals, collecting over 10,000 unique data points per analysis." },
+                { num: "02", title: "Sentiment & Risk Processing", icon: "psychology", highlight: "10M+ data points", desc: "Advanced natural language processing classifies every mention across a multi-dimensional sentiment matrix. Our model, trained on over 10,000,000 reputation data points, identifies risk patterns, crisis signals, and hidden vulnerabilities invisible to standard monitoring." },
+                { num: "03", title: "Revenue Impact Modelling", icon: "trending_up", highlight: "Financial mapping", desc: "Proprietary econometric models correlate reputation signals with conversion impact. Each finding is mapped to estimated revenue exposure, giving executives a clear financial picture of what their online perception is costing them." },
+                { num: "04", title: "Intelligence Report Generation", icon: "description", highlight: "Under 3 minutes", desc: "All findings are synthesised into a consultancy-grade intelligence report with scored recommendations, priority actions, and strategic insights, delivered in under 3 minutes." },
               ];
               return (
                 <div className="mb-24">
-                  <div className="text-center mb-10">
+                  <div className="text-center mb-14">
                     <p className="text-[#44474c] text-[10px] font-bold tracking-[0.2em] uppercase mb-3" style={{fontFamily:"'Manrope',sans-serif"}}>How it works</p>
                     <p className="text-[#74777d] text-sm max-w-2xl mx-auto" style={{fontFamily:"'Manrope',sans-serif"}}>Powered by a proprietary algorithm trained on over 10,000,000 reputation data points</p>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                    {howSteps.map((step) => (
-                      <div key={step.num} className="relative bg-white rounded-xl p-6 border border-[#e8e8e4] hover:border-[#1B263B]/20 hover:shadow-md transition-all duration-300 group">
-                        <div className="flex items-center gap-3 mb-4">
-                          <span className="text-[#1B263B] text-2xl font-black opacity-20 group-hover:opacity-40 transition-opacity" style={{fontFamily:"'Newsreader',serif"}}>{step.num}</span>
-                          <div className="w-8 h-8 rounded-lg bg-[#1B263B]/5 flex items-center justify-center group-hover:bg-[#1B263B] group-hover:text-white transition-colors duration-300">
-                            <span className="material-symbols-outlined text-lg">{step.icon}</span>
+
+                  {/* Desktop: horizontal connected cards */}
+                  <div className="hidden md:block">
+                    <div className="grid grid-cols-4 gap-0 relative">
+                      {/* Connecting line */}
+                      <div className="absolute top-[52px] left-[12%] right-[12%] h-[2px] bg-gradient-to-r from-[#1B263B]/10 via-[#1B263B]/30 to-[#1B263B]/10 z-0" />
+
+                      {howSteps.map((step, idx) => (
+                        <div key={step.num} className="relative z-10 flex flex-col items-center text-center px-4 group">
+                          {/* Number circle */}
+                          <div className="w-[72px] h-[72px] rounded-2xl bg-white border-2 border-[#e8e8e4] group-hover:border-[#1B263B] group-hover:shadow-lg flex flex-col items-center justify-center mb-5 transition-all duration-500 group-hover:scale-110">
+                            <span className="material-symbols-outlined text-2xl text-[#1B263B]/40 group-hover:text-[#1B263B] transition-colors duration-300" style={{fontVariationSettings:'"FILL" 0'}}>{step.icon}</span>
+                            <span className="text-[9px] font-black text-[#1B263B]/20 group-hover:text-[#1B263B]/60 tracking-wider transition-colors" style={{fontFamily:"'Manrope',sans-serif"}}>{step.num}</span>
                           </div>
+                          {/* Highlight pill */}
+                          <span className="px-3 py-1 rounded-full bg-[#1B263B]/5 text-[#1B263B] text-[10px] font-bold uppercase tracking-wider mb-3 group-hover:bg-[#1B263B] group-hover:text-white transition-all duration-300" style={{fontFamily:"'Manrope',sans-serif"}}>{step.highlight}</span>
+                          {/* Title */}
+                          <h4 className="font-bold text-[#1B263B] text-[16px] mb-2 leading-tight" style={{fontFamily:"'Newsreader',serif"}}>{step.title}</h4>
+                          {/* Description */}
+                          <p className="text-[#74777d] text-[12px] leading-relaxed max-h-0 group-hover:max-h-[200px] overflow-hidden transition-all duration-700 opacity-0 group-hover:opacity-100" style={{fontFamily:"'Manrope',sans-serif"}}>{step.desc}</p>
+                          {/* Hover hint */}
+                          <span className="text-[10px] text-[#c4c6cc] mt-2 group-hover:hidden transition-opacity" style={{fontFamily:"'Manrope',sans-serif"}}>Hover to learn more</span>
+                          {/* Arrow for non-last */}
+                          {idx < 3 && <div className="absolute -right-2 top-[52px] text-[#c4c6cc] hidden md:block"><span className="material-symbols-outlined text-sm">chevron_right</span></div>}
                         </div>
-                        <h4 className="font-bold text-[#1B263B] text-[15px] mb-2" style={{fontFamily:"'Newsreader',serif"}}>{step.title}</h4>
-                        <p className="text-[#74777d] text-[13px] leading-relaxed" style={{fontFamily:"'Manrope',sans-serif"}}>{step.desc}</p>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Mobile: vertical timeline */}
+                  <div className="md:hidden space-y-0">
+                    {howSteps.map((step, idx) => (
+                      <div key={step.num} className="flex gap-4 group">
+                        {/* Timeline line + dot */}
+                        <div className="flex flex-col items-center">
+                          <div className="w-12 h-12 rounded-xl bg-white border-2 border-[#e8e8e4] flex items-center justify-center shrink-0">
+                            <span className="material-symbols-outlined text-xl text-[#1B263B]">{step.icon}</span>
+                          </div>
+                          {idx < 3 && <div className="w-[2px] flex-1 bg-[#e8e8e4] my-1" />}
+                        </div>
+                        {/* Content */}
+                        <div className="pb-8">
+                          <span className="px-2 py-0.5 rounded-full bg-[#1B263B]/5 text-[#1B263B] text-[9px] font-bold uppercase tracking-wider" style={{fontFamily:"'Manrope',sans-serif"}}>{step.highlight}</span>
+                          <h4 className="font-bold text-[#1B263B] text-[15px] mt-2 mb-1" style={{fontFamily:"'Newsreader',serif"}}>{step.title}</h4>
+                          <p className="text-[#74777d] text-[12px] leading-relaxed" style={{fontFamily:"'Manrope',sans-serif"}}>{step.desc}</p>
+                        </div>
                       </div>
                     ))}
                   </div>
