@@ -877,20 +877,20 @@ export default function Home() {
                 <div className="bg-white p-2 rounded-full shadow-[0_20px_40px_rgba(26,28,26,0.05)] border border-[#101b30] flex flex-col md:flex-row items-center gap-2">
                   {/* Toggle */}
                   <div className="bg-[#e8e8e4] p-1 rounded-full flex gap-1 ml-2">
-                    <button type="button" onClick={() => setType("person")}
-                      className={`px-4 md:px-6 py-2.5 rounded-full text-sm font-bold shadow-sm transition-colors ${type === "person" ? "bg-[#1B263B] text-white" : "text-[#44474c] hover:bg-[#e2e3df]/50"}`} style={{fontFamily:"'Manrope',sans-serif"}}>
-                      Person
-                    </button>
                     <button type="button" onClick={() => setType("company")}
                       className={`px-4 md:px-6 py-2.5 rounded-full text-sm font-bold shadow-sm transition-colors ${type === "company" ? "bg-[#1B263B] text-white" : "text-[#44474c] hover:bg-[#e2e3df]/50"}`} style={{fontFamily:"'Manrope',sans-serif"}}>
                       Company
+                    </button>
+                    <button type="button" onClick={() => setType("person")}
+                      className={`px-4 md:px-6 py-2.5 rounded-full text-sm font-bold shadow-sm transition-colors ${type === "person" ? "bg-[#1B263B] text-white" : "text-[#44474c] hover:bg-[#e2e3df]/50"}`} style={{fontFamily:"'Manrope',sans-serif"}}>
+                      Person
                     </button>
                   </div>
                   {/* Input */}
                   <div className="flex-grow flex items-center px-6 gap-3">
                     <span className="material-symbols-outlined text-[#74777d]">search</span>
                     <input value={name} onChange={(e) => setName(e.target.value)}
-                      className="w-full bg-transparent border-none focus:ring-0 text-lg placeholder:text-[#c4c6cc] py-4 outline-none"
+                      className="w-full bg-transparent border-none focus:ring-0 text-lg placeholder:text-[#8a8d94] py-4 outline-none"
                       style={{fontFamily:"'Manrope',sans-serif"}}
                       placeholder={type === "person" ? "Enter a person's name" : "Enter a company name"} type="text" />
                   </div>
