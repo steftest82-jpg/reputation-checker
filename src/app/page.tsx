@@ -57,6 +57,8 @@ interface RevenueImpact {
   items: RevenueImpactItem[];
   analysis: string;
   topRisks: { title: string; impact: number; category: string }[];
+  actionableIntelligence?: { finding: string; currentImpact: string; potentialGain: string; dataSource: string; priority: string }[];
+  executiveSummary?: string;
 }
 
 interface CategoryScores {
@@ -144,6 +146,16 @@ interface ReviewDashboard {
   totalReviews: number;
   platforms: { name: string; rating: number; reviewCount: number; sentiment: string; recentTrend: string }[];
   risks: { platform: string; review: string; risk: string; link: string }[];
+  recentReviews?: {
+    positive: { platform: string; summary: string; date?: string; link?: string }[];
+    negative: { platform: string; summary: string; severity: string; date?: string; link?: string }[];
+  };
+  crisisDetection?: {
+    detected: boolean;
+    summary: string;
+    triggerReview?: { platform: string; summary: string; link?: string };
+    severity: string;
+  };
   trendAnalysis: string;
 }
 
@@ -262,6 +274,7 @@ interface ReportData {
   googleImagesAnalysis?: {
     ranking: string;
     ownedImagesPct: number;
+    sentimentBreakdown?: { positive: number; neutral: number; negative: number };
     analysis: string;
     concerns: string[];
   };
@@ -287,7 +300,7 @@ interface ReportData {
   geographicPresence?: {
     scope: string;
     primaryMarket: string;
-    markets: { country: string; strength: string; evidence: string }[];
+    markets: { country: string; strength: string; score?: number; evidence: string }[];
     analysis: string;
   };
   suspiciousActivityAnalysis?: {
@@ -681,7 +694,7 @@ function Card({ title, children, className = "" }: { title?: string; children: R
 // ── Main page ───────────────────────────────────────────────────────
 export default function Home() {
   const [name, setName] = useState("");
-  const [type, setType] = useState<"person" | "company">("person");
+  const [type, setType] = useState<"person" | "company">("company");
   const [domain, setDomain] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -830,7 +843,7 @@ export default function Home() {
           {/* Hero Section */}
           <section className="max-w-7xl mx-auto px-4 md:px-8 mb-24 text-center">
             <div className="max-w-3xl mx-auto mb-16 pt-[10px]">
-              <h1 className="text-[#1B263B] text-xs uppercase tracking-[0.2em] mb-4 font-normal" style={{fontFamily:"'Manrope',sans-serif"}}>Online Reputation Checker</h1>
+              <h1 className="text-[#1B263B] text-xs uppercase tracking-[0.2em] mb-4 font-normal" style={{fontFamily:"'Manrope',sans-serif"}}>Online Reputation Audit</h1>
               <h1 className="text-5xl md:text-7xl tracking-tight text-[#1B263B] leading-tight mb-6" style={{fontFamily:"'Newsreader',serif"}}>Comprehensive Online <br/><span className="italic font-light">Reputation Analysis</span></h1>
               <p className="text-xl md:text-2xl text-[#44474c] font-light tracking-wide" style={{fontFamily:"'Manrope',sans-serif"}}>Understand how a person or company is perceived across Google, AI platforms, media, and social channels, and get clear, actionable recommendations to improve it, in just 3 minutes.</p>
             </div>
@@ -870,7 +883,7 @@ export default function Home() {
                   {/* Action Button */}
                   <button type="submit" disabled={redirectingToCheckout}
                     className={`w-full md:w-auto px-10 py-4 rounded-full text-white font-bold text-lg tracking-tight hover:shadow-lg transition-all active:scale-95 duration-150 bg-gradient-to-r from-[#101b30] to-[#3c475d] ${redirectingToCheckout ? "opacity-70 cursor-not-allowed" : ""}`} style={{fontFamily:"'Manrope',sans-serif"}}>
-                    {redirectingToCheckout ? "Redirecting to payment..." : "Analyze ($12.99)"}
+                    {redirectingToCheckout ? "Redirecting to payment..." : "Analyze ($34.99)"}
                   </button>
                 </div>
 
@@ -886,7 +899,7 @@ export default function Home() {
                 {error && <p className="text-[#ba1a1a] mt-3 text-sm" style={{fontFamily:"'Manrope',sans-serif"}}>{error}</p>}
 
                 <div className="mt-6 flex flex-wrap justify-center gap-4 md:gap-8 text-[#74777d] text-[9px] md:text-xs uppercase tracking-widest font-bold" style={{fontFamily:"'Manrope',sans-serif"}}>
-                  <span className="flex items-center gap-2"><span className="material-symbols-outlined text-[16px]" style={{fontVariationSettings:'"FILL" 1'}}>verified_user</span> Pay per analysis</span>
+                  <span className="flex items-center gap-2"><span className="material-symbols-outlined text-[16px]" style={{fontVariationSettings:'"FILL" 1'}}>verified_user</span> Proprietary Algorithm</span>
                   <span className="flex items-center gap-2"><span className="material-symbols-outlined text-[16px]" style={{fontVariationSettings:'"FILL" 1'}}>lock</span>Encrypted</span>
                   <span className="flex items-center gap-2"><span className="material-symbols-outlined text-[16px]" style={{fontVariationSettings:'"FILL" 1'}}>visibility_off</span> Anonymous</span>
                 </div>
@@ -897,7 +910,42 @@ export default function Home() {
           {/* Report Features Section */}
           <section className="max-w-4xl mx-auto px-6 md:px-12 mb-32" style={{paddingTop:'45px'}}>
             <div className="text-center mb-16">
-              <h2 className="text-4xl md:text-5xl tracking-tight text-[#1B263B] leading-tight mb-4" style={{fontFamily:"'Newsreader',serif"}}>A complete reputation report in <span className="italic font-light">3 minutes</span></h2>
+              <h2 className="text-4xl md:text-5xl tracking-tight text-[#1B263B] leading-tight mb-4" style={{fontFamily:"'Newsreader',serif"}}>Get a full reputation risk & revenue impact analysis in <span className="italic font-light">3 minutes</span></h2>
+            </div>
+
+            {/* How It Works — 4-step tabbed section */}
+            {(() => {
+              const howSteps = [
+                { num: "01", title: "Deep Data Collection", icon: "database", desc: "Our proprietary algorithm scans over 120 live data sources simultaneously — Google SERPs, AI engines, news archives, social platforms, review sites, forums, complaint databases, and dark web signals — collecting over 10,000 unique data points per analysis." },
+                { num: "02", title: "Sentiment & Risk Processing", icon: "psychology", desc: "Advanced natural language processing classifies every mention across a multi-dimensional sentiment matrix. Our model, trained on over 10,000,000 reputation data points, identifies risk patterns, crisis signals, and hidden vulnerabilities invisible to standard monitoring." },
+                { num: "03", title: "Revenue Impact Modelling", icon: "trending_up", desc: "Proprietary econometric models correlate reputation signals with conversion impact. Each finding is mapped to estimated revenue exposure — giving executives a clear financial picture of what their online perception is costing them." },
+                { num: "04", title: "Intelligence Report Generation", icon: "description", desc: "All findings are synthesised into a consultancy-grade intelligence report with scored recommendations, priority actions, and strategic insights — delivered in under 3 minutes." },
+              ];
+              return (
+                <div className="mb-24">
+                  <div className="text-center mb-10">
+                    <p className="text-[#44474c] text-[10px] font-bold tracking-[0.2em] uppercase mb-3" style={{fontFamily:"'Manrope',sans-serif"}}>How it works</p>
+                    <p className="text-[#74777d] text-sm max-w-2xl mx-auto" style={{fontFamily:"'Manrope',sans-serif"}}>Powered by a proprietary algorithm trained on over 10,000,000 reputation data points</p>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    {howSteps.map((step) => (
+                      <div key={step.num} className="relative bg-white rounded-xl p-6 border border-[#e8e8e4] hover:border-[#1B263B]/20 hover:shadow-md transition-all duration-300 group">
+                        <div className="flex items-center gap-3 mb-4">
+                          <span className="text-[#1B263B] text-2xl font-black opacity-20 group-hover:opacity-40 transition-opacity" style={{fontFamily:"'Newsreader',serif"}}>{step.num}</span>
+                          <div className="w-8 h-8 rounded-lg bg-[#1B263B]/5 flex items-center justify-center group-hover:bg-[#1B263B] group-hover:text-white transition-colors duration-300">
+                            <span className="material-symbols-outlined text-lg">{step.icon}</span>
+                          </div>
+                        </div>
+                        <h4 className="font-bold text-[#1B263B] text-[15px] mb-2" style={{fontFamily:"'Newsreader',serif"}}>{step.title}</h4>
+                        <p className="text-[#74777d] text-[13px] leading-relaxed" style={{fontFamily:"'Manrope',sans-serif"}}>{step.desc}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
+
+            <div className="text-center mb-16">
               <p className="text-[#44474c] text-xs font-bold tracking-widest uppercase" style={{fontFamily:"'Manrope',sans-serif"}}>Each report includes:</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-y-16 gap-x-16">
@@ -907,7 +955,7 @@ export default function Home() {
                 { icon: "forum", title: "Sentiment breakdown", desc: "Granular analysis of what people are saying across reviews, forums, and social media channels." },
                 { icon: "warning", title: "Key risks identified", desc: "Critical identification of specific issues and vulnerabilities that could impact trust or conversions." },
                 { icon: "assignment_turned_in", title: "Clear recommendations", desc: "Actionable intelligence on exactly what to fix, where to focus resources, and why it matters." },
-                { icon: "payments", title: "Revenue impact", desc: "Understand the revenue impact in each recommendation so you can make educated decisions." },
+                { icon: "payments", title: "Revenue at Risk Analysis", desc: "Quantify how much revenue your current reputation is potentially costing you and how to optimize it." },
               ].map((item, i) => (
                 <div key={i} className="flex flex-col items-center md:items-start text-center md:text-left group">
                   <div className="w-12 h-12 rounded-lg bg-[#f3f4f0] flex items-center justify-center mb-6 border border-[#c4c6cc]/10 group-hover:bg-[#1B263B] group-hover:text-white transition-colors duration-300">
@@ -1220,7 +1268,7 @@ export default function Home() {
           <section className="mt-32 max-w-4xl mx-auto px-4 md:px-8 py-12 md:py-20 bg-[#edeeea] text-center rounded-2xl border border-[#c4c6cc]/10">
             <h2 className="text-2xl md:text-4xl italic mb-6" style={{fontFamily:"'Newsreader',serif"}}>Secure your digital reputation<br/>or spy on your competitors&apos; strategies</h2>
             <p className="text-[#44474c] mb-10 max-w-xl mx-auto" style={{fontFamily:"'Manrope',sans-serif"}}>
-              Join the executive suites of the Fortune 500 who rely on Rep500&apos;s Online Reputation Checker for their daily reputation briefings.
+              Join the executive suites of the Fortune 500 who rely on Rep500&apos;s Online Reputation Audit for their daily reputation briefings.
             </p>
             <button onClick={() => document.getElementById('search-bar')?.scrollIntoView({behavior:'smooth',block:'center'})} className="px-8 py-4 rounded-full bg-[#1B263B] text-white font-bold hover:bg-slate-800 transition-all shadow-lg" style={{fontFamily:"'Manrope',sans-serif"}}>Start Intelligence Scan</button>
           </section>
@@ -1785,6 +1833,17 @@ export default function Home() {
                           ~{report.googleImagesAnalysis.ownedImagesPct}% owned/controlled images
                         </span>
                       </div>
+                      {report.googleImagesAnalysis?.sentimentBreakdown && (
+                        <div className="flex gap-2 mb-3">
+                          {[
+                            { label: "Positive", value: report.googleImagesAnalysis.sentimentBreakdown.positive, color: "bg-green-100 text-green-700" },
+                            { label: "Neutral", value: report.googleImagesAnalysis.sentimentBreakdown.neutral, color: "bg-[#e8e8e4] text-[#44474c]" },
+                            { label: "Negative", value: report.googleImagesAnalysis.sentimentBreakdown.negative, color: "bg-red-100 text-red-700" },
+                          ].map((s) => (
+                            <span key={s.label} className={`px-2 py-1 rounded text-xs font-medium ${s.color}`}>{s.label}: {s.value}%</span>
+                          ))}
+                        </div>
+                      )}
                       <p className="text-sm text-[#44474c] leading-relaxed" style={{fontFamily:"'Manrope',sans-serif"}}>{report.googleImagesAnalysis.analysis}</p>
                       {report.googleImagesAnalysis?.concerns?.length > 0 && (
                         <div className="mt-3">
@@ -2048,6 +2107,7 @@ export default function Home() {
                                 <span className={`px-2 py-0.5 rounded text-xs font-medium ${
                                   m.strength === "strong" ? "bg-green-100 text-green-700" : m.strength === "moderate" ? "bg-yellow-100 text-yellow-700" : "bg-red-100 text-red-700"
                                 }`} style={{fontFamily:"'Manrope',sans-serif"}}>{m.strength}</span>
+                                {m.score && <span className="text-xs font-bold text-[#1B263B]" style={{fontFamily:"'Newsreader',serif"}}>{m.score}/10</span>}
                               </div>
                             ))}
                           </div>
@@ -2061,11 +2121,19 @@ export default function Home() {
                     <Card title="Media Brand Sentiment">
                       <p className="text-xs text-[#74777d] mb-3" style={{fontFamily:"'Manrope',sans-serif"}}>How professional and trustworthy readers perceive each media outlet covering {report.name}.</p>
                       <div className="space-y-2">
-                        {report.mediaBrandSentiment.outlets.map((o, i) => (
-                          <div key={i} className="flex items-center gap-3 pb-2 border-b border-[#c4c6cc]/10 last:border-0">
-                            <span className="text-sm font-medium text-[#1a1c1a] flex-1" style={{fontFamily:"'Manrope',sans-serif"}}>{o.name}</span>
-                            <span className={`px-2 py-0.5 rounded text-xs font-medium ${o.tier === "premium" ? "bg-green-100 text-green-700" : o.tier === "mid-tier" ? "bg-[#e8e8e4] text-[#1B263B]" : "bg-[#edeeea] text-[#74777d]"}`} style={{fontFamily:"'Manrope',sans-serif"}}>{o.tier}</span>
-                            <span className={`text-sm font-bold ${o.sentimentScore >= 7 ? "text-green-600" : o.sentimentScore >= 5 ? "text-yellow-600" : "text-red-600"}`} style={{fontFamily:"'Newsreader',serif"}}>{o.sentimentScore}/10</span>
+                        {report.mediaBrandSentiment.outlets.map((o: Record<string, string | number>, i: number) => (
+                          <div key={i} className="pb-2 border-b border-[#c4c6cc]/10 last:border-0">
+                            <div className="flex items-center gap-3">
+                              <span className="text-sm font-medium text-[#1a1c1a] flex-1" style={{fontFamily:"'Manrope',sans-serif"}}>{o.name}</span>
+                              <span className={`px-2 py-0.5 rounded text-xs font-medium ${o.tier === "premium" ? "bg-green-100 text-green-700" : o.tier === "mid-tier" ? "bg-[#e8e8e4] text-[#1B263B]" : "bg-[#edeeea] text-[#74777d]"}`} style={{fontFamily:"'Manrope',sans-serif"}}>{o.tier}</span>
+                              <span className={`text-sm font-bold ${Number(o.sentimentScore) >= 7 ? "text-green-600" : Number(o.sentimentScore) >= 5 ? "text-yellow-600" : "text-red-600"}`} style={{fontFamily:"'Newsreader',serif"}}>{o.sentimentScore}/10</span>
+                            </div>
+                            {o.articleUrl && (
+                              <a href={String(o.articleUrl)} target="_blank" rel="noopener noreferrer" className="text-xs text-[#1B263B] hover:underline mt-1 inline-flex items-center gap-1">
+                                <span className="material-symbols-outlined text-[12px]">open_in_new</span>
+                                {o.articleTitle || "View article"}
+                              </a>
+                            )}
                           </div>
                         ))}
                       </div>
@@ -2135,6 +2203,52 @@ export default function Home() {
                         </div>
                       </div>
                       <BulletText text={report.reviewDashboard.trendAnalysis} className="text-sm text-[#44474c] leading-relaxed" />
+
+                      {/* Recent Reviews */}
+                      {report.reviewDashboard?.recentReviews && (
+                        <div className="mt-4 pt-3 border-t border-[#c4c6cc]/15 space-y-3">
+                          {report.reviewDashboard.recentReviews.positive?.length > 0 && (
+                            <div>
+                              <p className="text-xs font-bold text-green-600 uppercase tracking-wide mb-1">Recent Positive</p>
+                              {report.reviewDashboard.recentReviews.positive.slice(0, 3).map((r: { platform?: string; summary?: string; link?: string }, i: number) => (
+                                <p key={i} className="text-xs text-[#44474c] mb-1"><span className="font-medium">{r.platform}:</span> {r.summary}</p>
+                              ))}
+                            </div>
+                          )}
+                          {report.reviewDashboard.recentReviews.negative?.length > 0 && (
+                            <div>
+                              <p className="text-xs font-bold text-red-500 uppercase tracking-wide mb-1">Recent Negative</p>
+                              {report.reviewDashboard.recentReviews.negative.slice(0, 3).map((r: { platform?: string; summary?: string; severity?: string; link?: string }, i: number) => (
+                                <div key={i} className="mb-1.5">
+                                  <div className="flex items-center gap-2">
+                                    <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${r.severity === "critical" ? "bg-red-100 text-red-700" : r.severity === "moderate" ? "bg-yellow-100 text-yellow-700" : "bg-[#e8e8e4] text-[#44474c]"}`}>{r.severity}</span>
+                                    <span className="text-xs font-medium text-[#1a1c1a]">{r.platform}</span>
+                                  </div>
+                                  <p className="text-xs text-[#44474c] mt-0.5">{r.summary}</p>
+                                  {r.link && <a href={r.link} target="_blank" rel="noopener noreferrer" className="text-xs text-[#1B263B] hover:underline inline-flex items-center gap-0.5"><span className="material-symbols-outlined text-[11px]">open_in_new</span>View review</a>}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Crisis Detection */}
+                      {report.reviewDashboard?.crisisDetection?.detected && (
+                        <div className="mt-4 pt-3 border-t border-red-200 bg-red-50/50 rounded-lg p-3">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="material-symbols-outlined text-red-500 text-lg">crisis_alert</span>
+                            <span className="text-sm font-bold text-red-700">Potential Crisis Detected</span>
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${report.reviewDashboard.crisisDetection.severity === "critical" || report.reviewDashboard.crisisDetection.severity === "high" ? "bg-red-200 text-red-800" : "bg-yellow-100 text-yellow-700"}`}>{report.reviewDashboard.crisisDetection.severity}</span>
+                          </div>
+                          <p className="text-xs text-red-800 leading-relaxed">{report.reviewDashboard.crisisDetection.summary}</p>
+                          {report.reviewDashboard.crisisDetection.triggerReview?.link && (
+                            <a href={report.reviewDashboard.crisisDetection.triggerReview.link} target="_blank" rel="noopener noreferrer" className="mt-2 text-xs text-red-700 hover:underline inline-flex items-center gap-1">
+                              <span className="material-symbols-outlined text-[11px]">open_in_new</span>View triggering review
+                            </a>
+                          )}
+                        </div>
+                      )}
                     </Card>
                   )}
 
@@ -2244,6 +2358,41 @@ export default function Home() {
                       ))}
                     </div>
                   </Card>
+                )}
+
+                {/* Actionable Intelligence */}
+                {(report.revenueImpact.actionableIntelligence?.length ?? 0) > 0 && (
+                  <Card title="Actionable Intelligence">
+                    <div className="space-y-4">
+                      {report.revenueImpact.actionableIntelligence!.map((ai: { finding: string; currentImpact: string; potentialGain: string; dataSource: string; priority: string }, i: number) => (
+                        <div key={i} className="p-4 rounded-lg border border-[#c4c6cc]/15 bg-white">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${ai.priority === "high" ? "bg-red-100 text-red-700" : ai.priority === "medium" ? "bg-yellow-100 text-yellow-700" : "bg-green-100 text-green-700"}`}>{ai.priority}</span>
+                          </div>
+                          <p className="text-sm font-medium text-[#1a1c1a] mb-1" style={{fontFamily:"'Manrope',sans-serif"}}>{ai.finding}</p>
+                          <div className="flex gap-4 mt-2">
+                            <div>
+                              <p className="text-[10px] text-[#74777d] uppercase tracking-wide font-bold">Current Cost</p>
+                              <p className="text-sm font-bold text-red-600">{ai.currentImpact}</p>
+                            </div>
+                            <div>
+                              <p className="text-[10px] text-[#74777d] uppercase tracking-wide font-bold">Recovery Potential</p>
+                              <p className="text-sm font-bold text-green-600">{ai.potentialGain}</p>
+                            </div>
+                          </div>
+                          <p className="text-[10px] text-[#74777d] mt-2 italic">{ai.dataSource}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </Card>
+                )}
+
+                {/* Executive Summary for Board */}
+                {report.revenueImpact.executiveSummary && (
+                  <div className="bg-[#101b30] text-white rounded-xl p-6">
+                    <h4 className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#79849d] mb-3">Board-Ready Summary</h4>
+                    <p className="text-sm leading-relaxed text-[#c4c6cc]" style={{fontFamily:"'Manrope',sans-serif"}}>{report.revenueImpact.executiveSummary}</p>
+                  </div>
                 )}
 
                 {/* Methodology note */}

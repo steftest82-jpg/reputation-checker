@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
               name: "Reputation Analysis",
               description: `Full reputation scan for "${name}"`,
             },
-            unit_amount: 1299, // $12.99
+            unit_amount: 3499, // $34.99
             tax_behavior: "exclusive",
           },
           quantity: 1,

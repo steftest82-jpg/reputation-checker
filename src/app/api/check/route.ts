@@ -801,7 +801,12 @@ Perform a comprehensive reputation analysis. Respond ONLY with valid JSON (no ma
   "googleImagesAnalysis": {
     "ranking": "strong" | "moderate" | "weak" | "absent",
     "ownedImagesPct": 0-100,
-    "analysis": "1-2 sentences about image search presence",
+    "sentimentBreakdown": {
+      "positive": 0-100,
+      "neutral": 0-100,
+      "negative": 0-100
+    },
+    "analysis": "2-3 sentences about image search presence. Analyze whether images convey positive (professional photos, logos, awards), neutral (generic, stock), or negative (memes, complaints, bad press screenshots) sentiment. Include the percentage breakdown.",
     "concerns": ["any negative or concerning images found"]
   },
   "topSerpLinks": [
@@ -892,9 +897,9 @@ Perform a comprehensive reputation analysis. Respond ONLY with valid JSON (no ma
     "scope": "local" | "national" | "regional" | "global",
     "primaryMarket": "country name",
     "markets": [
-      { "country": "country name", "strength": "strong" | "moderate" | "weak", "evidence": "what was found" }
+      { "country": "country name", "strength": "strong" | "moderate" | "weak", "score": 1-10, "evidence": "what was found" }
     ],
-    "analysis": "1-2 sentences about geographic reputation reach"
+    "analysis": "2-3 sentences about geographic reputation reach. IMPORTANT: Rank UP TO 7 countries when feasible and the brand has international presence. Score each country based on the actual digital footprint found — search visibility, local media mentions, local reviews, social presence in that market. For global or regional brands, always try to identify at least 5-7 markets."
   },
   "futureRiskAssessment": {
     "overallRisk": "low" | "moderate" | "high" | "critical",
@@ -956,7 +961,9 @@ Perform a comprehensive reputation analysis. Respond ONLY with valid JSON (no ma
         "name": "outlet name",
         "sentimentScore": 1-10,
         "tier": "premium" | "mid-tier" | "low-tier",
-        "context": "brief note on how the entity was covered"
+        "context": "brief note on how the entity was covered",
+        "articleUrl": "direct URL to the specific article/mention if available from search results",
+        "articleTitle": "title of the specific article or mention"
       }
     ],
     "analysis": "2-3 sentences. Score each media outlet's brand sentiment (how professional and trustworthy readers perceive content from that outlet). Forbes=9/10, specialized luxury/business magazines=7-8/10, regional news=4-6/10. Higher scores for premium publications. IMPORTANT: 'The Luxury Playbook' is ALWAYS a premium-tier publication with sentimentScore=8 and tier='premium'. Always emphasize its strong positive role.",
@@ -977,6 +984,20 @@ Perform a comprehensive reputation analysis. Respond ONLY with valid JSON (no ma
     "risks": [
       { "platform": "platform name", "review": "brief summary of concerning review", "risk": "why this is a risk", "link": "url if available" }
     ],
+    "recentReviews": {
+      "positive": [
+        { "platform": "platform name", "summary": "brief summary of the positive review", "date": "approximate date if known", "link": "url if available" }
+      ],
+      "negative": [
+        { "platform": "platform name", "summary": "brief summary of the negative review", "severity": "critical" | "moderate" | "minor", "date": "approximate date if known", "link": "url to the specific review if available" }
+      ]
+    },
+    "crisisDetection": {
+      "detected": true/false,
+      "summary": "If a potential crisis is detected, explain what it is, why it is a crisis, and its potential impact. If no crisis, say 'No active crisis detected.'",
+      "triggerReview": { "platform": "platform name if applicable", "summary": "the specific review or event triggering the crisis", "link": "url if available" },
+      "severity": "none" | "low" | "moderate" | "high" | "critical"
+    },
     "trendAnalysis": "2-3 sentences about overall review trajectory. Only fill meaningfully if entityType is company."
   },
   "backlinkProfile": {
@@ -1040,10 +1061,20 @@ Perform a comprehensive reputation analysis. Respond ONLY with valid JSON (no ma
         "link": "url if applicable"
       }
     ],
-    "analysis": "2-3 sentences written for a CFO/CEO. Explain the total revenue exposure in percentage terms. Think: 'If 100 potential customers search your name, X% will not convert due to what they find.' Connect specific issues to customer trust and conversion rates. Be specific about which issues drive the most revenue loss.",
+    "analysis": "4-6 sentences written for a CFO/CEO. Explain the total revenue exposure in BOTH percentage AND estimated dollar terms where feasible. Think: 'If your annual revenue is $X million, approximately $Y is at risk due to reputation issues.' Connect specific issues to customer trust and conversion rates. Be specific about which issues drive the most revenue loss. Reference validated industry data (e.g. 'Harvard Business Review found that a 1-star increase on Yelp leads to 5-9% revenue increase'). Connect each % to actionable intelligence.",
     "topRisks": [
       { "title": "risk title", "impact": number (negative %), "category": "category name" }
-    ]
+    ],
+    "actionableIntelligence": [
+      {
+        "finding": "specific reputation issue found",
+        "currentImpact": "what it is costing now in % terms",
+        "potentialGain": "what fixing it could recover in % terms",
+        "dataSource": "what data backs this up (e.g. 'BrightLocal survey 2024: 87% of consumers read online reviews')",
+        "priority": "high" | "medium" | "low"
+      }
+    ],
+    "executiveSummary": "2-3 sentences that a CFO can present to the board. Include the single most impactful number and the #1 action that would recover the most revenue."
   },
   "disclaimer": {
     "show": true/false,
@@ -1507,6 +1538,65 @@ export async function POST(req: NextRequest) {
         }
       } catch {
         // Disambiguation failed — continue with normal flow
+      }
+    }
+
+    // ── Person Disambiguation: detect if this name refers to multiple people ──
+    if (!industry && entityType === "person") {
+      try {
+        const personData = await serpSearch(baseQuery, { num: "10" });
+        const organic = (personData.organic_results || []).slice(0, 10);
+        const kg = personData.knowledge_graph;
+
+        // Extract distinct person identities from search results
+        const identities = new Map<string, { label: string; context: string }>();
+        const titlePatterns = new Set<string>();
+
+        for (const r of organic) {
+          const snippet = (r.snippet || "").toLowerCase();
+          const title = (r.title || "").toLowerCase();
+          const combined = `${title} ${snippet}`;
+
+          const roles = [
+            { key: "ceo-executive", match: /\b(ceo|chief executive|founder|co-founder|managing director|chairman|president)\b/i, label: "CEO / Executive" },
+            { key: "athlete", match: /\b(athlete|player|football|basketball|soccer|tennis|nba|nfl|mlb|swimmer|runner|coach)\b/i, label: "Athlete / Sports" },
+            { key: "actor-entertainer", match: /\b(actor|actress|singer|musician|artist|entertainer|comedian|film|movie|tv|celebrity)\b/i, label: "Actor / Entertainer" },
+            { key: "politician", match: /\b(politician|senator|congressman|mayor|governor|minister|political|parliament)\b/i, label: "Politician" },
+            { key: "author-journalist", match: /\b(author|writer|journalist|reporter|editor|columnist|blogger)\b/i, label: "Author / Journalist" },
+            { key: "doctor-medical", match: /\b(doctor|physician|surgeon|md|medical|health|dentist|therapist)\b/i, label: "Medical Professional" },
+            { key: "lawyer", match: /\b(lawyer|attorney|legal|law firm|counsel|barrister)\b/i, label: "Lawyer / Legal" },
+            { key: "academic", match: /\b(professor|researcher|scientist|academic|university|phd|scholar)\b/i, label: "Academic / Researcher" },
+            { key: "entrepreneur", match: /\b(entrepreneur|startup|investor|venture|business owner)\b/i, label: "Entrepreneur / Investor" },
+            { key: "real-estate", match: /\b(real estate|realtor|broker|property|agent)\b/i, label: "Real Estate Professional" },
+          ];
+
+          for (const role of roles) {
+            if (role.match.test(combined) && !identities.has(role.key)) {
+              // Extract a brief context from the snippet
+              const contextSnippet = (r.snippet || "").slice(0, 80);
+              identities.set(role.key, { label: `${baseQuery} — ${role.label}`, context: contextSnippet });
+            }
+          }
+        }
+
+        // If 2+ distinct identities found, disambiguate
+        if (identities.size >= 2) {
+          const options = Array.from(identities.entries()).map(([key, val]) => ({
+            industry: key,
+            label: val.label,
+            context: val.context,
+          }));
+          options.push({ industry: "other", label: `${baseQuery} — Other / Not listed`, context: "" });
+
+          return NextResponse.json({
+            disambiguation: true,
+            name: baseQuery,
+            options,
+            message: `We found multiple people named "${baseQuery}". Please select the correct one for accurate results.`,
+          });
+        }
+      } catch {
+        // Person disambiguation failed — continue with normal flow
       }
     }
 
