@@ -22,6 +22,7 @@ export async function POST(req: NextRequest) {
       name: session.metadata?.scan_name || "",
       type: session.metadata?.scan_type || "person",
       domain: session.metadata?.scan_domain || "",
+      customerEmail: session.customer_details?.email || "",
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Verification failed";

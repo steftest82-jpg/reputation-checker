@@ -708,6 +708,7 @@ export default function Home() {
   const [paymentVerified, setPaymentVerified] = useState(false);
   const [redirectingToCheckout, setRedirectingToCheckout] = useState(false);
   const [stripeSessionId, setStripeSessionId] = useState("");
+  const [customerEmail, setCustomerEmail] = useState("");
 
   // On mount: check if returning from Stripe payment
   useEffect(() => {
@@ -732,6 +733,7 @@ export default function Home() {
             setName(data.name);
             setType(data.type || "person");
             if (data.domain) setDomain(data.domain);
+            if (data.customerEmail) setCustomerEmail(data.customerEmail);
             // Run the scan with the verified session ID
             runCheck(data.name, data.type || "person", undefined, data.domain || "", sessionId);
           } else {
@@ -776,6 +778,15 @@ export default function Home() {
       setReport(data);
       setActiveTab("overview");
       window.scrollTo({ top: 0 });
+
+      // Auto-email the PDF report to the customer (fire and forget)
+      if (customerEmail) {
+        fetch("/api/send-report", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: customerEmail, report: data }),
+        }).catch(() => { /* silent — email is a bonus, not critical */ });
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
     } finally {
