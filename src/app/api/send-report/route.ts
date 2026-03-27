@@ -39,43 +39,49 @@ function generatePDF(report: Record<string, unknown>): Promise<Buffer> {
     const usableTop = headerZone + 12;
     const usableBottom = H - footerZone;
 
-    function need(n: number) { if (doc.y > usableBottom - n) doc.addPage(); }
+    function need(n: number) {
+      if (doc.y > usableBottom - n) {
+        doc.addPage();
+        doc.y = usableTop; // always start below header zone on new pages
+      }
+    }
 
     function sec(num: string, title: string) {
-      need(60);
-      doc.moveDown(1.0);
-      doc.fontSize(12).fillColor(C.pri).text(`${num}    ${title.toUpperCase()}`, ML, doc.y, { characterSpacing: 1.5, width: cW });
-      doc.moveDown(0.15);
-      doc.moveTo(ML, doc.y).lineTo(ML + cW, doc.y).strokeColor(C.pri).lineWidth(0.75).stroke();
-      doc.moveDown(0.5);
+      need(40);
+      if (doc.y > usableTop + 10) doc.moveDown(0.6);
+      doc.fontSize(11).fillColor(C.pri).text(`${num}    ${title.toUpperCase()}`, ML, doc.y, { characterSpacing: 1.2, width: cW });
+      doc.moveDown(0.1);
+      doc.moveTo(ML, doc.y).lineTo(ML + cW, doc.y).strokeColor(C.pri).lineWidth(0.5).stroke();
+      doc.moveDown(0.3);
     }
 
     function sub(num: string, t: string) {
-      need(28);
-      doc.moveDown(0.5);
-      doc.fontSize(9.5).fillColor(C.pri).text(`${num}  ${t}`, ML, doc.y, { width: cW });
-      doc.moveDown(0.25);
+      need(18);
+      doc.moveDown(0.3);
+      doc.fontSize(9).fillColor(C.pri).text(`${num}  ${t}`, ML, doc.y, { width: cW });
+      doc.moveDown(0.15);
     }
 
     function body(t: string) {
       if (!t) return;
-      doc.fontSize(8.5).fillColor(C.onV).text(String(t), ML, doc.y, { width: cW, lineGap: 3 });
+      need(16);
+      doc.fontSize(8).fillColor(C.onV).text(String(t), ML, doc.y, { width: cW, lineGap: 2 });
     }
 
     function lv(l: string, v: string) {
-      need(14);
-      doc.fontSize(8).fillColor(C.out).text(l, ML, doc.y, { continued: true, width: cW });
+      need(12);
+      doc.fontSize(7.5).fillColor(C.out).text(l, ML, doc.y, { continued: true, width: cW });
       doc.fillColor(C.on).text(`  ${v}`);
     }
 
     function bullet(t: string, color = C.onV) {
-      need(14);
-      doc.fontSize(8).fillColor(color).text(`    •  ${t}`, ML, doc.y, { width: cW - 8, lineGap: 1.5 });
+      need(12);
+      doc.fontSize(7.5).fillColor(color).text(`    •  ${t}`, ML, doc.y, { width: cW - 8, lineGap: 1 });
     }
 
     function link(label: string, url: string | undefined, color = C.sec) {
       if (!url) return;
-      need(12);
+      need(10);
       doc.fontSize(7).fillColor(color).text(label, ML + 12, doc.y, { width: cW - 16, link: String(url), underline: true });
     }
 
@@ -89,26 +95,26 @@ function generatePDF(report: Record<string, unknown>): Promise<Buffer> {
     const sLbl = score >= 90 ? "Excellent" : score >= 70 ? "Good" : score >= 50 ? "Fair" : score >= 30 ? "Poor" : "Critical";
 
     function tableRow(cols: { text: string; width: number; color?: string; align?: "left" | "center" | "right" }[], y?: number) {
-      need(14);
+      need(12);
       const rowY = y ?? doc.y;
       let x = ML;
       for (const col of cols) {
-        doc.fontSize(7.5).fillColor(col.color || C.on).text(col.text, x, rowY, { width: col.width, align: col.align || "left" });
+        doc.fontSize(7).fillColor(col.color || C.on).text(col.text, x, rowY, { width: col.width, align: col.align || "left" });
         x += col.width;
       }
-      doc.y = rowY + 13;
+      doc.y = rowY + 11;
     }
 
     function tableHeader(cols: { text: string; width: number }[]) {
-      need(20);
+      need(16);
       const rowY = doc.y;
-      doc.rect(ML, rowY - 2, cW, 14).fill("#f0f1ed");
+      doc.rect(ML, rowY - 2, cW, 12).fill("#f0f1ed");
       let x = ML;
       for (const col of cols) {
-        doc.fontSize(7).fillColor(C.pri).text(col.text.toUpperCase(), x + 3, rowY, { width: col.width - 6, characterSpacing: 0.5 });
+        doc.fontSize(6.5).fillColor(C.pri).text(col.text.toUpperCase(), x + 3, rowY, { width: col.width - 6, characterSpacing: 0.5 });
         x += col.width;
       }
-      doc.y = rowY + 14;
+      doc.y = rowY + 12;
     }
 
     function divider() {
@@ -310,7 +316,7 @@ function generatePDF(report: Record<string, unknown>): Promise<Buffer> {
       if (rn.length > 0) {
         sub("4.2", "Recent Negative Events");
         for (const n of rn) {
-          need(28);
+          need(18);
           doc.fontSize(8).fillColor(C.on).text(String(n.title || ""), ML + 8, doc.y, { width: cW - 12 });
           doc.fontSize(7).fillColor(C.out).text(`${s(n.dateFound, "")} (${n.daysAgo || "?"}d ago) — ${s(n.summary, "")}`, ML + 8, doc.y, { width: cW - 12 });
           doc.moveDown(0.15);
@@ -736,7 +742,7 @@ function generatePDF(report: Record<string, unknown>): Promise<Buffer> {
         body(String(fs.analysis || ""));
         doc.moveDown(0.2);
         for (const c of convs) {
-          need(25);
+          need(16);
           const sentClr = c.sentiment === "positive" ? C.grn : c.sentiment === "negative" ? C.red : C.out;
           doc.fontSize(7.5).fillColor(C.sec).text(`[${String(c.platform || "").toUpperCase()}]`, ML + 4, doc.y, { continued: true });
           doc.fillColor(sentClr).text(` ${s(c.sentiment)}`, { continued: true });
@@ -758,7 +764,7 @@ function generatePDF(report: Record<string, unknown>): Promise<Buffer> {
       doc.moveDown(0.2);
       const vids = (vs.videos || []) as Record<string, unknown>[];
       for (const v of vids.slice(0, 8)) {
-        need(28);
+        need(18);
         const sentClr = v.sentiment === "positive" ? C.grn : v.sentiment === "negative" ? C.red : C.out;
         doc.fontSize(7.5).fillColor(sentClr).text(`[${String(v.sentiment || "").toUpperCase()}]`, ML + 4, doc.y, { continued: true });
         doc.fillColor(C.on).text(`  ${s(v.title)}`);
@@ -914,7 +920,7 @@ function generatePDF(report: Record<string, unknown>): Promise<Buffer> {
     if (strengths.length > 0) {
       sub("16.1", `Strengths (${strengths.length})`);
       for (const item of strengths) {
-        need(25);
+        need(16);
         doc.rect(ML, doc.y, 2, 18).fill(C.grn);
         doc.fontSize(8).fillColor(C.on).text(String(item.title || ""), ML + 8, doc.y, { width: cW - 12 });
         doc.fontSize(7).fillColor(C.onV).text(String(item.description || ""), ML + 8, doc.y, { width: cW - 12 });
@@ -927,7 +933,7 @@ function generatePDF(report: Record<string, unknown>): Promise<Buffer> {
     if (allProblems.length > 0) {
       sub("16.2", `Problems Found (${allProblems.length})`);
       for (const p of allProblems) {
-        need(30);
+        need(20);
         const sv2 = p.severity === "high" ? C.red : p.severity === "medium" ? C.ylw : C.sec;
         doc.rect(ML, doc.y, 2, 22).fill(sv2);
         doc.fontSize(7.5).fillColor(sv2).text(String(p.severity || "").toUpperCase(), ML + 8, doc.y, { continued: true });
@@ -953,8 +959,8 @@ function generatePDF(report: Record<string, unknown>): Promise<Buffer> {
       if (highRecs2.length > 0) {
         sub("17.1", "High Priority");
         for (const rc of highRecs2) {
-          need(40);
-          doc.rect(ML, doc.y, 2, 30).fill(C.red);
+          need(24);
+          doc.rect(ML, doc.y, 2, 24).fill(C.red);
           doc.fontSize(8).fillColor(C.on).text(String(rc.action || ""), ML + 8, doc.y, { width: cW - 12 });
           doc.fontSize(7).fillColor(C.onV).text(String(rc.reason || ""), ML + 8, doc.y, { width: cW - 12 });
           doc.fontSize(7).fillColor(C.grn).text(`Impact: ${s(rc.estimatedImpact)}`, ML + 8, doc.y, { width: cW - 12 });
@@ -967,7 +973,7 @@ function generatePDF(report: Record<string, unknown>): Promise<Buffer> {
       if (medRecs.length > 0) {
         sub("17.2", "Medium Priority");
         for (const rc of medRecs) {
-          need(35);
+          need(22);
           doc.rect(ML, doc.y, 2, 26).fill(C.ylw);
           doc.fontSize(8).fillColor(C.on).text(String(rc.action || ""), ML + 8, doc.y, { width: cW - 12 });
           doc.fontSize(7).fillColor(C.onV).text(String(rc.reason || ""), ML + 8, doc.y, { width: cW - 12 });
@@ -979,7 +985,7 @@ function generatePDF(report: Record<string, unknown>): Promise<Buffer> {
       // Other / low priority
       if (otherRecs.length > 0) {
         for (const rc of otherRecs) {
-          need(30);
+          need(20);
           doc.rect(ML, doc.y, 2, 22).fill(C.sec);
           doc.fontSize(8).fillColor(C.on).text(String(rc.action || ""), ML + 8, doc.y, { width: cW - 12 });
           doc.fontSize(7).fillColor(C.onV).text(String(rc.reason || ""), ML + 8, doc.y, { width: cW - 12 });

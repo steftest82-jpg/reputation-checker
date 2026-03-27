@@ -1313,12 +1313,12 @@ export default function Home() {
         </main>
       )}
 
-      {/* Disambiguation */}
+      {/* Disambiguation + Domain (combined step) */}
       {disambiguation && !loading && !report && (
         <main className="max-w-7xl mx-auto px-4 md:px-8 flex-1 w-full pt-24">
           <div className="max-w-lg mx-auto" style={{ paddingTop: "20px" }}>
-            <button onClick={() => { setDisambiguation(null); }}
-              className="mb-4 text-sm text-[#1B263B] hover:underline flex items-center gap-1" style={{fontFamily:"'Manrope',sans-serif"}}>&larr; Back to search</button>
+            <button onClick={() => { setDisambiguation(null); setDomainStep(true); }}
+              className="mb-4 text-sm text-[#1B263B] hover:underline flex items-center gap-1" style={{fontFamily:"'Manrope',sans-serif"}}>&larr; Back</button>
             <div className="bg-white rounded-2xl border border-[#1B263B]/20 shadow-sm p-6">
               <div className="text-center mb-5">
                 <div className="w-14 h-14 bg-[#f3f4f0] rounded-full flex items-center justify-center mx-auto mb-3">
@@ -1327,12 +1327,26 @@ export default function Home() {
                 <h3 className="text-xl font-bold text-[#1a1c1a] mb-1" style={{fontFamily:"'Newsreader',serif"}}>Which &ldquo;{disambiguation.name}&rdquo;?</h3>
                 <p className="text-sm text-[#74777d]" style={{fontFamily:"'Manrope',sans-serif"}}>{disambiguation.message}</p>
               </div>
+
+              {/* Domain input — required */}
+              <div className="mb-4">
+                <label className="text-xs font-bold text-[#74777d] uppercase tracking-wider mb-1.5 block" style={{fontFamily:"'Manrope',sans-serif"}}>Website (required)</label>
+                <input
+                  type="text" value={domain} onChange={(e) => setDomain(e.target.value)}
+                  placeholder="e.g. acmecorp.com"
+                  className="w-full h-11 pl-4 pr-4 rounded-xl border border-[#1B263B]/20 focus:outline-none focus:ring-2 focus:ring-[#1B263B]/20 bg-white text-[#1a1c1a] text-sm"
+                  style={{fontFamily:"'Manrope',sans-serif"}}
+                />
+                {!domain.trim() && <p className="text-[10px] text-[#ba1a1a] mt-1" style={{fontFamily:"'Manrope',sans-serif"}}>Please enter a website to continue</p>}
+              </div>
+
               <div className="space-y-2">
                 {disambiguation.options.map((opt) => (
                   <button
                     key={opt.industry}
-                    onClick={() => handleDisambiguationSelect(opt.industry)}
-                    className="w-full text-left px-4 py-3 rounded-xl border border-[#c4c6cc]/15 hover:border-[#1B263B]/40 hover:bg-[#f3f4f0] transition flex items-center justify-between group"
+                    onClick={() => { if (!domain.trim()) return; handleDisambiguationSelect(opt.industry); }}
+                    disabled={!domain.trim()}
+                    className={`w-full text-left px-4 py-3 rounded-xl border border-[#c4c6cc]/15 hover:border-[#1B263B]/40 hover:bg-[#f3f4f0] transition flex items-center justify-between group ${!domain.trim() ? "opacity-40 cursor-not-allowed" : ""}`}
                   >
                     <div>
                       <p className="font-semibold text-[#1a1c1a] text-sm" style={{fontFamily:"'Manrope',sans-serif"}}>{opt.label}</p>
