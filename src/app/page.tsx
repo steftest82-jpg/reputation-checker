@@ -929,8 +929,8 @@ export default function Home() {
               return (
                 <div className="mb-24">
                   <div className="text-center mb-14">
-                    <p className="text-[#44474c] text-[10px] font-bold tracking-[0.2em] uppercase mb-3" style={{fontFamily:"'Manrope',sans-serif"}}>How it works</p>
-                    <p className="text-[#74777d] text-sm max-w-2xl mx-auto" style={{fontFamily:"'Manrope',sans-serif"}}>Powered by a proprietary algorithm trained on over 10,000,000 reputation data points</p>
+                    <p className="text-[#44474c] text-[12px] font-bold tracking-[1.2px] uppercase mb-3" style={{fontFamily:"'Manrope',sans-serif"}}>How it works</p>
+                    <p className="text-[#74777d] text-[16px] max-w-2xl mx-auto" style={{fontFamily:"'Manrope',sans-serif"}}>Powered by a proprietary algorithm trained on over 10,000,000 reputation data points</p>
                   </div>
 
                   {/* Desktop: horizontal connected cards */}
@@ -947,13 +947,13 @@ export default function Home() {
                             <span className="text-[9px] font-black text-[#1B263B]/20 group-hover:text-[#1B263B]/60 tracking-wider transition-colors" style={{fontFamily:"'Manrope',sans-serif"}}>{step.num}</span>
                           </div>
                           {/* Highlight pill */}
-                          <span className="px-3 py-1 rounded-full bg-[#1B263B]/5 text-[#1B263B] text-[10px] font-bold uppercase tracking-wider mb-3 group-hover:bg-[#1B263B] group-hover:text-white transition-all duration-300" style={{fontFamily:"'Manrope',sans-serif"}}>{step.highlight}</span>
+                          <span className="px-3 py-1 rounded-full bg-[#1B263B]/5 text-[#1B263B] text-[11px] font-bold uppercase tracking-wider mb-3 group-hover:bg-[#1B263B] group-hover:text-white transition-all duration-300" style={{fontFamily:"'Manrope',sans-serif"}}>{step.highlight}</span>
                           {/* Title */}
                           <h4 className="font-bold text-[#1B263B] text-[16px] mb-2 leading-tight" style={{fontFamily:"'Newsreader',serif"}}>{step.title}</h4>
                           {/* Description */}
                           <p className="text-[#74777d] text-[12px] leading-relaxed max-h-0 group-hover:max-h-[200px] overflow-hidden transition-all duration-700 opacity-0 group-hover:opacity-100" style={{fontFamily:"'Manrope',sans-serif"}}>{step.desc}</p>
                           {/* Hover hint */}
-                          <span className="text-[10px] text-[#c4c6cc] mt-2 group-hover:hidden transition-opacity" style={{fontFamily:"'Manrope',sans-serif"}}>Hover to learn more</span>
+                          <span className="text-[10px] text-[#8a8d94] mt-2 group-hover:hidden transition-opacity" style={{fontFamily:"'Manrope',sans-serif"}}>Hover to learn more</span>
                           {/* Arrow for non-last */}
                           {idx < 3 && <div className="absolute -right-2 top-[52px] text-[#c4c6cc] hidden md:block"><span className="material-symbols-outlined text-sm">chevron_right</span></div>}
                         </div>
@@ -974,7 +974,7 @@ export default function Home() {
                         </div>
                         {/* Content */}
                         <div className="pb-8">
-                          <span className="px-2 py-0.5 rounded-full bg-[#1B263B]/5 text-[#1B263B] text-[9px] font-bold uppercase tracking-wider" style={{fontFamily:"'Manrope',sans-serif"}}>{step.highlight}</span>
+                          <span className="px-2 py-0.5 rounded-full bg-[#1B263B]/5 text-[#1B263B] text-[10px] font-bold uppercase tracking-wider" style={{fontFamily:"'Manrope',sans-serif"}}>{step.highlight}</span>
                           <h4 className="font-bold text-[#1B263B] text-[15px] mt-2 mb-1" style={{fontFamily:"'Newsreader',serif"}}>{step.title}</h4>
                           <p className="text-[#74777d] text-[12px] leading-relaxed" style={{fontFamily:"'Manrope',sans-serif"}}>{step.desc}</p>
                         </div>
@@ -1741,9 +1741,9 @@ export default function Home() {
                     </Card>
                   )}
 
-                  {/* Personal Influence */}
+                  {/* Personal / Brand Influence Score */}
                   {report.personalInfluence && (
-                    <Card title="Personal Influence">
+                    <Card title="Personal / Brand Influence Score">
                       <div className="flex items-center gap-3 mb-3">
                         <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${
                           report.personalInfluence.verdict === "strong" ? "bg-green-100 text-green-700"
@@ -1962,6 +1962,36 @@ export default function Home() {
                 </div>
 
                 <div className="space-y-6">
+                  {/* AI / LLM Visibility (Overview) */}
+                  {report.aiLlmAppearance && (
+                    <div className="bg-gradient-to-br from-[#1B263B] to-[#2d3a52] rounded-xl p-5 md:p-6 text-white border border-[#1B263B]">
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
+                          <span className="material-symbols-outlined text-xl text-[#D4AF37]">psychology</span>
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-[15px]" style={{fontFamily:"'Newsreader',serif"}}>AI / LLM Visibility</h4>
+                          <p className="text-[10px] text-white/50 uppercase tracking-widest font-bold" style={{fontFamily:"'Manrope',sans-serif"}}>ChatGPT, Claude, Gemini</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4 mb-3">
+                        <span className="text-4xl font-black" style={{fontFamily:"'Public Sans',sans-serif"}}>{report.aiLlmAppearance.score}<span className="text-lg text-white/40">/10</span></span>
+                        <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${
+                          report.aiLlmAppearance.verdict === "strong" ? "bg-green-500/20 text-green-300"
+                          : report.aiLlmAppearance.verdict === "moderate" ? "bg-yellow-500/20 text-yellow-300"
+                          : "bg-red-500/20 text-red-300"
+                        }`} style={{fontFamily:"'Manrope',sans-serif"}}>{report.aiLlmAppearance.verdict}</span>
+                      </div>
+                      <p className="text-sm text-white/70 leading-relaxed mb-4" style={{fontFamily:"'Manrope',sans-serif"}}>
+                        {report.aiLlmAppearance.analysis.split('. ').slice(0, 2).join('. ')}.
+                      </p>
+                      <button onClick={() => { setActiveTab("ai-llm"); document.getElementById('tabs-anchor')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}
+                        className="text-xs font-bold text-[#D4AF37] hover:text-[#e8c84b] transition-colors" style={{fontFamily:"'Manrope',sans-serif"}}>
+                        View Full AI Analysis &rarr;
+                      </button>
+                    </div>
+                  )}
+
                   {/* Social Presence */}
                   <Card title="Social Media Presence">
                     <p className="text-sm text-[#44474c] mb-3" style={{fontFamily:"'Manrope',sans-serif"}}>{report.socialPresenceDetail.assessment}</p>
@@ -1976,7 +2006,7 @@ export default function Home() {
                       </div>
                     )}
                     {report.socialPresenceDetail?.missing?.length > 0 && (
-                      <div>
+                      <div className="mb-3">
                         <p className="text-xs font-medium text-[#74777d] mb-1.5" style={{fontFamily:"'Manrope',sans-serif"}}>Missing:</p>
                         <div className="flex flex-wrap gap-1.5">
                           {report.socialPresenceDetail.missing.map((p, i) => (
@@ -1985,6 +2015,12 @@ export default function Home() {
                         </div>
                       </div>
                     )}
+                    <div className="mt-3 pt-3 border-t border-[#c4c6cc]/15">
+                      <p className="text-[10px] text-[#9a9da4] italic leading-relaxed" style={{fontFamily:"'Manrope',sans-serif"}}>
+                        <span className="material-symbols-outlined text-[10px] align-middle mr-0.5" style={{fontSize:"10px"}}>info</span>
+                        Social media profiles shown reflect only those appearing in Google Search Results (SERPs) at the time and geographic location of this scan. Profiles that exist but do not appear in search results may not be listed.
+                      </p>
+                    </div>
                   </Card>
 
                   {/* Review Summary */}
