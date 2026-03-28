@@ -1,10 +1,35 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 
-// Split key fallback (same pattern as other routes for Turbopack env var bug)
-const _rk = ["re_MxSnEjk4_Af5Xdo", "32nV9FHekAdB6ddiv2"];
-const RESEND_KEY = process.env.RESEND_API_KEY || _rk.join("");
+// ── Security: API key from env only (never hardcode) ─────────────
+const RESEND_KEY = process.env.RESEND_API_KEY || "";
 const TO_EMAIL = "info@reputation500.com";
+
+// ── Rate limiter for contact/send-report endpoints ───────────────
+const contactHits: Record<string, { count: number; firstHit: number }> = {};
+const CONTACT_MAX = 5;
+const CONTACT_WINDOW = 60 * 60 * 1000; // 1 hour
+
+function isContactRateLimited(ip: string): boolean {
+  const now = Date.now();
+  const entry = contactHits[ip];
+  if (!entry || now - entry.firstHit > CONTACT_WINDOW) {
+    contactHits[ip] = { count: 1, firstHit: now };
+    return false;
+  }
+  entry.count++;
+  return entry.count > CONTACT_MAX;
+}
+
+// ── HTML escaping to prevent injection ───────────────────────────
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
 
 const td = `padding:8px;border-bottom:1px solid #eee;`;
 const th = `${td}font-weight:bold;`;
@@ -24,11 +49,11 @@ function buildReportHtml(r: Record<string, unknown>): string {
 
   let html = `
     <hr style="margin:24px 0;border:none;border-top:2px solid #2563eb;">
-    <h2 style="color:#2563eb;">Full Report: ${r.name || "N/A"}</h2>
-    <p><strong>Entity Type:</strong> ${r.entityType || "N/A"}</p>
-    <p><strong>Score:</strong> ${r.score ?? "N/A"}/100 &nbsp; | &nbsp; <strong>Risk Level:</strong> ${r.riskLevel || "N/A"}</p>
-    <p><strong>Summary:</strong> ${r.summary || "N/A"}</p>
-    <p><strong>Executive Brief:</strong> ${r.executiveBrief || "N/A"}</p>
+    <h2 style="color:#2563eb;">Full Report: ${escapeHtml(String(r.name || "N/A"))}</h2>
+    <p><strong>Entity Type:</strong> ${escapeHtml(String(r.entityType || "N/A"))}</p>
+    <p><strong>Score:</strong> ${escapeHtml(String(r.score ?? "N/A"))}/100 &nbsp; | &nbsp; <strong>Risk Level:</strong> ${escapeHtml(String(r.riskLevel || "N/A"))}</p>
+    <p><strong>Summary:</strong> ${escapeHtml(String(r.summary || "N/A"))}</p>
+    <p><strong>Executive Brief:</strong> ${escapeHtml(String(r.executiveBrief || "N/A"))}</p>
   `;
 
   // Category scores
@@ -149,24 +174,56 @@ function buildReportHtml(r: Record<string, unknown>): string {
 
 export async function POST(req: NextRequest) {
   try {
+    // ── Rate limit per IP ──
+    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || req.headers.get("x-real-ip") || "unknown";
+    if (isContactRateLimited(ip)) {
+      return NextResponse.json({ error: "Too many requests. Please try again later." }, { status: 429 });
+    }
+
+    // ── Body size guard (max 500KB) ──
+    const contentLength = parseInt(req.headers.get("content-length") || "0", 10);
+    if (contentLength > 512_000) {
+      return NextResponse.json({ error: "Request too large" }, { status: 413 });
+    }
+
+    // ── Fail fast if Resend key is missing ──
+    if (!RESEND_KEY) {
+      console.error("RESEND_API_KEY is not configured");
+      return NextResponse.json({ error: "Service temporarily unavailable" }, { status: 503 });
+    }
+
     const { name, email, packageName, reportName, reportScore, reportData } = await req.json();
 
     if (!name || !email) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
+    // ── Input validation ──
+    if (typeof name !== "string" || name.length > 200) {
+      return NextResponse.json({ error: "Invalid name" }, { status: 400 });
+    }
+    if (typeof email !== "string" || email.length > 320 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return NextResponse.json({ error: "Invalid email" }, { status: 400 });
+    }
+
+    // ── Escape all user inputs for HTML ──
+    const safeName = escapeHtml(name);
+    const safeEmail = escapeHtml(email);
+    const safePackage = packageName ? escapeHtml(String(packageName)) : "";
+    const safeReportName = reportName ? escapeHtml(String(reportName)) : "";
+
     const isGeneralContact = !packageName;
-    const emailType = isGeneralContact ? "General Contact Inquiry" : packageName === "Report Unlock" ? "Report Unlock Lead" : "Package Inquiry";
+    const emailType = isGeneralContact ? "General Contact Inquiry" : safePackage === "Report Unlock" ? "Report Unlock Lead" : "Package Inquiry";
 
     let emailHtml = `
-      <h2>${isGeneralContact ? "📩 New Contact Form Submission" : `New ${emailType}`} from Rep500</h2>
+      <h2>${isGeneralContact ? "New Contact Form Submission" : `New ${emailType}`} from Rep500</h2>
       ${isGeneralContact ? `<p style="color:#2563eb;font-weight:bold;font-size:14px;">This is a general contact inquiry from the website footer.</p>` : ""}
       <table style="border-collapse:collapse;width:100%;max-width:500px;">
-        <tr><td style="${th}">Name</td><td style="${td}">${name}</td></tr>
-        <tr><td style="${th}">Email</td><td style="${td}"><a href="mailto:${email}">${email}</a></td></tr>
-        ${packageName ? `<tr><td style="${th}">Package</td><td style="${td}">${packageName}</td></tr>` : `<tr><td style="${th}">Type</td><td style="${td}">General Contact</td></tr>`}
-        ${reportName ? `<tr><td style="${th}">Report For</td><td style="${td}">${reportName}</td></tr>` : ""}
-        ${reportScore !== undefined && reportScore > 0 ? `<tr><td style="${th}">Reputation Score</td><td style="${td}">${reportScore}/100</td></tr>` : ""}
+        <tr><td style="${th}">Name</td><td style="${td}">${safeName}</td></tr>
+        <tr><td style="${th}">Email</td><td style="${td}"><a href="mailto:${safeEmail}">${safeEmail}</a></td></tr>
+        ${safePackage ? `<tr><td style="${th}">Package</td><td style="${td}">${safePackage}</td></tr>` : `<tr><td style="${th}">Type</td><td style="${td}">General Contact</td></tr>`}
+        ${safeReportName ? `<tr><td style="${th}">Report For</td><td style="${td}">${safeReportName}</td></tr>` : ""}
+        ${reportScore !== undefined && typeof reportScore === "number" && reportScore > 0 ? `<tr><td style="${th}">Reputation Score</td><td style="${td}">${Math.round(reportScore)}/100</td></tr>` : ""}
       </table>
     `;
 
@@ -175,9 +232,8 @@ export async function POST(req: NextRequest) {
       emailHtml += buildReportHtml(reportData);
     }
 
-    // Always log the lead
-    console.log("=== NEW LEAD ===");
-    console.log(JSON.stringify({ name, email, packageName, reportName, reportScore }, null, 2));
+    // Log lead without full PII (email redacted for privacy)
+    console.log("=== NEW LEAD ===", JSON.stringify({ name, type: emailType, hasReport: !!reportData }));
 
     if (RESEND_KEY) {
       const resend = new Resend(RESEND_KEY);

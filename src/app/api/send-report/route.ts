@@ -2,9 +2,25 @@ import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import PDFDocument from "pdfkit";
 
-const _rk = ["re_MxSnEjk4_Af5Xdo", "32nV9FHekAdB6ddiv2"];
-const RESEND_KEY = process.env.RESEND_API_KEY || _rk.join("");
+// ── Security: API key from env only (never hardcode) ─────────────
+const RESEND_KEY = process.env.RESEND_API_KEY || "";
 const NOTIFY_EMAIL = "info@reputation500.com";
+
+// ── Rate limiter for send-report endpoint ────────────────────────
+const reportHits: Record<string, { count: number; firstHit: number }> = {};
+const REPORT_MAX = 10;
+const REPORT_WINDOW = 60 * 60 * 1000; // 1 hour
+
+function isReportRateLimited(ip: string): boolean {
+  const now = Date.now();
+  const entry = reportHits[ip];
+  if (!entry || now - entry.firstHit > REPORT_WINDOW) {
+    reportHits[ip] = { count: 1, firstHit: now };
+    return false;
+  }
+  entry.count++;
+  return entry.count > REPORT_MAX;
+}
 
 function generatePDF(report: Record<string, unknown>): Promise<Buffer> {
   return new Promise((resolve, reject) => {
@@ -738,8 +754,31 @@ function generatePDF(report: Record<string, unknown>): Promise<Buffer> {
 // ── POST handler ──
 export async function POST(req: NextRequest) {
   try {
+    // ── Rate limit per IP ──
+    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || req.headers.get("x-real-ip") || "unknown";
+    if (isReportRateLimited(ip)) {
+      return NextResponse.json({ error: "Too many requests. Please try again later." }, { status: 429 });
+    }
+
+    // ── Body size guard (max 2MB for report data) ──
+    const contentLength = parseInt(req.headers.get("content-length") || "0", 10);
+    if (contentLength > 2_097_152) {
+      return NextResponse.json({ error: "Request too large" }, { status: 413 });
+    }
+
+    // ── Fail fast if Resend key is missing ──
+    if (!RESEND_KEY) {
+      console.error("RESEND_API_KEY is not configured");
+      return NextResponse.json({ error: "Service temporarily unavailable" }, { status: 503 });
+    }
+
     const { email, report } = await req.json();
     if (!email || !report) return NextResponse.json({ error: "Missing email or report data" }, { status: 400 });
+
+    // ── Validate email format ──
+    if (email !== "__download__" && (typeof email !== "string" || email.length > 320 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))) {
+      return NextResponse.json({ error: "Invalid email address" }, { status: 400 });
+    }
 
     let pdfBuffer: Buffer;
     try { pdfBuffer = await generatePDF(report); } catch (pdfErr) { console.error("PDF generation error:", pdfErr); return NextResponse.json({ error: "PDF generation failed" }, { status: 500 }); }

@@ -2,20 +2,26 @@ import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import Stripe from "stripe";
 
-// ── API Keys (loaded exclusively from environment variables) ─
-const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY || "";
-const SERP_KEY = process.env.SERPAPI_KEY || "";
-const NEWSAPI_KEY = process.env.NEWSAPI_KEY || "";
-const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY || "";
-const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || "";
+// ── API Keys — fail fast if critical keys are missing ────────────
+const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY ?? "";
+const SERP_KEY = process.env.SERPAPI_KEY ?? "";
+const NEWSAPI_KEY = process.env.NEWSAPI_KEY ?? "";
+const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY ?? "";
+const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY ?? "";
 
-// ── Rate-limit store (in-memory; resets on cold start) ──────────────
+if (!ANTHROPIC_KEY) console.error("FATAL: ANTHROPIC_API_KEY is not set");
+if (!SERP_KEY) console.error("FATAL: SERPAPI_KEY is not set");
+if (!STRIPE_SECRET_KEY) console.error("FATAL: STRIPE_SECRET_KEY is not set");
+
+// ── Allowed origin for payment flow ──────────────────────────────
+const ALLOWED_ORIGIN = "https://www.rep500.com";
+
+// ── Rate-limit store (in-memory; always enabled) ─────────────────
 const ipHits: Record<string, { count: number; firstHit: number }> = {};
-const MAX_HITS = 2;
-const WINDOW_MS = 24 * 60 * 60 * 1000;
+const MAX_HITS = 5;
+const WINDOW_MS = 60 * 60 * 1000; // 1 hour
 
 function isRateLimited(ip: string): boolean {
-  if (process.env.RATE_LIMIT_ENABLED !== "true") return false;
   const now = Date.now();
   const entry = ipHits[ip];
   if (!entry || now - entry.firstHit > WINDOW_MS) {
@@ -24,6 +30,33 @@ function isRateLimited(ip: string): boolean {
   }
   entry.count++;
   return entry.count > MAX_HITS;
+}
+
+// ── Input sanitization helpers ───────────────────────────────────
+function sanitizeName(raw: string): string {
+  // Strip anything that isn't alphanumeric, spaces, hyphens, dots, or common name chars
+  return raw.replace(/[^\p{L}\p{N}\s\-.'&,()]/gu, "").trim().slice(0, 200);
+}
+
+// ── SSRF protection: block internal/private IPs in domain checks ─
+function isPrivateOrReserved(hostname: string): boolean {
+  const lower = hostname.toLowerCase();
+  // Block localhost, internal IPs, cloud metadata endpoints
+  if (lower === "localhost" || lower === "127.0.0.1" || lower === "[::1]") return true;
+  if (lower === "0.0.0.0" || lower.endsWith(".local") || lower.endsWith(".internal")) return true;
+  // AWS/GCP/Azure metadata endpoints
+  if (lower === "169.254.169.254" || lower === "metadata.google.internal") return true;
+  // Private IP ranges
+  const parts = lower.split(".");
+  if (parts.length === 4) {
+    const first = parseInt(parts[0], 10);
+    const second = parseInt(parts[1], 10);
+    if (first === 10) return true; // 10.0.0.0/8
+    if (first === 172 && second >= 16 && second <= 31) return true; // 172.16.0.0/12
+    if (first === 192 && second === 168) return true; // 192.168.0.0/16
+    if (first === 169 && second === 254) return true; // link-local
+  }
+  return false;
 }
 
 // ── SerpAPI helpers ─────────────────────────────────────────────────
@@ -309,13 +342,12 @@ async function serpSocialProfiles(query: string) {
   return results;
 }
 
-// ── Domain check (free, no API needed) ──────────────────────────────
+// ── Domain check (free, no API needed) — with SSRF protection ───────
 async function checkDomain(name: string, userDomain?: string): Promise<{
   domain: string;
   available: boolean;
   hasSite: boolean;
 }> {
-  // If user provided a domain, use it directly
   let domain: string;
   if (userDomain) {
     domain = userDomain.replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/.*$/, "").trim();
@@ -327,8 +359,15 @@ async function checkDomain(name: string, userDomain?: string): Promise<{
     domain = `${slug}.com`;
   }
 
-  // Try HEAD first, then GET as fallback. Accept any HTTP response (even 403/301)
-  // as evidence the site exists — only DNS/connection failures mean "no site".
+  // ── SSRF protection: block private/internal addresses ──
+  if (isPrivateOrReserved(domain)) {
+    return { domain, available: false, hasSite: false };
+  }
+  // Must look like a valid public domain
+  if (!/^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/i.test(domain)) {
+    return { domain, available: false, hasSite: false };
+  }
+
   async function probe(url: string): Promise<boolean> {
     try {
       await fetch(url, {
@@ -353,7 +392,6 @@ async function checkDomain(name: string, userDomain?: string): Promise<{
     }
   }
 
-  // Try https first, then http
   const hasHttps = await probe(`https://${domain}`);
   if (hasHttps) return { domain, available: false, hasSite: true };
 
@@ -1442,6 +1480,11 @@ function getPackageRecommendations(
 // ── Main handler ────────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
   try {
+    // ── Fail fast if critical env vars are missing ──
+    if (!ANTHROPIC_KEY || !SERP_KEY || !STRIPE_SECRET_KEY) {
+      return NextResponse.json({ error: "Service configuration error" }, { status: 503 });
+    }
+
     const ip =
       req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
       req.headers.get("x-real-ip") ||
@@ -1449,28 +1492,51 @@ export async function POST(req: NextRequest) {
 
     if (isRateLimited(ip)) {
       return NextResponse.json(
-        { error: "Rate limit exceeded. You can run 2 checks per day." },
+        { error: "Rate limit exceeded. Please try again later." },
         { status: 429 }
       );
+    }
+
+    // ── Body size guard (max 100KB for check requests) ──
+    const contentLength = parseInt(req.headers.get("content-length") || "0", 10);
+    if (contentLength > 102_400) {
+      return NextResponse.json({ error: "Request too large" }, { status: 413 });
     }
 
     const body = await req.json();
     const { name, type, industry, domain: userDomain, stripe_session_id } = body;
 
     // ── Payment verification: require valid Stripe session ──
-    if (stripe_session_id) {
-      try {
-        const stripe = new Stripe(STRIPE_SECRET_KEY);
-        const session = await stripe.checkout.sessions.retrieve(stripe_session_id);
-        if (session.payment_status !== "paid") {
-          return NextResponse.json({ error: "Payment not completed." }, { status: 402 });
-        }
-      } catch {
-        return NextResponse.json({ error: "Invalid payment session." }, { status: 402 });
-      }
-    } else {
-      // No session ID = no payment = block access
+    if (!stripe_session_id || typeof stripe_session_id !== "string") {
       return NextResponse.json({ error: "Payment required." }, { status: 402 });
+    }
+
+    // Validate session_id format (Stripe session IDs start with cs_)
+    if (!/^cs_(test_|live_)[a-zA-Z0-9]+$/.test(stripe_session_id)) {
+      return NextResponse.json({ error: "Invalid payment session." }, { status: 402 });
+    }
+
+    try {
+      const stripe = new Stripe(STRIPE_SECRET_KEY);
+      const session = await stripe.checkout.sessions.retrieve(stripe_session_id);
+
+      if (session.payment_status !== "paid") {
+        return NextResponse.json({ error: "Payment not completed." }, { status: 402 });
+      }
+
+      // ── Verify the session metadata matches this request ──
+      const sessionName = session.metadata?.scan_name || "";
+      if (name && sessionName && sanitizeName(sessionName).toLowerCase() !== sanitizeName(String(name)).toLowerCase()) {
+        return NextResponse.json({ error: "Payment session mismatch." }, { status: 402 });
+      }
+
+      // ── Verify session is recent (max 24 hours old) to prevent replay ──
+      const sessionAge = Date.now() - (session.created * 1000);
+      if (sessionAge > 24 * 60 * 60 * 1000) {
+        return NextResponse.json({ error: "Payment session expired. Please purchase a new scan." }, { status: 402 });
+      }
+    } catch {
+      return NextResponse.json({ error: "Invalid payment session." }, { status: 402 });
     }
 
     if (!name || typeof name !== "string" || name.trim().length < 2) {
@@ -1481,7 +1547,8 @@ export async function POST(req: NextRequest) {
     }
 
     const entityType = type === "company" ? "company" : "person";
-    const baseQuery = name.trim();
+    // ── Sanitize name to prevent prompt injection / special chars ──
+    const baseQuery = sanitizeName(name);
 
     // ── Disambiguation: detect if this name refers to multiple entities ──
     // Skip if user already selected an industry
@@ -1748,11 +1815,10 @@ export async function POST(req: NextRequest) {
       revenueImpact: analysis.revenueImpact || { totalEstimatedImpact: 0, categoryBreakdown: { search: 0, social: 0, media: 0, aiLlm: 0, reviews: 0, forums: 0 }, items: [], analysis: "Insufficient data for revenue impact analysis.", topRisks: [] },
     });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : String(err);
-    const stack = err instanceof Error ? err.stack : "";
-    console.error("Reputation check error:", message, stack);
+    // ── Log full error server-side, return generic message to client ──
+    console.error("Reputation check error:", err instanceof Error ? err.message : "Unknown error");
     return NextResponse.json(
-      { error: `Analysis failed: ${message}` },
+      { error: "Analysis failed. Please try again or contact support." },
       { status: 500 }
     );
   }
