@@ -431,13 +431,14 @@ function LoadingProgress() {
     return () => clearTimeout(timer);
   }, [activeTrack]);
 
-  // Add audit messages
+  // Add audit messages — each message shown only once
   useEffect(() => {
     let msgIndex = 0;
     let startTime = Date.now();
     const addMessage = () => {
+      if (msgIndex >= AUDIT_MESSAGES.length) return; // Stop after all unique messages shown
       const secs = ((Date.now() - startTime) / 1000).toFixed(2);
-      setAuditLog((prev) => [...prev.slice(-12), { message: AUDIT_MESSAGES[msgIndex % AUDIT_MESSAGES.length], elapsed: `+${secs}s` }]);
+      setAuditLog((prev) => [...prev.slice(-12), { message: AUDIT_MESSAGES[msgIndex], elapsed: `+${secs}s` }]);
       msgIndex++;
     };
     addMessage();
@@ -1335,25 +1336,23 @@ export default function Home() {
                 <p className="text-sm text-[#74777d]" style={{fontFamily:"'Manrope',sans-serif"}}>{disambiguation.message}</p>
               </div>
 
-              {/* Domain input — required */}
+              {/* Domain input — optional for better accuracy */}
               <div className="mb-4">
-                <label className="text-xs font-bold text-[#74777d] uppercase tracking-wider mb-1.5 block" style={{fontFamily:"'Manrope',sans-serif"}}>Website (required)</label>
+                <label className="text-xs font-bold text-[#74777d] uppercase tracking-wider mb-1.5 block" style={{fontFamily:"'Manrope',sans-serif"}}>{type === "person" ? "Website or LinkedIn (optional)" : "Website (optional)"}</label>
                 <input
                   type="text" value={domain} onChange={(e) => setDomain(e.target.value)}
-                  placeholder="e.g. acmecorp.com"
+                  placeholder={type === "person" ? "e.g. linkedin.com/in/johndoe" : "e.g. acmecorp.com"}
                   className="w-full h-11 pl-4 pr-4 rounded-xl border border-[#1B263B]/20 focus:outline-none focus:ring-2 focus:ring-[#1B263B]/20 bg-white text-[#1a1c1a] text-sm"
                   style={{fontFamily:"'Manrope',sans-serif"}}
                 />
-                {!domain.trim() && <p className="text-[10px] text-[#ba1a1a] mt-1" style={{fontFamily:"'Manrope',sans-serif"}}>Please enter a website to continue</p>}
               </div>
 
               <div className="space-y-2">
                 {disambiguation.options.map((opt) => (
                   <button
                     key={opt.industry}
-                    onClick={() => { if (!domain.trim()) return; handleDisambiguationSelect(opt.industry); }}
-                    disabled={!domain.trim()}
-                    className={`w-full text-left px-4 py-3 rounded-xl border border-[#c4c6cc]/15 hover:border-[#1B263B]/40 hover:bg-[#f3f4f0] transition flex items-center justify-between group ${!domain.trim() ? "opacity-40 cursor-not-allowed" : ""}`}
+                    onClick={() => { handleDisambiguationSelect(opt.industry); }}
+                    className={`w-full text-left px-4 py-3 rounded-xl border border-[#c4c6cc]/15 hover:border-[#1B263B]/40 hover:bg-[#f3f4f0] transition flex items-center justify-between group`}
                   >
                     <div>
                       <p className="font-semibold text-[#1a1c1a] text-sm" style={{fontFamily:"'Manrope',sans-serif"}}>{opt.label}</p>
