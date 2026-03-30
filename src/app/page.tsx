@@ -719,7 +719,7 @@ export default function Home() {
   const [report, setReport] = useState<ReportData | null>(null);
   const [activeTab, setActiveTab] = useState<"overview" | "revenue" | "ai-llm" | "influencers" | "reviews" | "backlinks" | "crisis" | "suspicious" | "results" | "problems" | "strengths">("overview");
   const [contactModal, setContactModal] = useState<{ open: boolean; packageName: string }>({ open: false, packageName: "" });
-  const [contactForm, setContactForm] = useState({ name: "", email: "" });
+  const [contactForm, setContactForm] = useState({ name: "", email: "", message: "" });
   const [contactSent, setContactSent] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [printMode, setPrintMode] = useState(false);
@@ -3238,7 +3238,7 @@ export default function Home() {
                         onClick={() => {
                           setContactModal({ open: true, packageName: `${pkg.name} (${pkg.price})` });
                           setContactSent(false);
-                          setContactForm({ name: "", email: "" });
+                          setContactForm({ name: "", email: "", message: "" });
                         }}
                         className={`block w-full text-center py-3 rounded-lg font-semibold text-sm transition cursor-pointer ${
                           pkg.match === "perfect"
@@ -3278,7 +3278,7 @@ export default function Home() {
           <div className="flex flex-wrap gap-4 md:gap-8">
             <a className="text-xs tracking-widest uppercase text-slate-400 hover:text-[#0d1b2a] transition-colors" href="/privacy" style={{fontFamily:"'Public Sans',sans-serif"}}>Privacy Policy</a>
             <a className="text-xs tracking-widest uppercase text-slate-400 hover:text-[#0d1b2a] transition-colors" href="/terms" style={{fontFamily:"'Public Sans',sans-serif"}}>Terms of Service</a>
-            <button className="text-xs tracking-widest uppercase text-slate-400 hover:text-[#0d1b2a] transition-colors" onClick={() => { setContactModal({ open: true, packageName: "" }); setContactSent(false); setContactForm({ name: "", email: "" }); }} style={{fontFamily:"'Public Sans',sans-serif"}}>Contact</button>
+            <button className="text-xs tracking-widest uppercase text-slate-400 hover:text-[#0d1b2a] transition-colors" onClick={() => { setContactModal({ open: true, packageName: "" }); setContactSent(false); setContactForm({ name: "", email: "", message: "" }); }} style={{fontFamily:"'Public Sans',sans-serif"}}>Contact</button>
           </div>
         </div>
       </footer>
@@ -3314,6 +3314,7 @@ export default function Home() {
                         body: JSON.stringify({
                           name: contactForm.name.trim(),
                           email: contactForm.email.trim(),
+                          message: contactForm.message.trim(),
                           packageName: contactModal.packageName,
                           reportName: report?.name || "",
                           reportScore: report?.score || 0,
@@ -3347,6 +3348,17 @@ export default function Home() {
                       onChange={(e) => setContactForm((f) => ({ ...f, email: e.target.value }))}
                       className="w-full h-11 px-4 rounded-lg border border-[#c4c6cc]/30 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B263B]/20 focus:border-transparent"
                       placeholder="john@example.com"
+                      style={{fontFamily:"'Manrope',sans-serif"}}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-[#44474c] mb-1" style={{fontFamily:"'Manrope',sans-serif"}}>Message</label>
+                    <textarea
+                      value={contactForm.message}
+                      onChange={(e) => setContactForm((f) => ({ ...f, message: e.target.value }))}
+                      className="w-full px-4 py-3 rounded-lg border border-[#c4c6cc]/30 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B263B]/20 focus:border-transparent resize-none"
+                      placeholder="How can we help you?"
+                      rows={3}
                       style={{fontFamily:"'Manrope',sans-serif"}}
                     />
                   </div>

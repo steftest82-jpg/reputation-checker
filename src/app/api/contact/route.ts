@@ -192,7 +192,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Service temporarily unavailable" }, { status: 503 });
     }
 
-    const { name, email, packageName, reportName, reportScore, reportData } = await req.json();
+    const { name, email, message, packageName, reportName, reportScore, reportData } = await req.json();
 
     if (!name || !email) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -224,6 +224,7 @@ export async function POST(req: NextRequest) {
         ${safePackage ? `<tr><td style="${th}">Package</td><td style="${td}">${safePackage}</td></tr>` : `<tr><td style="${th}">Type</td><td style="${td}">General Contact</td></tr>`}
         ${safeReportName ? `<tr><td style="${th}">Report For</td><td style="${td}">${safeReportName}</td></tr>` : ""}
         ${reportScore !== undefined && typeof reportScore === "number" && reportScore > 0 ? `<tr><td style="${th}">Reputation Score</td><td style="${td}">${Math.round(reportScore)}/100</td></tr>` : ""}
+        ${message ? `<tr><td style="${th}">Message</td><td style="${td}">${escapeHtml(String(message))}</td></tr>` : ""}
       </table>
     `;
 
