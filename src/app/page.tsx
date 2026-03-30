@@ -866,7 +866,7 @@ export default function Home() {
             <span className="font-sans text-lg font-black tracking-tighter text-[#1B263B]">REP500</span>
           </div>
           <div className="flex items-center gap-5">
-            <a href="/docs" className="text-sm font-semibold hover:opacity-70 transition-opacity" style={{fontFamily:"'Manrope',sans-serif", color:"#374258"}}>Documentation</a>
+            <a href="/docs" target="_blank" rel="noopener noreferrer" className="text-sm font-semibold hover:opacity-70 transition-opacity" style={{fontFamily:"'Manrope',sans-serif", color:"#374258"}}>Documentation</a>
             <button
               onClick={() => setContactModal({ open: true, packageName: "" })}
               className="text-sm font-semibold hover:opacity-70 transition-opacity"
