@@ -378,13 +378,29 @@ const LOADING_TRACKS = [
 
 const AUDIT_MESSAGES = [
   "Scanning 500+ premium news sources for sentiment volatility...",
-  "Mapping entity relations in GPT-4 and Claude 3 Knowledge Graphs...",
+  "Mapping entity relations in GPT-4 and Claude Knowledge Graphs...",
   "Cross-referencing legal filings and global sanction lists...",
   "Analyzing dark web mentions and threat indicators...",
   "Auditing social media profiles for consistency...",
   "Checking review platform sentiment patterns...",
   "Evaluating Google autocomplete for risk signals...",
   "Scanning Reddit and Quora for reputation threats...",
+  "Extracting YouTube video transcripts for sentiment analysis...",
+  "Measuring AI / LLM visibility across ChatGPT, Claude, and Gemini...",
+  "Analyzing Google Images ranking and visual sentiment...",
+  "Computing revenue impact correlation models...",
+  "Evaluating backlink authority and domain trust signals...",
+  "Assessing geographic reputation reach across key markets...",
+  "Scanning Trustpilot, Glassdoor, and G2 for review trends...",
+  "Mapping influencer and third-party mention authority...",
+  "Detecting content flooding and suspicious activity patterns...",
+  "Calculating SERP volatility and first-page dominance...",
+  "Analyzing Knowledge Panel presence and structured data...",
+  "Cross-referencing complaint databases and consumer forums...",
+  "Running final sentiment classification across all data points...",
+  "Building executive-grade intelligence report...",
+  "Scoring recommendations by priority and revenue impact...",
+  "Finalizing crisis detection and future risk assessment...",
 ];
 
 function LoadingProgress() {
@@ -849,11 +865,14 @@ export default function Home() {
             <span className="material-symbols-outlined text-[#1B263B] text-2xl" style={{fontVariationSettings:'"FILL" 1'}}>shield_person</span>
             <span className="font-sans text-lg font-black tracking-tighter text-[#1B263B]">REP500</span>
           </div>
-          <button
-            onClick={() => setContactModal({ open: true, packageName: "" })}
-            className="text-sm font-semibold hover:opacity-70 transition-opacity"
-            style={{fontFamily:"'Manrope',sans-serif", color:"#374258"}}
-          >Contact</button>
+          <div className="flex items-center gap-5">
+            <a href="/docs" className="text-sm font-semibold hover:opacity-70 transition-opacity" style={{fontFamily:"'Manrope',sans-serif", color:"#374258"}}>Documentation</a>
+            <button
+              onClick={() => setContactModal({ open: true, packageName: "" })}
+              className="text-sm font-semibold hover:opacity-70 transition-opacity"
+              style={{fontFamily:"'Manrope',sans-serif", color:"#374258"}}
+            >Contact</button>
+          </div>
         </div>
       </nav>
 
