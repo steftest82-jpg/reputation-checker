@@ -843,11 +843,16 @@ export default function Home() {
     <div className="min-h-screen flex flex-col bg-[#f9faf5]">
       {/* Header */}
       <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md border-b border-[#c4c6cc]/10 bg-white">
-        <div className="max-w-7xl mx-auto px-4 md:px-8 h-16 flex items-center">
+        <div className="max-w-7xl mx-auto px-4 md:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="material-symbols-outlined text-[#1B263B] text-2xl" style={{fontVariationSettings:'"FILL" 1'}}>shield_person</span>
             <span className="font-sans text-lg font-black tracking-tighter text-[#1B263B]">REP500</span>
           </div>
+          <button
+            onClick={() => setContactModal({ open: true, packageName: "" })}
+            className="text-sm font-semibold hover:opacity-70 transition-opacity"
+            style={{fontFamily:"'Manrope',sans-serif", color:"#374258"}}
+          >Contact</button>
         </div>
       </nav>
 
@@ -1379,12 +1384,12 @@ export default function Home() {
               </div>
               <div className="space-y-4">
                 <div>
-                  <label className="text-xs font-bold text-[#74777d] uppercase tracking-wider mb-1.5 block" style={{fontFamily:"'Manrope',sans-serif"}}>Website</label>
+                  <label className="text-xs font-bold text-[#74777d] uppercase tracking-wider mb-1.5 block" style={{fontFamily:"'Manrope',sans-serif"}}>{type === "person" ? "Website or LinkedIn" : "Website"}</label>
                   <input
                     type="text"
                     value={domain}
                     onChange={(e) => setDomain(e.target.value)}
-                    placeholder="e.g. acmecorp.com"
+                    placeholder={type === "person" ? "e.g. linkedin.com/in/johndoe or johndoe.com" : "e.g. acmecorp.com"}
                     className="w-full h-12 pl-5 pr-5 rounded-xl border border-[#1B263B]/20 focus:outline-none focus:ring-2 focus:ring-[#1B263B]/20 bg-white text-[#1a1c1a] text-sm"
                     style={{fontFamily:"'Manrope',sans-serif"}}
                     autoFocus
@@ -1486,9 +1491,9 @@ export default function Home() {
               <div className="grid grid-cols-3 md:grid-cols-6 gap-3 mt-6 pt-6 border-t border-[#c4c6cc]/15">
                 {[
                   { label: "Results Analyzed", value: report.dataStats.totalResults },
-                  { label: "News Mentions", value: report.dataStats.newsCount },
+                  { label: "News Mentions", value: Math.max(report.dataStats.newsCount, (report.mediaBrandSentiment?.outlets?.length || 0)) },
                   { label: "Social Profiles", value: report.dataStats.socialCount },
-                  { label: "Review Sites", value: report.dataStats.reviewCount },
+                  { label: "Review Sites", value: Math.max(report.dataStats.reviewCount, (report.reviewSummary?.platforms_found?.length || 0)) },
                   { label: "Complaint Sites", value: report.dataStats.complaintCount },
                   { label: "Domains in Top 10", value: report.dataStats.uniqueDomainsInTop10 },
                 ].map((s, i) => (
