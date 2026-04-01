@@ -834,7 +834,7 @@ Perform a comprehensive reputation analysis. Respond ONLY with valid JSON (no ma
       }
     ],
     "overallSentiment": "positive" | "neutral" | "negative" | "mixed" | "no_data",
-    "analysis": "1-2 sentences about forum reputation"
+    "analysis": "1-2 sentences about forum reputation. IMPORTANT: If a thread title poses a negative question (e.g. 'Is X a scam?') but the snippet/replies indicate positive consensus, classify as positive and explain the resolution."
   },
   "googleImagesAnalysis": {
     "ranking": "strong" | "moderate" | "weak" | "absent",
@@ -928,7 +928,7 @@ Perform a comprehensive reputation analysis. Respond ONLY with valid JSON (no ma
         "commentHighlights": ["1-2 notable comment themes if visible"]
       }
     ],
-    "analysis": "2-3 sentences about video/voice presence on YouTube. If transcripts are available, analyze the actual spoken content for sentiment, key themes, and any concerning statements about the entity. Consider whether the entity controls their own YouTube narrative or if third parties dominate. Include observations about engagement (saves, shares, comments).",
+    "analysis": "2-3 sentences about video/voice presence on YouTube. CRITICAL: If transcripts are available, you MUST base sentiment on the actual spoken content, NOT just the video title. A video titled 'Is X a Scam?' that concludes positively in the transcript = POSITIVE sentiment. Always analyze transcripts for the actual conclusion and tone. Consider whether the entity controls their own YouTube narrative or if third parties dominate. Include observations about engagement (saves, shares, comments).",
     "concerns": ["any negative or concerning videos found"]
   },
   "geographicPresence": {
@@ -1148,6 +1148,12 @@ REVENUE IMPACT GUIDE (think like a CFO analyzing customer conversion friction):
 - Negative YouTube video (high views): -3 to -10%
 Impacts are NOT additive linearly — there is overlap. Total should be a realistic composite, typically capped at -60% for worst cases. A clean reputation should show -0 to -5%.
 
+CRITICAL SENTIMENT ANALYSIS RULES:
+1. MEDIA ARTICLES: NEVER judge sentiment solely by the headline. Many articles use negative words like "scam" or "fraud" in headlines as clickbait to attract clicks, but the actual article content may conclude positively. ALWAYS analyze the article body/snippet/description to determine true sentiment. Example: "Is XYZ a Scam?" headline where the article concludes "XYZ is legitimate and well-regulated" = POSITIVE sentiment, not negative.
+2. YOUTUBE VIDEOS: ALWAYS analyze the video TRANSCRIPT (provided in the data) to determine sentiment, not just the title. A video titled "Is Company X Trustworthy?" may conclude positively after analysis. Base sentiment on what the speaker actually says in the transcript.
+3. REDDIT/QUORA THREADS: ALWAYS analyze the FULL thread context from the snippet. Many threads start as legitimacy questions ("Is X legit?") but the community response concludes positively. When a thread asks a negative question but the discussion ends with positive consensus, classify it as POSITIVE and note in the summary that "the discussion concluded positively despite the initial question." Give the full picture of what was discussed and how it resolved.
+4. SCORE CONSISTENCY: The "aiLlmPresence" value in "categoryScores" MUST EXACTLY EQUAL the "score" value in "aiLlmAppearance". These are the same metric — never give different numbers.
+
 Be brutally honest. Do not inflate scores. A mediocre online presence should score 45-60, not 75.`;
 
   const msg = await client.messages.create({
@@ -1161,7 +1167,12 @@ Be brutally honest. Do not inflate scores. A mediocre online presence should sco
   // Strip markdown fences if Claude adds them despite instructions
   const cleaned = text.replace(/```json\s*/g, "").replace(/```\s*/g, "").trim();
   try {
-    return JSON.parse(cleaned);
+    const result = JSON.parse(cleaned);
+    // ── Enforce AI/LLM score consistency between categoryScores and aiLlmAppearance ──
+    if (result.aiLlmAppearance?.score != null && result.categoryScores?.aiLlmPresence != null) {
+      result.categoryScores.aiLlmPresence = result.aiLlmAppearance.score;
+    }
+    return result;
   } catch (parseErr) {
     console.error("JSON parse failed. Raw response:", cleaned.slice(0, 500));
     throw new Error("Failed to parse AI response as JSON");
