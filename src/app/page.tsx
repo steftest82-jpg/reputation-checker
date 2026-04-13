@@ -469,21 +469,21 @@ function LoadingProgress() {
   const timeStr = `${remainingMin}:${remainingSecPart.toString().padStart(2, "0")}`;
 
   return (
-    <div className="flex-grow flex flex-col items-center w-full">
-      <div className="max-w-4xl w-full mx-auto px-4 md:px-8 py-8 flex flex-col items-center">
+    <div className="flex-grow flex flex-col items-center w-full overflow-x-hidden">
+      <div className="max-w-4xl w-full mx-auto px-4 md:px-8 py-4 md:py-8 flex flex-col items-center">
         {/* Encrypted Session badge */}
-        <div className="flex items-center gap-3 mb-6 bg-[#f3f4f0] px-4 py-2 rounded-full border border-[#c4c6cc]/30">
+        <div className="flex items-center gap-2 md:gap-3 mb-4 md:mb-6 bg-[#f3f4f0] px-3 md:px-4 py-2 rounded-full border border-[#c4c6cc]/30">
           <div className="w-2 h-2 rounded-full bg-[#002c24] animate-pulse"></div>
-          <span className="text-[10px] uppercase tracking-[0.25em] font-bold text-slate-800" style={{fontFamily:"'Manrope',sans-serif"}}>Encrypted Session</span>
+          <span className="text-[9px] md:text-[10px] uppercase tracking-[0.25em] font-bold text-slate-800" style={{fontFamily:"'Manrope',sans-serif"}}>Encrypted Session</span>
           <div className="w-2 h-2 rounded-full bg-[#002c24] animate-pulse"></div>
         </div>
 
         {/* Main Heading */}
-        <div className="text-center space-y-4 mb-10 max-w-2xl">
-          <h2 className="text-4xl lg:text-5xl text-[#051125] leading-tight" style={{fontFamily:"'Newsreader',serif"}}>
+        <div className="text-center space-y-3 md:space-y-4 mb-6 md:mb-10 max-w-2xl px-2">
+          <h2 className="text-2xl md:text-4xl lg:text-5xl text-[#051125] leading-tight" style={{fontFamily:"'Newsreader',serif"}}>
             Compiling Your<br/><span className="italic text-[#47607e]">Reputation Intelligence</span>
           </h2>
-          <p className="text-base text-[#44474c] leading-relaxed" style={{fontFamily:"'Manrope',sans-serif"}}>
+          <p className="text-sm md:text-base text-[#44474c] leading-relaxed" style={{fontFamily:"'Manrope',sans-serif"}}>
             Our AI is currently auditing 10,000,000+ data points across Google, global media, and LLMs. This process typically takes 3 minutes.<br/>Sessions are anonymous and encrypted. We cannot access or download your reports. Please keep this page open until the report loads.
           </p>
         </div>
@@ -527,12 +527,12 @@ function LoadingProgress() {
           </div>
 
           {/* Right Side: Live Audit Stream */}
-          <aside className="lg:col-span-5 bg-[#f3f4f0] p-6 rounded-xl border border-[#c4c6cc]/30 flex flex-col gap-4">
+          <aside className="lg:col-span-5 bg-[#f3f4f0] p-4 md:p-6 rounded-xl border border-[#c4c6cc]/30 flex flex-col gap-3 md:gap-4">
             <div className="flex items-center gap-2 border-b border-[#c4c6cc]/50 pb-3">
               <span className="material-symbols-outlined text-[#002c24] text-lg" style={{fontVariationSettings:'"FILL" 1'}}>analytics</span>
               <h3 className="font-bold text-[10px] tracking-widest uppercase" style={{fontFamily:"'Public Sans',sans-serif"}}>Live Audit Stream</h3>
             </div>
-            <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+            <div className="space-y-3 md:space-y-4 max-h-[200px] md:max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
               {auditLog.map((entry, i) => {
                 const isLast = i === auditLog.length - 1;
                 return (
