@@ -756,6 +756,8 @@ export default function Home() {
             if (data.customerEmail) setCustomerEmail(data.customerEmail);
             // Show domain collection step before running scan
             setDomainStep(true);
+            // Scroll to top on all devices (fixes mobile scroll-to-footer bug)
+            window.scrollTo({ top: 0, behavior: "instant" });
           } else {
             setError("Payment could not be verified. Please try again.");
           }

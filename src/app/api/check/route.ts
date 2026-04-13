@@ -1156,9 +1156,9 @@ CRITICAL SENTIMENT ANALYSIS RULES:
 
 Be brutally honest. Do not inflate scores. A mediocre online presence should score 45-60, not 75.`;
 
-  // ── Retry logic for transient Anthropic API errors (429, 529, 500) ──
+  // ── Retry logic for transient Anthropic API errors (429, 529, 500, 503) ──
   let msg;
-  const MAX_RETRIES = 3;
+  const MAX_RETRIES = 4;
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     try {
       msg = await client.messages.create({
@@ -1171,7 +1171,7 @@ Be brutally honest. Do not inflate scores. A mediocre online presence should sco
       const status = (apiErr as { status?: number })?.status;
       const isRetryable = status === 429 || status === 529 || status === 500 || status === 503;
       if (isRetryable && attempt < MAX_RETRIES) {
-        const delay = attempt * 5000 + Math.random() * 2000; // 5s, 10s + jitter
+        const delay = attempt * 8000 + Math.random() * 4000; // 8s, 16s, 24s + jitter
         console.log(`Anthropic API returned ${status}, retrying in ${Math.round(delay / 1000)}s (attempt ${attempt}/${MAX_RETRIES})`);
         await new Promise(r => setTimeout(r, delay));
         continue;
