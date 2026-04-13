@@ -879,7 +879,7 @@ export default function Home() {
       </nav>
 
       {/* Homepage */}
-      {!report && !loading && !disambiguation && (
+      {!report && !loading && !disambiguation && !domainStep && (
         <main className="pb-24 overflow-x-hidden pt-32" style={{paddingTop:'calc(8rem - 15px)'}}>
           {/* Hero Section */}
           <section className="max-w-7xl mx-auto px-4 md:px-8 mb-24 text-center">
