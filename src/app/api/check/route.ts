@@ -1156,11 +1156,30 @@ CRITICAL SENTIMENT ANALYSIS RULES:
 
 Be brutally honest. Do not inflate scores. A mediocre online presence should score 45-60, not 75.`;
 
-  const msg = await client.messages.create({
-    model: "claude-sonnet-4-20250514",
-    max_tokens: 12000,
-    messages: [{ role: "user", content: prompt }],
-  });
+  // ── Retry logic for transient Anthropic API errors (429, 529, 500) ──
+  let msg;
+  const MAX_RETRIES = 3;
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      msg = await client.messages.create({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 12000,
+        messages: [{ role: "user", content: prompt }],
+      });
+      break; // success
+    } catch (apiErr: unknown) {
+      const status = (apiErr as { status?: number })?.status;
+      const isRetryable = status === 429 || status === 529 || status === 500 || status === 503;
+      if (isRetryable && attempt < MAX_RETRIES) {
+        const delay = attempt * 5000 + Math.random() * 2000; // 5s, 10s + jitter
+        console.log(`Anthropic API returned ${status}, retrying in ${Math.round(delay / 1000)}s (attempt ${attempt}/${MAX_RETRIES})`);
+        await new Promise(r => setTimeout(r, delay));
+        continue;
+      }
+      throw apiErr; // non-retryable or max retries exhausted
+    }
+  }
+  if (!msg) throw new Error("Anthropic API failed after retries");
 
   const text = msg.content?.[0]?.type === "text" ? msg.content[0].text : "";
   if (!text) throw new Error("Claude returned empty response");
