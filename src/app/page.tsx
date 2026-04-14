@@ -463,7 +463,7 @@ function LoadingProgress() {
     return () => clearInterval(interval);
   }, []);
 
-  const remainingSecs = Math.max(0, 180 - elapsed);
+  const remainingSecs = Math.max(0, 195 - elapsed);
   const remainingMin = Math.floor(remainingSecs / 60);
   const remainingSecPart = remainingSecs % 60;
   const timeStr = `${remainingMin}:${remainingSecPart.toString().padStart(2, "0")}`;
@@ -722,6 +722,7 @@ export default function Home() {
   const [contactForm, setContactForm] = useState({ name: "", email: "", message: "" });
   const [contactSent, setContactSent] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [showMobileNotice, setShowMobileNotice] = useState(false);
   const [printMode, setPrintMode] = useState(false);
   const [disambiguation, setDisambiguation] = useState<{ name: string; options: { industry: string; label: string }[]; message: string } | null>(null);
   const [paymentVerified, setPaymentVerified] = useState(false);
@@ -729,6 +730,17 @@ export default function Home() {
   const [stripeSessionId, setStripeSessionId] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
   const [domainStep, setDomainStep] = useState(false);
+
+  // On mount: detect mobile/tablet and show notice (dismissible, remembers choice per session)
+  useEffect(() => {
+    try {
+      if (sessionStorage.getItem("rep500_mobile_notice_dismissed") === "1") return;
+      const ua = navigator.userAgent.toLowerCase();
+      const isMobileUA = /mobile|android|iphone|ipad|ipod|tablet|silk|kindle|blackberry|windows phone/i.test(ua);
+      const isNarrow = window.innerWidth < 1024;
+      if (isMobileUA || isNarrow) setShowMobileNotice(true);
+    } catch {}
+  }, []);
 
   // On mount: check if returning from Stripe payment
   useEffect(() => {
@@ -860,6 +872,22 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#f9faf5]">
+      {/* Mobile/tablet optimal-experience notice */}
+      {showMobileNotice && (
+        <div className="fixed top-16 left-0 right-0 z-40 bg-[#1B263B] text-white px-4 py-2.5 flex items-start gap-3 lg:hidden" style={{fontFamily:"'Manrope',sans-serif"}}>
+          <span className="material-symbols-outlined text-[#D4AF37] text-[18px] shrink-0 mt-0.5">desktop_windows</span>
+          <p className="text-[12px] leading-snug flex-1">For the optimal experience, we recommend accessing this tool on desktop. Some elements may display differently on mobile devices.</p>
+          <button
+            onClick={() => {
+              try { sessionStorage.setItem("rep500_mobile_notice_dismissed", "1"); } catch {}
+              setShowMobileNotice(false);
+            }}
+            aria-label="Dismiss"
+            className="text-white/60 hover:text-white text-lg leading-none shrink-0 px-1"
+          >&times;</button>
+        </div>
+      )}
+
       {/* Header */}
       <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md border-b border-[#c4c6cc]/10 bg-white">
         <div className="max-w-7xl mx-auto px-4 md:px-8 h-16 flex items-center justify-between">
