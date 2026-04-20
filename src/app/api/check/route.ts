@@ -1580,8 +1580,8 @@ export async function POST(req: NextRequest) {
     // ── Sanitize name to prevent prompt injection / special chars ──
     const baseQuery = sanitizeName(name);
 
-    // ── Disambiguation: detect if this name refers to multiple entities ──
-    // Skip if user already selected an industry
+    // ── Disambiguation: always show suggested matches before running the scan ──
+    // Skip only if user already selected an industry (i.e. came back from disambiguation)
     if (!industry && entityType === "company") {
       try {
         const disambigData = await serpSearch(baseQuery, { num: "10" });
@@ -1617,8 +1617,8 @@ export async function POST(req: NextRequest) {
           }
         }
 
-        // If 2+ distinct industries found, this name is ambiguous
-        if (industries.size >= 2) {
+        // Always show disambiguation with whatever matches were found, plus "Other" fallback
+        if (industries.size >= 1) {
           const options = Array.from(industries).map((ind) => ({
             industry: ind,
             label: `${baseQuery} (${ind.charAt(0).toUpperCase() + ind.slice(1)})`,
@@ -1626,11 +1626,15 @@ export async function POST(req: NextRequest) {
           // Add a generic "other" option
           options.push({ industry: "other", label: `${baseQuery} (Other / Not listed)` });
 
+          const message = industries.size >= 2
+            ? `Multiple entities found for "${baseQuery}". Please confirm which one you meant.`
+            : `Please confirm the entity you want to analyze for "${baseQuery}".`;
+
           return NextResponse.json({
             disambiguation: true,
             name: baseQuery,
             options,
-            message: `Multiple entities found for "${baseQuery}". Please select the correct industry to get accurate results.`,
+            message,
           });
         }
       } catch {
@@ -1676,8 +1680,8 @@ export async function POST(req: NextRequest) {
           }
         }
 
-        // If 2+ distinct identities found, disambiguate
-        if (identities.size >= 2) {
+        // Always show disambiguation with whatever matches were found, plus "Other" fallback
+        if (identities.size >= 1) {
           const options = Array.from(identities.entries()).map(([key, val]) => ({
             industry: key,
             label: val.label,
@@ -1685,11 +1689,15 @@ export async function POST(req: NextRequest) {
           }));
           options.push({ industry: "other", label: `${baseQuery} — Other / Not listed`, context: "" });
 
+          const message = identities.size >= 2
+            ? `We found multiple people named "${baseQuery}". Please select the correct one.`
+            : `Please confirm which "${baseQuery}" you want to analyze.`;
+
           return NextResponse.json({
             disambiguation: true,
             name: baseQuery,
             options,
-            message: `We found multiple people named "${baseQuery}". Please select the correct one for accurate results.`,
+            message,
           });
         }
       } catch {

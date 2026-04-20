@@ -1443,32 +1443,21 @@ export default function Home() {
                     autoFocus
                   />
                 </div>
-                <div>
-                  <label className="text-xs font-bold text-[#74777d] uppercase tracking-wider mb-1.5 block" style={{fontFamily:"'Manrope',sans-serif"}}>Industry</label>
-                  <input
-                    type="text"
-                    value={industry}
-                    onChange={(e) => setIndustry(e.target.value)}
-                    placeholder="e.g. Financial Services, Real Estate, Technology"
-                    className="w-full h-12 pl-5 pr-5 rounded-xl border border-[#1B263B]/20 focus:outline-none focus:ring-2 focus:ring-[#1B263B]/20 bg-white text-[#1a1c1a] text-sm"
-                    style={{fontFamily:"'Manrope',sans-serif"}}
-                  />
-                </div>
                 <button
                   onClick={() => {
                     setDomainStep(false);
-                    runCheck(name, type, industry.trim() || undefined, domain.trim(), stripeSessionId);
+                    runCheck(name, type, undefined, domain.trim(), stripeSessionId);
                   }}
                   disabled={!domain.trim()}
                   className="w-full py-3.5 rounded-xl text-white font-bold text-sm tracking-tight transition-all bg-gradient-to-r from-[#101b30] to-[#3c475d] hover:shadow-lg disabled:opacity-40 disabled:cursor-not-allowed"
                   style={{fontFamily:"'Manrope',sans-serif"}}
                 >
-                  Start Analysis
+                  Next
                 </button>
                 <button
                   onClick={() => {
                     setDomainStep(false);
-                    runCheck(name, type, industry.trim() || undefined, "", stripeSessionId);
+                    runCheck(name, type, undefined, "", stripeSessionId);
                   }}
                   className="w-full py-2.5 text-[#74777d] text-xs hover:text-[#1B263B] transition-colors"
                   style={{fontFamily:"'Manrope',sans-serif"}}
