@@ -1162,7 +1162,7 @@ Be brutally honest. Do not inflate scores. A mediocre online presence should sco
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     try {
       msg = await client.messages.create({
-        model: "claude-sonnet-4-20250514",
+        model: "claude-opus-4-8",
         max_tokens: 12000,
         messages: [{ role: "user", content: prompt }],
       });
