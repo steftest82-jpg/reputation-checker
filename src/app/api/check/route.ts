@@ -1163,7 +1163,7 @@ Be brutally honest. Do not inflate scores. A mediocre online presence should sco
     try {
       msg = await client.messages.create({
         model: "claude-opus-4-8",
-        max_tokens: 12000,
+        max_tokens: 20000,
         messages: [{ role: "user", content: prompt }],
       });
       break; // success
@@ -1192,9 +1192,16 @@ Be brutally honest. Do not inflate scores. A mediocre online presence should sco
       result.categoryScores.aiLlmPresence = result.aiLlmAppearance.score;
     }
     return result;
-  } catch (parseErr) {
-    console.error("JSON parse failed. Raw response:", cleaned.slice(0, 500));
-    throw new Error("Failed to parse AI response as JSON");
+  } catch {
+    const truncated = msg.stop_reason === "max_tokens";
+    console.error(
+      `JSON parse failed. stop_reason=${msg.stop_reason} output_tokens=${msg.usage?.output_tokens} length=${cleaned.length} tail=${JSON.stringify(cleaned.slice(-300))}`
+    );
+    throw new Error(
+      truncated
+        ? "AI response truncated at max_tokens — raise the cap"
+        : "Failed to parse AI response as JSON"
+    );
   }
 }
 
